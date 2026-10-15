@@ -1,0 +1,32 @@
+# Acme Corp: synthetic environment for the Argus SOC demo (Workstream B).
+# Fictional names, private IP ranges. Demo facts the tests check:
+#   - bastion-01 -> app-02 -> db-prod-01 (crown jewel) is a path an attacker can walk.
+#   - web-01 has no path to any crown jewel.
+# The filler section adds generated hosts and users around the demo hosts, from a
+# fixed seed, so every run builds exactly the same graph.
+tenant: acme
+
+hosts:
+  - {hostname: bastion-01, ip: 10.0.1.10, os: ubuntu-22.04, zone: dmz,  criticality: 3}
+  - {hostname: app-02,     ip: 10.0.2.20, os: ubuntu-22.04, zone: app,  criticality: 4}
+  - {hostname: db-prod-01, ip: 10.0.3.30, os: ubuntu-22.04, zone: data, criticality: 5, tags: [crown-jewel]}
+  - {hostname: web-01,     ip: 10.0.1.40, os: ubuntu-22.04, zone: dmz,  criticality: 2}
+
+users:
+  - {username: svc_deploy, role: service, department: platform, privileged: true, logs_into: [bastion-01, app-02]}
+
+links:
+  - {from: bastion-01, to: app-02,     port: 22}
+  - {from: app-02,     to: db-prod-01, port: 5432}
+
+iocs:
+  - {type: ip, value: 10.0.5.20, owner: null}   # internal pentest scanner (scenario 2)
+
+filler:
+  seed: 20261015
+  # Filler workstations may SSH into the gateway. No other filler link touches a demo host,
+  # so the demo paths above stay exactly as written.
+  gateway: bastion-01
+  subnets: {dmz: 10.0.1.0/24, app: 10.0.2.0/24, data: 10.0.3.0/24, corp: 10.0.4.0/24}
+  hosts: {dmz: 6, app: 16, data: 6, corp: 32}
+  users: 30

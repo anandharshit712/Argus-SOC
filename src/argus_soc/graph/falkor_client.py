@@ -91,6 +91,19 @@ async def ping() -> bool:
         return False
 
 
+async def graph_exists(tenant: str) -> bool:
+    """True when the tenant's graph has been created (seeded or indexed)."""
+    return graph_name(tenant) in await _db().list_graphs()
+
+
+async def delete_graph(tenant: str) -> bool:
+    """Delete the tenant's whole graph. True if there was one. Used by reset_demo only."""
+    if not await graph_exists(tenant):
+        return False
+    await graph_for(tenant).delete()
+    return True
+
+
 async def close() -> None:
     """Close the connection pool (service shutdown, end of tests)."""
     global _client, _client_loop
