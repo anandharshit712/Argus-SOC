@@ -70,6 +70,9 @@ Entry points (console scripts in `pyproject.toml`): `argus-ingest` → `ingest_l
 | `LLM_TIMEOUT_SECONDS` | `20` | agents | A |
 | `API_PORT` | `8080` | api | C |
 | `API_CORS_ORIGINS` | `http://localhost:5173` | api | C |
+| `ARGUS_DEMO_USERS` | required; JSON `[{"username","display_name","password","tenants":[...]}]` | api (login) | C (field in shared `settings.py`) — **GAP-1, proposed** |
+| `ARGUS_SESSION_SECRET` | required, ≥ 32 chars | api (login) | C — **GAP-1, proposed** |
+| `ARGUS_SESSION_HOURS` | `12` | api (login) | C — **GAP-1, proposed** |
 | `LOG_LEVEL` | `INFO` | all | everyone |
 
 `settings.py` uses `pydantic-settings`; a bad value raises at startup (rule C9).
@@ -103,13 +106,18 @@ string anywhere else.
 | `IOC` | `type` + `value` | `first_seen`, `last_seen`, `verdict` (`unknown`/`malicious`/`benign`), `owner` (semantic fact), `seen_case_ids` (list, semantic fact) |
 | `Technique` | `mitre_id` | `name`, `tactic` |
 | `Case` | `id` (int) | `status`, `priority`, `opened_at`, `updated_at`, `claimed_by`, `claimed_at`, `findings` (JSON string), `verdict`, `closed_reason` |
-| `Decision` | `id` (uuid) | `actions` (list), `needs_approval`, `rule_id`, `reason`, `explanation`, `evidence` (JSON: query names + results), `outcome` (`pending`/`approved`/`rejected`/`auto`), `created_at` |
+| `Decision` | `id` (uuid) | `actions` (list), `needs_approval`, `rule_id`, `reason`, `explanation`, `evidence` (JSON: query names + results), `outcome` (`pending`/`approved`/`rejected`/`auto`), `created_at`; `previous_priority` (case priority before this decision — **GAP-5, proposed**) |
 | `Feedback` | `id` (uuid) | `verdict` (`approve`/`reject`/`benign`), `note`, `analyst`, `created_at` |
 | `Playbook` | `name` + `version` | `condition` (JSON), `action` (`auto_close`), `active` (bool), `created_at` |
 | `AgentRun` | `id` (uuid) | `agent`, `worker`, `case_id`, `started_at`, `finished_at`, `outcome`, `summary`, `tool_calls` (JSON: deep-dive calls, Investigator only) |
 
 Relationships: as in `ARCHITECTURE.md` §4. `LOGGED_INTO` carries `last_seen`; `CONNECTS_TO`
-carries `port`.
+carries `port`. `graph_schema.py` also defines `(Case)-[:APPLIED]->(Playbook)` and
+`(Decision)-[:APPLIED]->(Playbook)` to cite the playbook used (GAP-7, docs to catch up).
+
+No label holds UI analyst accounts. For the hackathon, analysts are hard-coded demo users in
+`.env` (HLD D13); the graph's `User` label is the simulated company's accounts. The only analyst
+trace in the graph is `Feedback.analyst`.
 
 Case status constants: `NEW`, `TRIAGED`, `INVESTIGATED`, `AWAITING_APPROVAL`, `CLOSED`,
 `AUTO_CLOSED`.
@@ -154,9 +162,9 @@ Every function is `async`, takes `tenant` first, returns plain Python types.
 | `list_new_alerts(tenant, limit)` | Alerts with `status = 'new'`, oldest first | `[alert dict]` |
 | `known_incident_ids(tenant, ids)` | Which of these incident ids already exist | `set[str]` |
 | `list_cases(tenant, status=None, limit=100)` | Cases newest first | `[case summary]` |
-| `get_case(tenant, case_id)` | Case with alerts, findings, decisions, feedback | `dict` |
+| `get_case(tenant, case_id)` | Case with alerts, findings, decisions, feedback, agent runs | `dict`; feedback items as `{id, verdict, note, analyst, created_at}` (GAP-4) and agent runs with `worker`, `tool_calls` (GAP-2/3) — **proposed** |
 | `list_playbooks(tenant)` | Playbooks with version and source case | `[dict]` |
-| `list_activity(tenant, since)` | AgentRun entries after a timestamp | `[dict]` |
+| `list_activity(tenant, since)` | AgentRun entries after a timestamp | `[dict]` incl. `worker` and parsed `tool_calls` (GAP-2/3, **proposed**) |
 
 #### 4.4.1 Semantic facts
 
@@ -191,7 +199,7 @@ All single `MERGE`-based queries (rule A3).
 | `claim_case(tenant, status, agent, ttl_seconds)` | Atomically claim the oldest case in `status` whose claim is empty or expired; returns `case_id` or `None` (§6.1) |
 | `set_case_status(tenant, case_id, status, priority=None)` | Move status, clear the claim |
 | `record_findings(tenant, case_id, findings: dict)` | Store findings JSON on the case |
-| `record_decision(tenant, case_id, decision: DecisionInput)` | CREATE Decision, link HAS_DECISION, MERGE ACTED_ON to targets, set simulated flags (`isolated`, `disabled`) |
+| `record_decision(tenant, case_id, decision: DecisionInput)` | CREATE Decision, link HAS_DECISION, MERGE ACTED_ON to targets, set simulated flags (`isolated`, `disabled`); stores `decision.previous_priority` (GAP-5, **proposed**) |
 | `record_feedback(tenant, case_id, verdict, note, analyst)` | CREATE Feedback ON Case; set Decision outcome; set IOC `verdict` |
 | `create_playbook_version(tenant, feedback_id, condition, action)` | Deactivate older versions with the same name; CREATE new version; LEARNED_FROM feedback |
 | `set_ioc_fact(tenant, ioc, key, value)` | Semantic fact on an IOC (e.g. `owner`) |
@@ -428,6 +436,7 @@ run(tenant, case_id):
     explanation = llm.explain(case, rule, ranking) if LLM_ENABLED else template(case, rule, ranking)
     graph.record_decision(tenant, case_id, DecisionInput(rule_id=rule.id, actions=targets,
         needs_approval=rule.needs_approval, reason=..., explanation=explanation,
+        previous_priority=case.priority,          # GAP-5 (proposed): lets the UI show high → medium
         evidence={"findings": case.findings, "ranking": ranking}))
     new_priority = lower_one(case.priority) if rule.priority == "lower_one" else None
     graph.set_case_status(tenant, case_id, AWAITING_APPROVAL if rule.needs_approval else CLOSED, new_priority)
@@ -552,6 +561,38 @@ Errors: 404 unknown tenant or case; 409 feedback on a case not awaiting approval
 
 `mock_data.py` returns these same models with scenario-1 values when `ARGUS_API_MOCK=true`.
 
+### 7.1 Login for the hackathon (GAP-1, proposed — see `docs/CONTRACT_GAPS.md`)
+
+Hard-coded demo users from `ARGUS_DEMO_USERS` (`acme.analyst` → acme, `globex.analyst` → globex,
+`demo.admin` → both). No user table; real login is post-hackathon (HLD D13).
+
+| Method + path | Request | Response | Errors |
+|---|---|---|---|
+| `POST /api/auth/login` | `LoginIn {username, password}` | `SessionOut {token, username, display_name, tenants, expires_at}` | 401 (same message for unknown user and wrong password) |
+| `GET /api/auth/me` | bearer token | `MeOut {username, display_name, tenants}` | 401 |
+| `POST /api/auth/logout` | bearer token | 204 | — |
+
+- Token = `base64(payload).hmac_sha256(payload, ARGUS_SESSION_SECRET)`, payload `{username, exp}`;
+  checked with `hmac.compare_digest`. Files: `api/auth_routes.py`, `api/session_tokens.py`.
+- Guard dependency on every `/api/{tenant}/…` route: 401 without a valid token, 403 if the tenant
+  isn't the user's. `/api/health` and `/api/auth/login` stay open. `GET /api/tenants` returns
+  only the caller's tenants.
+- Feedback: `analyst` comes from the token; the browser's value is ignored.
+
+### 7.2 Proposed model additions (GAP-2…6, not in the contract until acked)
+
+```python
+class ToolCallOut(BaseModel):     tool: str; args: dict; result: str; why: str
+class ActivityItem(BaseModel):    # + worker: str | None = None; tool_calls: list[ToolCallOut] | None = None
+class FeedbackItemOut(BaseModel): id: str; verdict: Literal["approve","reject","benign"]; note: str; analyst: str; created_at: datetime
+class DecisionOut(BaseModel):     # + previous_priority: str | None = None
+class FindingsOut(BaseModel, extra="allow"):   # every key optional
+    recall: list[dict] | None; facts: dict | None; linked: list[str] | None
+    succeeded: bool | None; path_to_crown_jewel: bool | None; shortest_path: list[str] | None
+    blast_radius: list[dict] | None; deep_dive: list[ToolCallOut] | None
+# CaseDetail: findings: FindingsOut; feedback: list[FeedbackItemOut]
+```
+
 ## 8. UI — Workstream C
 
 | Page | Shows | Data |
@@ -564,6 +605,11 @@ Errors: 404 unknown tenant or case; 409 feedback on a case not awaiting approval
 
 Notes: path view can be plain SVG or a small graph library; Talos's own recommended actions are
 shown, labelled "Talos suggested", next to the agent's decision.
+
+**Full page-by-page spec: `docs/UI_PAGES.md`** (5 pages: Sign in, Case queue, Case detail,
+Playbooks, Agent activity; plus the app shell and a not-found page). The Sign in page and the
+token handling depend on GAP-1; the worker, tool-call and "high → medium" displays depend on
+GAP-2, GAP-3 and GAP-5 and stay hidden until those fields exist.
 
 ---
 

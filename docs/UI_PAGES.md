@@ -480,7 +480,7 @@ items; de-duplicate by (`at`, `agent`, `case_id`, `summary`).
 
 ## 9. Contract gaps to agree with the team
 
-These are not in `api_models.py` today. The UI can ship without them (fields hidden), but the
+Tracked as GAP-1…GAP-6 in `docs/CONTRACT_GAPS.md` (rows 1–6 below, same order), with owners and status. These are not in `api_models.py` today. The UI can ship without them (fields hidden), but the
 G9/G11 proofs look much better with them. Agree before changing the contract (A11, G3).
 
 | # | Gap | Proposed change | Needed for |

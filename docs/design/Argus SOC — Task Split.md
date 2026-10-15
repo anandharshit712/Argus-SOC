@@ -126,6 +126,17 @@ Owner: Satya. Owns everything a judge sees: the analyst screen, the live view of
 
 **How:** start with the case detail screen; it carries the demo. Build against mock data that matches the agreed JSON shapes, then switch to the real API on Oct 16.
 
+## Oct 16 — contract gaps found
+
+Checking the UI against the contracts found seven gaps (login, worker and tool calls on activity,
+typed feedback, previous priority on decisions, typed findings, `APPLIED` in the docs). Each one
+names its owners and the exact change in `docs/CONTRACT_GAPS.md`; the UI spec is in
+`docs/UI_PAGES.md`. Login for the hackathon is hard-coded demo users (HLD D13).
+
+- **A:** ack GAP-5, GAP-6; Responder sets `previous_priority`; keep findings key names.
+- **B:** ack GAP-1 (settings), GAP-2…5; extend the read/write functions; draw `APPLIED`.
+- **C:** ack all; build login (GAP-1) and the model additions once agreed.
+
 ## Interface contracts
 
 These three contracts are what keep the streams independent. Agree them in today's call; after that, change them only with a message to all three.

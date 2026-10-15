@@ -39,12 +39,15 @@ investigate, decide and learn, explaining every decision as a path through the g
 - Two tenants (Acme, Globex) with isolated graphs.
 - Analyst UI with approve / reject / benign, path view, playbooks, live agent activity.
 - Deployment on one OCI instance with HTTPS.
+- Sign in with **hard-coded demo users** per tenant (D13), so the public demo URL isn't open.
 
 **Out of scope**
 
 - Changing Talos, or pushing learnings back into it (a post-hackathon feature).
 - Real response actions against infrastructure (all actions are simulated).
-- Real customer data, authentication and user management, multi-instance scaling.
+- Real customer data, multi-instance scaling.
+- Real authentication and user management (accounts in a database, hashed passwords, roles):
+  a post-hackathon feature. The hackathon uses hard-coded demo users (D13).
 
 ## 2. Goals and success criteria
 
@@ -158,6 +161,7 @@ Full schema: `ARCHITECTURE.md` §4 and `LLD.md` §4.1.
 | D10 | UI talks only to our API, never to FalkorDB | One place for validation; UI can use mocks from day one | UI querying the graph directly |
 | D11 | MCP tool selection is a bounded, read-only deep dive after the fixed queries | Shows the agent choosing tools (Track 01) without letting the LLM decide, write or cross tenants | LLM drives the whole investigation through MCP |
 | D12 | Semantic facts store case-id lists, not counters | Writing the same case twice changes nothing (D7) | Incrementing counters |
+| D13 | Hackathon login uses hard-coded demo users in `.env` and a signed token; no analyst accounts in FalkorDB | Protects the public URL in hours, not days; keeps the graph about security data only | Full user management now (too slow); no login at all (anyone could approve actions on the live URL) |
 
 ## 8. Non-functional requirements
 
@@ -212,3 +216,4 @@ Targets are for the demo on one OCI instance. All numbers are proposed and can b
 | Tenancy with Talos | One Talos per tenant · one Talos + host-name mapping | Oct 15 | A, B |
 | UI framework | React + TypeScript + Vite suggested | Oct 15 | C |
 | Polling interval | 2–5 s | Oct 16 | A |
+| Contract gaps GAP-1…7 (`CONTRACT_GAPS.md`) | Ack or change each one | Oct 16 | A, B, C |
