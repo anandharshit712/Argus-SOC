@@ -10,9 +10,9 @@ Three workstreams, one owner each. The streams meet only at three agreed interfa
 | --- | --- | --- |
 | A. Agents + Talos integration | @Harshit Anand | Talos running, ingestor, scenario logs, Triage / Investigator / Responder agents, learning logic |
 | B. Database and graph | Md Adnan Afzal | FalkorDB, schema, asset inventory, graph tools library (Q1–Q6 + writes), Docker Compose and OCI deployment |
-| C. UI, API and submission | To be chosen by the team | Backend API for the UI, analyst UI, live demo view, README, demo video |
+| C. UI, API and submission | Satya | Backend API for the UI, analyst UI, live demo view, README, demo video |
 
-B is taken by Md Adnan Afzal; the remaining teammate takes C and puts their name in this table.
+B is taken by Md Adnan Afzal and C by Satya.
 
 Reference: the design doc, "Argus SOC — FalkorDB Hackathon Design", for the full data model, queries and demo scenarios.
 
@@ -97,7 +97,7 @@ Owner: Md Adnan Afzal. Owns everything inside FalkorDB and the way the rest of t
 
 ## Workstream C — UI, API and submission
 
-Owner: to be chosen. Owns everything a judge sees: the analyst screen, the live view of the agents, and the submission package.
+Owner: Satya. Owns everything a judge sees: the analyst screen, the live view of the agents, and the submission package.
 
 **Backend API for the UI (Python, FastAPI)**
 

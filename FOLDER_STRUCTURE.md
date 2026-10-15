@@ -4,7 +4,7 @@ Every file has one owner, set by the folder it lives in. If you need a file some
 isn't listed here, add it to this document in the same pull request.
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission · **shared** = change only after telling all three.
+**C** = UI, API and submission (Satya) · **shared** = change only after telling all three.
 
 ## Tree
 

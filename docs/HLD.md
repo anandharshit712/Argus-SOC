@@ -19,7 +19,7 @@ Diagrams are in `ARCHITECTURE.md`; module-level detail is in `LLD.md`; data flow
 | 10–11. Risks, open decisions | Everyone; owner named per row | What could go wrong, what's still undecided |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 

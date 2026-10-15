@@ -23,7 +23,7 @@ stores** (D-numbered), rounded boxes are **external entities**.
 | 10. Trust and sensitivity | Everyone | Untrusted data and what must stay private |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 

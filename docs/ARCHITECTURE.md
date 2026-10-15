@@ -20,7 +20,7 @@ and the case lifecycle. Diagrams are Mermaid and render on GitHub. Detail behind
 | 8. Trust boundaries | Everyone | What is untrusted and what stays private |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 

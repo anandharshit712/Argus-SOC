@@ -22,7 +22,7 @@ the same pull request.
 | 12. Deployment detail | **B**; A provides the Talos Dockerfile | |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 
