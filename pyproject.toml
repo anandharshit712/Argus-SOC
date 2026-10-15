@@ -1,0 +1,54 @@
+# Owner: Workstream B (Md Adnan Afzal). Other workstreams add their dependencies here.
+
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argus-soc"
+version = "0.1.0"
+description = "Multi-agent security incident triage on a FalkorDB graph (Graph Hacks 2026)"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "falkordb>=1.8.0,<2",        # graph database client (sync and asyncio)
+    "pydantic>=2.7,<3",          # models at module boundaries
+    "pydantic-settings>=2.3,<3", # .env -> core/settings.py
+    "pyyaml>=6.0,<7",            # tenant inventory files for the seed script
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "pytest-asyncio>=0.23",
+    "ruff>=0.6",
+]
+
+[project.scripts]
+# Entry points from docs/LLD.md §1. They work once each module exists.
+argus-ingest = "argus_soc.ingestor.ingest_loop:main"
+argus-agents = "argus_soc.agents.agent_runner:main"
+argus-api = "argus_soc.api.api_server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"argus_soc.agents" = ["prompts/*.md"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["src", "tests"]
+# Python files only: docs/ holds design snippets in Markdown that are not meant to be formatted.
+include = ["*.py", "*.pyi", "**/pyproject.toml"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "ASYNC"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = [
+    "falkordb: needs a running FalkorDB (docker compose up -d falkordb)",
+]

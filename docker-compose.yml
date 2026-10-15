@@ -1,0 +1,28 @@
+# Argus SOC — local and OCI stack. Owner: Workstream B (Md Adnan Afzal).
+# Only FalkorDB for now; talos, ingestor, agents, api, ui and nginx are added as they are built.
+name: argus-soc
+
+services:
+  falkordb:
+    # Pinned to the exact image tested on Oct 15, 2026 (FalkorDB on Redis 8.10.2).
+    image: falkordb/falkordb@sha256:b0bdcac2cbaff989e77cb0610439b7a9289e86de033ccbbd4368b66fb680ae7a
+    restart: unless-stopped
+    environment:
+      # Append-only file: every write is saved to disk, so memory survives restarts.
+      REDIS_ARGS: "--appendonly yes"
+    volumes:
+      # This image keeps its data in FALKORDB_DATA_PATH=/var/lib/falkordb/data (not /data).
+      - falkordb-data:/var/lib/falkordb/data
+    ports:
+      # Bound to 127.0.0.1 only: reachable from this machine (tests, seed script, Browser),
+      # never from the internet. FalkorDB has no password, so it must stay private on OCI too.
+      - "127.0.0.1:6379:6379"   # database
+      - "127.0.0.1:3000:3000"   # FalkorDB Browser (web UI)
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  falkordb-data:
