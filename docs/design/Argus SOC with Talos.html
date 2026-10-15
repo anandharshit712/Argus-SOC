@@ -1,0 +1,985 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Argus SOC with Talos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Condensed:wght@500;600;700&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a control-room page. One wide animated system map up top, a step console under it,
+   then reference sections (Talos, Argus SOC, parallelism, loops, glossary) in a single reading column. */
+:root {
+  --bg: #eef1f4;
+  --surface: #ffffff;
+  --zone: #f6f8fa;
+  --ink: #15202b;
+  --muted: #586572;
+  --line: #d3dae1;
+  --line-strong: #aeb9c4;
+  --talos: #b0600a;
+  --talos-tint: #fbefe1;
+  --soc: #0c7781;
+  --soc-tint: #e0f3f4;
+  --mem: #6a4cc0;
+  --mem-tint: #efeafb;
+  --crit: #b8322a;
+  --ok: #2c7a41;
+  --code-bg: #f2f4f7;
+  --f-display: "IBM Plex Sans Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1318; --surface: #161d25; --zone: #121920; --ink: #e3e8ed; --muted: #95a2ae;
+    --line: #2a3541; --line-strong: #44525f; --talos: #e8a04a; --talos-tint: #33261a;
+    --soc: #44c2cb; --soc-tint: #15303a; --mem: #a993f2; --mem-tint: #262043;
+    --crit: #ef6b60; --ok: #63c27c; --code-bg: #10161c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1318; --surface: #161d25; --zone: #121920; --ink: #e3e8ed; --muted: #95a2ae;
+  --line: #2a3541; --line-strong: #44525f; --talos: #e8a04a; --talos-tint: #33261a;
+  --soc: #44c2cb; --soc-tint: #15303a; --mem: #a993f2; --mem-tint: #262043;
+  --crit: #ef6b60; --ok: #63c27c; --code-bg: #10161c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.6; }
+.wrap { max-width: 1200px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 64px; }
+h1, h2, h3 { font-family: var(--f-display); line-height: 1.15; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 4.4vw, 46px); font-weight: 700; letter-spacing: -0.01em; }
+h2 { font-size: 28px; font-weight: 700; margin-bottom: 10px; }
+h3 { font-size: 19px; font-weight: 600; }
+p { margin: 0; max-width: 72ch; }
+a { color: var(--soc); }
+code, .mono { font-family: var(--f-mono); font-size: 0.86em; }
+code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+.eyebrow { font-family: var(--f-mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header.hero { display: grid; gap: 12px; padding-block: 8px 24px; }
+.lede { font-size: 17px; color: var(--muted); max-width: 70ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 7px; }
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.talos { background: var(--talos); } .dot.soc { background: var(--soc); } .dot.mem { background: var(--mem); }
+.note { font-size: 13px; color: var(--muted); border-left: 3px solid var(--line-strong); padding-left: 10px; max-width: 80ch; }
+
+/* ---------- map console ---------- */
+.console { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; border-bottom: 1px solid var(--line); background: var(--zone); }
+.tab { font: 500 13px var(--f-body); color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 999px; padding: 6px 13px; cursor: pointer; }
+.tab[aria-selected="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+.tab:focus-visible, .btn:focus-visible, .chip:focus-visible, select:focus-visible { outline: 2px solid var(--soc); outline-offset: 2px; }
+.mapwrap { overflow-x: auto; border-bottom: 1px solid var(--line); }
+#map { display: block; width: 100%; min-width: 980px; height: auto; }
+.controls { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 12px; border-bottom: 1px solid var(--line); }
+.btn { font: 500 13px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.btn.primary { background: var(--soc); border-color: var(--soc); color: var(--surface); min-width: 92px; justify-content: center; }
+.btn:disabled { opacity: .45; cursor: default; }
+.controls label { font-size: 13px; color: var(--muted); display: inline-flex; gap: 6px; align-items: center; margin-left: auto; }
+select { font: 13px var(--f-body); color: var(--ink); background: var(--surface); border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 12px; border-bottom: 1px solid var(--line); }
+.chip { font: 500 12px var(--f-mono); color: var(--muted); background: var(--zone); border: 1px solid var(--line); border-radius: 6px; padding: 4px 9px; cursor: pointer; max-width: 100%; text-align: left; }
+.chip[aria-current="step"] { color: var(--ink); border-color: var(--ink); background: var(--surface); }
+.chip.talos::before, .chip.soc::before, .chip.mem::before { content: ""; display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.chip.talos::before { background: var(--talos); } .chip.soc::before { background: var(--soc); } .chip.mem::before { background: var(--mem); }
+.panel { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 20px; padding: 18px 18px 22px; }
+.panel > div { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 12px; }
+.pill { font: 600 11px var(--f-mono); letter-spacing: .04em; text-transform: uppercase; border-radius: 4px; padding: 2px 7px; border: 1px solid currentColor; }
+.pill.talos { color: var(--talos); } .pill.soc { color: var(--soc); } .pill.mem { color: var(--mem); }
+.pill.kind { color: var(--muted); }
+.panel h3 { font-size: 22px; }
+.decision { border: 1px solid var(--line); border-left: 4px solid var(--soc); background: var(--zone); border-radius: 6px; padding: 10px 12px; font-size: 14px; }
+.decision.talos { border-left-color: var(--talos); } .decision.mem { border-left-color: var(--mem); }
+.decision b { font-family: var(--f-mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); display: block; margin-bottom: 2px; }
+pre { margin: 0; background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px; padding: 12px; overflow-x: auto; font: 12.5px/1.55 var(--f-mono); color: var(--ink); white-space: pre; }
+.datalabel { font: 600 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+/* svg */
+.zone-rect { fill: var(--zone); stroke: var(--line-strong); stroke-width: 1; stroke-dasharray: 4 4; }
+.zone-title { font: 600 12px var(--f-mono); letter-spacing: .06em; fill: var(--muted); }
+.zone-title.talos { fill: var(--talos); } .zone-title.soc { fill: var(--soc); }
+.node { cursor: pointer; transition: opacity .25s; }
+.node rect { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.2; transition: fill .25s, stroke .25s; }
+.node .t1 { font: 600 13px var(--f-body); fill: var(--ink); }
+.node .t2 { font: 11.5px var(--f-body); fill: var(--muted); }
+.node:hover rect { stroke: var(--ink); }
+.node:focus { outline: none; } .node:focus-visible rect { stroke: var(--soc); stroke-width: 2.5; }
+.node.on.talos rect { stroke: var(--talos); stroke-width: 2.4; fill: var(--talos-tint); }
+.node.on.soc rect, .node.on.in rect { stroke: var(--soc); stroke-width: 2.4; fill: var(--soc-tint); }
+.node.on.mem rect { stroke: var(--mem); stroke-width: 2.4; fill: var(--mem-tint); }
+.node.on.in rect { stroke: var(--talos); fill: var(--talos-tint); }
+.edge path { fill: none; stroke: var(--line-strong); stroke-width: 1.4; marker-end: url(#m-idle); transition: stroke .25s, opacity .25s; }
+.edge.on.talos path { stroke: var(--talos); stroke-width: 2.2; marker-end: url(#m-talos); }
+.edge.on.soc path { stroke: var(--soc); stroke-width: 2.2; marker-end: url(#m-soc); }
+.edge.on.mem path { stroke: var(--mem); stroke-width: 2.2; marker-end: url(#m-mem); }
+.edge.bi path { marker-start: url(#m-idle-s); }
+.edge.bi.on.soc path { marker-start: url(#m-soc-s); }
+svg.focus .node:not(.on) { opacity: .42; }
+svg.focus .edge:not(.on) { opacity: .35; }
+.mk-idle { fill: var(--line-strong); } .mk-talos { fill: var(--talos); } .mk-soc { fill: var(--soc); } .mk-mem { fill: var(--mem); }
+.pkt { stroke: var(--surface); stroke-width: 1.5; }
+.pkt.talos { fill: var(--talos); } .pkt.soc { fill: var(--soc); } .pkt.mem { fill: var(--mem); }
+.elabel { font: 11px var(--f-mono); fill: var(--muted); }
+.legend-svg text { font: 12px var(--f-body); fill: var(--muted); }
+
+/* ---------- reference sections ---------- */
+section.ref { padding-top: 56px; display: grid; gap: 18px; }
+section.ref > p { color: var(--ink); }
+.sub { color: var(--muted); }
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 11.5px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); background: var(--zone); white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+td.num { font-variant-numeric: tabular-nums; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.card h3 { display: flex; align-items: center; gap: 10px; }
+.card dl { margin: 0; display: grid; grid-template-columns: 84px minmax(0, 1fr); gap: 6px 12px; font-size: 14px; }
+.card dt { font: 600 11px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); padding-top: 3px; }
+.card dd { margin: 0; }
+.card ol, .card ul { margin: 0; padding-left: 20px; font-size: 14px; display: grid; gap: 4px; }
+.card.talos { border-top: 3px solid var(--talos); } .card.soc { border-top: 3px solid var(--soc); } .card.mem { border-top: 3px solid var(--mem); }
+.twocol { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+.rules { display: grid; gap: 8px; margin: 0; padding-left: 22px; }
+.tag { font: 600 10.5px var(--f-mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); border: 1px dashed var(--line-strong); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+.loops { display: grid; gap: 12px; }
+.loop { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; }
+.loop .ico { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; font: 600 14px var(--f-mono); color: var(--surface); }
+.loop.talos .ico { background: var(--talos); } .loop.soc .ico { background: var(--soc); } .loop.mem .ico { background: var(--mem); }
+.loop.future { border-style: dashed; }
+.loop.future .ico { background: var(--muted); }
+.loop h3 { font-size: 17px; margin-bottom: 4px; }
+dl.gloss { display: grid; grid-template-columns: minmax(120px, 200px) minmax(0, 1fr); gap: 8px 18px; margin: 0; font-size: 14px; }
+dl.gloss dt { font-weight: 600; }
+dl.gloss dd { margin: 0; color: var(--muted); }
+footer { margin-top: 56px; padding-top: 18px; border-top: 1px solid var(--line); font-size: 13px; color: var(--muted); display: grid; gap: 6px; }
+
+@media (max-width: 760px) {
+  .panel { grid-template-columns: minmax(0, 1fr); }
+  .controls label { margin-left: 0; }
+  dl.gloss { grid-template-columns: minmax(0, 1fr); gap: 2px 0; }
+  dl.gloss dd { margin-bottom: 10px; }
+  .card dl { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: reduce) { .node, .node rect, .edge path { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header class="hero">
+    <div class="eyebrow">Graph Hacks · FalkorDB · Oct 15–18, 2026 · Tracks 01 + 02</div>
+    <h1>Argus SOC with Talos</h1>
+    <p class="lede">How the whole system works, end to end. Talos reads security logs and detects attacks one incident at a time. Argus SOC loads those incidents into a FalkorDB graph, where three agents connect them, follow them to what matters, decide what to do, and remember what the analyst said for next time.</p>
+    <div class="legend" aria-label="Colour key">
+      <span><i class="dot talos"></i>Talos: detection, already built</span>
+      <span><i class="dot soc"></i>Argus SOC: graph and agents, built during the event</span>
+      <span><i class="dot mem"></i>Memory and feedback</span>
+    </div>
+    <p class="note">Talos sections describe the code in the Talos repo as it stands. Argus SOC sections describe the plan for Oct 15–18; anything marked <span class="tag">proposed</span> is a starting rule we will tune while building. Actions such as "isolate host" are simulated: recorded in the graph and shown in the UI, never sent to real infrastructure.</p>
+  </header>
+
+  <section class="console" aria-label="Animated system map">
+    <div class="tabs" role="tablist" id="tabs"></div>
+    <div class="mapwrap">
+      <svg id="map" viewBox="0 0 1320 760" role="img" aria-label="System map: inputs feed Talos, Talos feeds the Argus SOC ingestor, FalkorDB and three agents">
+        <defs>
+          <marker id="m-idle" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-idle" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m-idle-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-idle" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m-talos" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-talos" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m-soc" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-soc" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m-soc-s" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-soc" d="M0 0L10 5L0 10z"/></marker>
+          <marker id="m-mem" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="mk-mem" d="M0 0L10 5L0 10z"/></marker>
+        </defs>
+        <g id="zones"></g>
+        <g id="edges"></g>
+        <g id="nodes"></g>
+        <g id="pkts"></g>
+      </svg>
+    </div>
+    <div class="controls">
+      <button class="btn" id="prev" type="button" aria-label="Previous step">◀ Prev</button>
+      <button class="btn primary" id="play" type="button">▶ Play</button>
+      <button class="btn" id="next" type="button" aria-label="Next step">Next ▶</button>
+      <button class="btn" id="replay" type="button">↻ Replay step</button>
+      <label for="speed">Speed
+        <select id="speed">
+          <option value="0.6">0.6×</option>
+          <option value="1" selected>1×</option>
+          <option value="1.6">1.6×</option>
+          <option value="2.5">2.5×</option>
+        </select>
+      </label>
+    </div>
+    <div class="chips" id="chips" aria-label="Steps in this scenario"></div>
+    <div class="panel" aria-live="polite">
+      <div>
+        <div class="meta" id="pMeta"></div>
+        <h3 id="pTitle"></h3>
+        <p id="pBody"></p>
+        <div class="decision" id="pDecision"></div>
+      </div>
+      <div>
+        <div class="datalabel" id="pDataLabel">Data at this step</div>
+        <pre id="pData"></pre>
+      </div>
+    </div>
+  </section>
+  <p class="note" style="margin-top:10px">Click any box on the map to read what it does. Packets show data moving: two packets on one line at once means work running in parallel.</p>
+
+  <!-- ===================== TALOS ===================== -->
+  <section class="ref" id="talos">
+    <div class="eyebrow">Part 1 · For teammates new to Talos</div>
+    <h2>How Talos works</h2>
+    <p>Talos is Harshit's open-source attack-detection engine (<a href="https://github.com/anandharshit712/Talos" target="_blank" rel="noopener">github.com/anandharshit712/Talos</a>, Apache licence). It reads web and network security logs one event at a time and answers three questions about each attack: is it an attack, which technique is it (mapped to MITRE ATT&amp;CK and OWASP), and what exactly was affected, including whether it succeeded. In Argus SOC we run Talos unchanged and read its incidents over HTTP.</p>
+    <div class="twocol">
+      <div class="card talos">
+        <h3>Rule 1 · Deterministic first, model second</h3>
+        <p>Regex and statistics make the detection decision. A language model is called only for genuinely borderline cases and to write the narrative. With no model reachable, every detector still works and marks its verdict <code>used_llm=false</code>.</p>
+      </div>
+      <div class="card talos">
+        <h3>Rule 2 · Every verdict carries evidence</h3>
+        <p>Each verdict has a confidence between 0 and 1 and non-empty evidence: the matched pattern, the computed statistic or the baseline deviation, plus the event IDs behind it. A score without evidence is never shipped.</p>
+      </div>
+    </div>
+
+    <h3>The pipeline, one event at a time</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Stage</th><th>What it does</th><th>How it runs</th></tr></thead>
+        <tbody>
+          <tr><td><b>Parsers</b><br><span class="sub mono">web_log_parser, network_log_parser</span></td><td>Turn one raw log line into a <code>NormalizedEvent</code>: who (source IP, account), what (host, endpoint, port), request or login details, and the raw line kept verbatim as evidence.</td><td>One line at a time, in order</td></tr>
+          <tr><td><b>Event window</b></td><td>Keeps recent events by event time, so detectors can count things like "failures in the last 120 seconds". The event is added <em>before</em> any detector runs, so a detector evaluating it can count it.</td><td>Every event</td></tr>
+          <tr><td><b>Event orchestrator</b></td><td>Routes by domain only: <code>web</code> or <code>network</code>. It has never heard of brute force or injection, so adding a new attack type never changes it.</td><td>Sequential</td></tr>
+          <tr><td><b>Domain agent</b></td><td>Asks its type classifier which category the event belongs to, then hands it to that category's sub-agent.</td><td>Sequential</td></tr>
+          <tr><td><b>Type classifier</b></td><td>Cheap static signals first. Web: injection markers are checked before the login-endpoint check (a SQLi payload sent to <code>/login</code> is injection, not a failed login); paths ending in an object id go to access control. Network: login telemetry goes to brute force. A model is asked only when static rules cannot place the event, and its answer must come from a fixed list of categories.</td><td>Sequential</td></tr>
+          <tr><td><b>Attack-type sub-agent</b></td><td>Runs its child detectors on the event and collects their verdicts.</td><td>Detectors in <b>parallel</b> (<code>asyncio.gather</code>); access control scores first, then updates the baseline</td></tr>
+          <tr><td><b>Detectors</b></td><td>Each returns a <code>Verdict</code>: attack yes/no, confidence, evidence, scope (hosts, accounts, endpoints, objects, attempt count, succeeded), MITRE mapping and reasoning.</td><td>Parallel within the sub-agent</td></tr>
+          <tr><td><b>Verdict aggregator</b></td><td>Five steps: dedupe verdicts, merge their scope, score severity, combine confidence, fill in recommended actions. Output is one <code>IncidentReport</code>. If no verdict claims an attack, there is no report at all.</td><td>Sequential</td></tr>
+          <tr><td><b>Repeat suppression</b></td><td>A windowed detector fires again on every event past its threshold, so one 40-attempt burst would become 32 alerts. Talos reports an attack once, then again only if it succeeded or its attempt count doubled.</td><td>Sequential, remembers signatures</td></tr>
+          <tr><td><b>Verdict log + API</b></td><td>Stores each report in PostgreSQL and serves it over HTTP.</td><td>Read on demand</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>The detectors</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Detector</th><th>Category</th><th>MITRE</th><th>Fires when</th></tr></thead>
+        <tbody>
+          <tr><td>SQL injection</td><td><code>injection</code></td><td class="mono">T1190</td><td>SQL pattern rules hit. A clear hit (for example <code>UNION SELECT</code>) is a verdict with no model call. A borderline hit goes to a code-aware model whose only job is to clear it; with no model reachable it becomes a low-confidence lead.</td></tr>
+          <tr><td>XSS</td><td><code>injection</code></td><td class="mono">T1059.007</td><td>Same approach with XSS pattern rules.</td></tr>
+          <tr><td>Web brute force</td><td><code>auth_failure</code></td><td class="mono">T1110</td><td>10 or more failed logins within 120 s against one account or from one IP.</td></tr>
+          <tr><td>Credential stuffing</td><td><code>auth_failure</code></td><td class="mono">T1110.004</td><td>15 or more distinct accounts within 300 s, with at most 3 failures each: breadth rather than depth.</td></tr>
+          <tr><td>SSH brute force</td><td><code>network_brute_force</code></td><td class="mono">T1110</td><td>8 or more failures within 120 s.</td></tr>
+          <tr><td>RDP brute force</td><td><code>network_brute_force</code></td><td class="mono">T1110</td><td>8 or more failures within 120 s.</td></tr>
+          <tr><td>IDOR</td><td><code>broken_access_control</code></td><td class="mono">T1083, T1530</td><td>Each account has a learned access baseline. A score weighs four features: sequential object ids 0.40, ids outside the usual range 0.30, access rate 0.20, new endpoint 0.10. Silent below 0.35. Above it, a reasoning model weighs in with a 0.40 weight. Until a baseline has 50 observations, it only emits a 0.20-confidence lead that never fires.</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">Rate-based confidence (all four login detectors): 0.70 at the threshold, plus 0.02 for each extra failure, capped at 0.95. A burst followed by a successful login never scores below 0.90.</p>
+
+    <div class="twocol">
+      <div class="card talos">
+        <h3>How an incident is scored</h3>
+        <ul>
+          <li><b>Severity floor by category:</b> injection high, access control high, auth failure medium, network brute force medium.</li>
+          <li><b>One level up</b> if the attack succeeded. <b>One level down</b> if confidence is below 0.5.</li>
+          <li><b>Confidence:</b> the highest verdict, plus 0.05 for each extra independent detector that agrees.</li>
+          <li><b>Recommended actions:</b> templates per category (block IP, force password reset, patch endpoint, revoke session), plus "rotate credentials" and "hunt for follow-on activity" when it succeeded.</li>
+        </ul>
+      </div>
+      <div class="card talos">
+        <h3>Where models are used</h3>
+        <ul>
+          <li>Placing events the static classifier rules cannot place.</li>
+          <li>Judging borderline injection payloads (it can only clear them).</li>
+          <li>Weighing IDOR scores above the floor.</li>
+          <li>Writing the narrative for each verdict.</li>
+        </ul>
+        <p class="sub">Each detector and classifier has its own routed model on Groq, NVIDIA NIM or Mistral. With no keys, Talos produces the same incidents with templated narratives.</p>
+      </div>
+    </div>
+
+    <h3>Talos's API (what Argus SOC calls)</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Endpoint</th><th>Returns</th><th>Used by Argus SOC</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">GET /healthz</td><td>Liveness, including the database</td><td>Startup check</td></tr>
+          <tr><td class="mono">GET /reports</td><td>Recent incidents, newest first</td><td>Ingestor polling</td></tr>
+          <tr><td class="mono">GET /reports/{incident_id}</td><td>One recorded incident</td><td>Ingestor fetch</td></tr>
+          <tr><td class="mono">POST /events</td><td>An <code>IncidentReport</code> for one event, or <code>204</code> when nothing fired</td><td>Optional, for single events</td></tr>
+          <tr><td class="mono">GET /trace/chains, POST /trace</td><td>Annotated pipeline trace for Talos's own UI</td><td>No</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">Talos has no authentication and binds to localhost by default, so in Docker Compose its port stays private to our network.</p>
+
+    <div class="card soc">
+      <h3>What Talos does not do, and why Argus SOC exists</h3>
+      <ul>
+        <li>It never links one incident to another. An SSH brute force and a credential-stuffing burst from the same IP are two unrelated reports.</li>
+        <li>It does not know the environment: which hosts connect to which, who logs in where, which servers hold the crown jewels.</li>
+        <li>It does not remember analyst decisions across sessions.</li>
+        <li>It recommends actions but does not decide or act.</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ===================== ARGUS SOC ===================== -->
+  <section class="ref" id="soc">
+    <div class="eyebrow">Part 2 · What we build Oct 15–18</div>
+    <h2>How Argus SOC works</h2>
+    <p>Argus SOC turns Talos's separate incidents into one connected picture per client company, then runs three agents over it. Every agent decision comes from a Cypher query or graph algorithm, and every decision and analyst verdict is written back into the graph as memory. FalkorDB is the only place Argus SOC keeps state.</p>
+
+    <h3>The graph, in three layers</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Layer</th><th>Nodes</th><th>Comes from</th></tr></thead>
+        <tbody>
+          <tr><td><b>Environment</b></td><td>Host, User, Service, Endpoint, AssetTag (crown-jewel)</td><td>Our generated asset inventory, one per tenant</td></tr>
+          <tr><td><b>Activity</b></td><td>Alert, IOC (attacker IP), Technique</td><td>Talos incidents, via the ingestor</td></tr>
+          <tr><td><b>Memory</b></td><td>Case, Decision, Feedback, Playbook, AgentRun</td><td>The agents and the analyst</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">Key links: <code>(User)-[:LOGGED_INTO]->(Host)</code>, <code>(Host)-[:CONNECTS_TO]->(Host)</code>, <code>(Host)-[:TAGGED]->(AssetTag)</code>, <code>(Alert)-[:ON_HOST|INVOLVES|TARGETED|MAPS_TO]->(…)</code>, <code>(Case)-[:CONTAINS]->(Alert)</code>, <code>(Case)-[:HAS_DECISION]->(Decision)</code>, <code>(Playbook)-[:LEARNED_FROM]->(Feedback)</code>, <code>(AgentRun)-[:HANDED_OFF_TO]->(AgentRun)</code>. Each tenant (tenant_acme, tenant_globex) is a separate named graph.</p>
+
+    <div class="cards">
+      <div class="card soc">
+        <h3>Ingestor</h3>
+        <dl>
+          <dt>Trigger</dt><dd>A loop every few seconds <span class="tag">proposed</span></dd>
+          <dt>Reads</dt><dd><code>GET /reports</code>, then <code>GET /reports/{id}</code> for each incident it hasn't seen</dd>
+          <dt>Decides</dt><dd>Which tenant the incident belongs to: one Talos per tenant, or mapping by host name (decided on day 1)</dd>
+          <dt>Writes</dt><dd>Alert, Host, User, Endpoint, IOC and Technique nodes and their links, all with <code>MERGE</code>, so reading a report twice changes nothing</dd>
+          <dt>Next</dt><dd>The new Alert waits in the graph for Triage</dd>
+        </dl>
+      </div>
+      <div class="card soc">
+        <h3>Triage agent</h3>
+        <dl>
+          <dt>Trigger</dt><dd>New Alert nodes in the tenant's graph</dd>
+          <dt>Reads</dt><dd>Playbooks; Q4 recall (earlier cases with this IOC, host or account); Q5 connected components (alerts sharing a host, user or IP)</dd>
+          <dt>Decides</dt><dd>
+            <ol>
+              <li>Does a playbook match? Then auto-close, citing the playbook and the case that taught it. Stop.</li>
+              <li>Does the alert join an open case? Otherwise open a new one.</li>
+              <li>Priority: Talos severity, raised if recall finds a confirmed-malicious history.</li>
+            </ol>
+          </dd>
+          <dt>Writes</dt><dd>Case, CONTAINS links, AgentRun</dd>
+          <dt>Next</dt><dd>Hands the case to the Investigator</dd>
+        </dl>
+      </div>
+      <div class="card soc">
+        <h3>Investigator agent</h3>
+        <dl>
+          <dt>Trigger</dt><dd>A case handed off by Triage</dd>
+          <dt>Reads</dt><dd>Q1 blast radius (what the IP and accounts touched, where those accounts log in); Q2 shortest path from each affected host to crown-jewel hosts, up to 6 hops</dd>
+          <dt>Decides</dt><dd>Is there a path to a crown jewel, and how many hops? Did the attack succeed?</dd>
+          <dt>Writes</dt><dd>Findings on the case, plus facts about hosts, users and IOCs</dd>
+          <dt>Next</dt><dd>Hands the case to the Responder</dd>
+        </dl>
+      </div>
+      <div class="card soc">
+        <h3>Responder agent</h3>
+        <dl>
+          <dt>Trigger</dt><dd>A case handed off by the Investigator</dd>
+          <dt>Reads</dt><dd>Q3 centrality (PageRank or betweenness) × host criticality; Talos's recommended actions as input</dd>
+          <dt>Decides</dt><dd>Actions from the table below, and whether they need analyst approval</dd>
+          <dt>Writes</dt><dd>Decision nodes with ACTED_ON links; Q6 builds the explanation path shown in the UI</dd>
+          <dt>Next</dt><dd>The analyst queue</dd>
+        </dl>
+      </div>
+      <div class="card mem">
+        <h3>Analyst and learning</h3>
+        <dl>
+          <dt>Trigger</dt><dd>A decision waiting in the UI</dd>
+          <dt>Choices</dt><dd>Approve, reject, or mark the case benign with a reason</dd>
+          <dt>Writes</dt><dd>A Feedback node on the case; the Decision's outcome</dd>
+          <dt>Learns</dt><dd>A benign verdict creates or versions up a Playbook for that pattern (source + category), linked by LEARNED_FROM. The demo uses one verdict; real use would want two or more consistent verdicts <span class="tag">proposed</span></dd>
+        </dl>
+      </div>
+    </div>
+
+    <h3>How the Responder decides</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Login or attack succeeded?</th><th>Path to a crown jewel?</th><th>Actions</th><th>Approval</th></tr></thead>
+        <tbody>
+          <tr><td>Yes</td><td>Yes</td><td>Isolate the top-ranked host, disable the account, block the source IP</td><td>Analyst must approve</td></tr>
+          <tr><td>Yes</td><td>No</td><td>Disable the account, block the source IP, open a hunt ticket</td><td>Analyst must approve</td></tr>
+          <tr><td>No</td><td>Yes</td><td>Block the source IP, put the hosts on the path on watch</td><td>Automatic, analyst can review</td></tr>
+          <tr><td>No</td><td>No</td><td>Block or rate-limit the source IP, open a ticket; case priority may drop</td><td>Automatic, analyst can review</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="sub">The whole table is <span class="tag">proposed</span>. The point for judges: the decision comes from graph facts (success, path, centrality) that Talos alone cannot see.</p>
+
+    <h3>What the system remembers</h3>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Memory type</th><th>Stored as</th><th>Example recall</th></tr></thead>
+        <tbody>
+          <tr><td><b>Episodic</b></td><td>Case, Decision, AgentRun, with timestamps</td><td>"203.0.113.7 was in Case #31, confirmed malicious"</td></tr>
+          <tr><td><b>Semantic</b></td><td>Facts on Host, User, IOC</td><td>"10.0.5.20 is the internal pentest scanner"</td></tr>
+          <tr><td><b>Procedural</b></td><td>Versioned Playbook nodes</td><td>"Playbook v2: auto-close auth failure from 10.0.5.20"</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== PARALLEL ===================== -->
+  <section class="ref" id="parallel">
+    <div class="eyebrow">Part 3</div>
+    <h2>What runs in parallel, what runs in order</h2>
+    <div class="tablewrap">
+      <table>
+        <thead><tr><th>Part</th><th>How it runs</th></tr></thead>
+        <tbody>
+          <tr><td>Talos, per event</td><td>In order: parse → window → route → classify → sub-agent → aggregate → suppress → store</td></tr>
+          <tr><td>Detectors inside one Talos sub-agent</td><td><b>Parallel</b> (<code>asyncio.gather</code>): SQLi ∥ XSS, brute force ∥ credential stuffing, SSH ∥ RDP</td></tr>
+          <tr><td>Web and network log streams</td><td>Independent; each event is handled as it arrives</td></tr>
+          <tr><td>Talos ↔ Argus SOC</td><td>Decoupled: Talos stores reports; the ingestor polls on its own schedule</td></tr>
+          <tr><td>Agents on one case</td><td>In order: Triage → Investigator → Responder, each handoff recorded in the graph</td></tr>
+          <tr><td>Agents across cases</td><td><b>Parallel</b>: several cases can be in flight at once</td></tr>
+          <tr><td>Graph writes</td><td>One short <code>MERGE</code> query per write, so parallel agents don't clash</td></tr>
+          <tr><td>Analyst</td><td>Asynchronous: the case waits in the UI queue until someone acts</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ===================== LOOPS ===================== -->
+  <section class="ref" id="loops">
+    <div class="eyebrow">Part 4</div>
+    <h2>The loops</h2>
+    <div class="loops">
+      <div class="loop talos"><div class="ico">↻</div><div><h3>Talos repeat suppression</h3><p>Every event past a detector's threshold fires again. Talos remembers each attack's signature (category, technique, accounts, hosts, endpoints) and reports again only when the attack succeeds or its attempt count doubles. Old signatures expire by event time.</p></div></div>
+      <div class="loop talos"><div class="ico">↻</div><div><h3>Talos IDOR baseline</h3><p>Every object access is scored against the account's baseline and then added to it. The baseline grows with use, capped at 500 object ids and 50 endpoints per account.</p></div></div>
+      <div class="loop soc"><div class="ico">↻</div><div><h3>Ingestor polling</h3><p>The ingestor asks Talos for new reports every few seconds. Because every write is a <code>MERGE</code> on <code>incident_id</code>, overlapping polls never create duplicates.</p></div></div>
+      <div class="loop soc"><div class="ico">↻</div><div><h3>Case handoff and resume</h3><p>Each agent finishes by recording a handoff and setting the case status. The next agent picks up cases in that status. If an agent crashes, it restarts, reads the case from the graph and carries on.</p></div></div>
+      <div class="loop mem"><div class="ico">↻</div><div><h3>Learning across sessions</h3><p>Analyst feedback → Playbook version → Triage checks playbooks first next session. This is the loop that proves Track 02: memory that persists, updates and is shared by every agent.</p></div></div>
+      <div class="loop future"><div class="ico">→</div><div><h3>After the hackathon: back into Talos</h3><p>Push learnings back into Talos, for example suppressing a detector for a source known to be benign. Not in hackathon scope: for now Talos stays unchanged and all learning lives in the graph.</p></div></div>
+    </div>
+  </section>
+
+  <!-- ===================== GLOSSARY ===================== -->
+  <section class="ref" id="glossary">
+    <div class="eyebrow">Part 5</div>
+    <h2>Glossary</h2>
+    <dl class="gloss">
+      <dt>SOC</dt><dd>Security operations centre: the team that watches alerts and responds to attacks.</dd>
+      <dt>IOC</dt><dd>Indicator of compromise: a concrete trace of an attacker, here a source IP.</dd>
+      <dt>MITRE ATT&amp;CK</dt><dd>A public catalogue of attacker techniques with IDs such as T1110 (brute force).</dd>
+      <dt>Credential stuffing</dt><dd>Trying leaked username and password pairs across many accounts, a few attempts each.</dd>
+      <dt>IDOR</dt><dd>Insecure direct object reference: reading objects you shouldn't by changing an id in the URL.</dd>
+      <dt>Crown jewel</dt><dd>A host holding the most valuable data, such as the production database.</dd>
+      <dt>Blast radius</dt><dd>Everything an attacker's IP or stolen account has touched or can reach.</dd>
+      <dt>Connected components (WCC)</dt><dd>A graph algorithm that groups nodes linked by any path; used to group related alerts into one case.</dd>
+      <dt>Centrality / PageRank</dt><dd>Algorithms that score how important a node is to the network's connections; used to pick which host to isolate first.</dd>
+      <dt>Tenant</dt><dd>One client company. Each gets its own FalkorDB graph, so memory never crosses between companies.</dd>
+      <dt>Cypher</dt><dd>The graph query language FalkorDB uses.</dd>
+      <dt>MERGE</dt><dd>A Cypher write that creates a node or link only if it doesn't already exist.</dd>
+    </dl>
+  </section>
+
+  <footer>
+    <div>Talos details are taken from the Talos repository (pipeline, detectors, thresholds and API as implemented). Argus SOC details follow the team's design doc for Graph Hacks.</div>
+    <div>Host names, accounts, IPs, incident ids and case numbers in the scenarios are fictional demo data. Thresholds, severity rules and the confidence curve are Talos's real settings; other confidence figures in the payloads are illustrative.</div>
+  </footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  /* ---------------- nodes ---------------- */
+  var N = {
+    weblog:  { x: 105, y: 90,  w: 160, h: 52, sys: "in",    l: ["Web access logs", "nginx-style lines"],
+      info: "Web server access log lines (method, path, status, source IP). For the demo these are our own scenario logs, written in the format Talos's web parser already reads, and replayed with talos replay." },
+    netlog:  { x: 105, y: 170, w: 160, h: 52, sys: "in",    l: ["SSH / RDP auth logs", "sshd, Windows logon"],
+      info: "Login success and failure lines from sshd and Windows RDP. Same as the web logs: our scenario files in Talos's existing format." },
+    parser:  { x: 330, y: 110, w: 190, h: 52, sys: "talos", l: ["Parsers", "log line → NormalizedEvent"],
+      info: "Talos's web and network parsers turn each raw line into a NormalizedEvent: actor (source IP, account), target (host, endpoint, port), request or auth details, and the raw line kept as evidence." },
+    window:  { x: 610, y: 110, w: 190, h: 52, sys: "talos", l: ["Event window", "recent events, event time"],
+      info: "Holds recent events by event time so detectors can count failures in a time window. Each event is added before the agents run, so a detector evaluating it sees it." },
+    orch:    { x: 470, y: 190, w: 250, h: 52, sys: "talos", l: ["Event orchestrator", "routes by domain only"],
+      info: "Routes each event by domain (web or network) to the matching domain agent. It knows nothing about attack types; adding a detector never changes it." },
+    webDA:   { x: 360, y: 270, w: 190, h: 46, sys: "talos", l: ["Web domain agent"],
+      info: "Asks the web type classifier for a category and hands the event to that category's sub-agent." },
+    netDA:   { x: 640, y: 270, w: 190, h: 46, sys: "talos", l: ["Network domain agent"],
+      info: "Asks the network type classifier for a category and hands the event to the brute-force sub-agent." },
+    webTC:   { x: 360, y: 345, w: 200, h: 52, sys: "talos", l: ["Web type classifier", "static rules, model if unsure"],
+      info: "Static checks in a fixed order: injection markers first, then login endpoints, then object-id paths. Only events it cannot place go to a model, and the answer must be one of: injection, auth_failure, broken_access_control, unclassified." },
+    netTC:   { x: 640, y: 345, w: 190, h: 52, sys: "talos", l: ["Network type classifier", "login signals → brute force"],
+      info: "Login-bearing telemetry routes to network_brute_force on static signals alone. A model is asked only about events that would otherwise be dropped as unclassified." },
+    inj:     { x: 285, y: 440, w: 116, h: 70, sys: "talos", l: ["Injection", "SQLi ∥ XSS"],
+      info: "Runs the SQL injection and XSS detectors in parallel. Clear pattern hits need no model; borderline hits go to a code-aware model that can only clear them." },
+    auth:    { x: 410, y: 440, w: 124, h: 70, sys: "talos", l: ["Auth failure", "brute force ∥", "cred. stuffing"],
+      info: "Runs the web brute-force detector (10+ failures in 120 s) and the credential-stuffing detector (15+ accounts in 300 s, at most 3 failures each) in parallel." },
+    bac:     { x: 535, y: 440, w: 116, h: 70, sys: "talos", l: ["Access control", "IDOR scorer", "+ baseline"],
+      info: "Scores each object access against the account's learned baseline (sequential ids, ids out of range, access rate, new endpoint), then adds the access to the baseline." },
+    netbf:   { x: 665, y: 440, w: 130, h: 70, sys: "talos", l: ["Net brute force", "SSH ∥ RDP"],
+      info: "Runs the SSH and RDP brute-force detectors in parallel: 8+ failures in 120 s. A burst followed by a successful login scores at least 0.90." },
+    agg:     { x: 470, y: 545, w: 250, h: 52, sys: "talos", l: ["Verdict aggregator", "merge · score · recommend"],
+      info: "Dedupes verdicts, merges their scope, scores severity (category floor, +1 if it succeeded, −1 if confidence < 0.5), combines confidence (+0.05 per agreeing detector) and fills in recommended actions. Produces one IncidentReport." },
+    gate:    { x: 470, y: 620, w: 250, h: 52, sys: "talos", l: ["Repeat suppression", "report again only on escalation"],
+      info: "Stops one ongoing attack from becoming dozens of alerts. Reports again only if the attack succeeded or its attempt count doubled." },
+    store:   { x: 330, y: 695, w: 170, h: 52, sys: "talos", l: ["Verdict log", "PostgreSQL"],
+      info: "Talos's own audit store. Internal to Talos; Argus SOC never reads it directly." },
+    api:     { x: 610, y: 695, w: 170, h: 52, sys: "talos", l: ["Talos API", "GET /reports"],
+      info: "FastAPI service (talos serve). Argus SOC uses GET /healthz, GET /reports and GET /reports/{incident_id}. No authentication, so it stays private inside Docker Compose." },
+    ingestor:{ x: 925, y: 90,  w: 170, h: 52, sys: "soc",   l: ["Ingestor", "poll /reports → MERGE"],
+      info: "Argus SOC's bridge from Talos. Polls for new incidents, assigns the tenant, and writes Alert, Host, User, Endpoint, IOC and Technique nodes with MERGE so nothing is duplicated." },
+    asset:   { x: 1195, y: 90, w: 180, h: 52, sys: "soc",   l: ["Asset inventory", "hosts, users, links"],
+      info: "Our generated environment per tenant: hosts, users, services, endpoints, which host connects to which, who logs in where, and crown-jewel tags. Talos knows none of this." },
+    falkordb:{ x: 1060, y: 205, w: 440, h: 96, sys: "soc",  l: ["FalkorDB", "one graph per tenant: tenant_acme · tenant_globex", "Environment · Activity · Memory"],
+      info: "The only state store Argus SOC has. Each tenant is a separate named graph. Data lives on a mounted volume, so it survives restarts." },
+    tools:   { x: 1060, y: 305, w: 440, h: 40, sys: "soc",  l: ["Graph tools · Cypher Q1–Q6 + algorithms (MCP)"],
+      info: "The fixed, tested queries the agents call: Q1 blast radius, Q2 shortest path to crown jewels, Q3 centrality ranking, Q4 recall, Q5 connected components, Q6 explanation path." },
+    triage:  { x: 905, y: 410, w: 130, h: 60, sys: "soc",   l: ["Triage", "recall · correlate"],
+      info: "Checks playbooks, recalls past cases (Q4), groups related alerts into one case (Q5), sets priority and hands off." },
+    inv:     { x: 1060, y: 410, w: 130, h: 60, sys: "soc",  l: ["Investigator", "reach · paths"],
+      info: "Finds the blast radius (Q1) and the shortest path from affected hosts to crown jewels (Q2)." },
+    resp:    { x: 1215, y: 410, w: 130, h: 60, sys: "soc",  l: ["Responder", "rank · decide"],
+      info: "Ranks hosts by centrality × criticality (Q3), picks actions from the decision table, writes a Decision and an explanation path (Q6)." },
+    analyst: { x: 1215, y: 530, w: 130, h: 60, sys: "mem",  l: ["Analyst (UI)", "approve · reject"],
+      info: "A person reviews proposed actions and the graph path behind them: approve, reject or mark benign. Every choice becomes a Feedback node." },
+    playbook:{ x: 905, y: 530, w: 140, h: 60, sys: "mem",   l: ["Learning", "feedback → playbook"],
+      info: "Turns analyst feedback into versioned Playbook nodes linked to the feedback that taught them. Triage checks playbooks first, every session." }
+  };
+
+  /* ---------------- edges ---------------- */
+  var E = {
+    e_web_parse:  { s: "talos", p: [[185,90],[205,90],[205,104],[235,104]] },
+    e_net_parse:  { s: "talos", p: [[185,170],[205,170],[205,118],[235,118]] },
+    e_parse_win:  { s: "talos", p: [[425,110],[515,110]] },
+    e_win_orch:   { s: "talos", p: [[610,136],[610,150],[560,150],[560,164]] },
+    e_orch_web:   { s: "talos", p: [[400,216],[400,232],[360,232],[360,247]] },
+    e_orch_net:   { s: "talos", p: [[540,216],[540,232],[640,232],[640,247]] },
+    e_web_tc:     { s: "talos", p: [[360,293],[360,319]] },
+    e_net_tc:     { s: "talos", p: [[640,293],[640,319]] },
+    e_tc_inj:     { s: "talos", p: [[300,371],[300,388],[285,388],[285,405]] },
+    e_tc_auth:    { s: "talos", p: [[390,371],[390,388],[410,388],[410,405]] },
+    e_tc_bac:     { s: "talos", p: [[440,371],[440,388],[535,388],[535,405]] },
+    e_tc_netbf:   { s: "talos", p: [[665,371],[665,405]] },
+    e_inj_agg:    { s: "talos", p: [[285,475],[285,500],[380,500],[380,519]] },
+    e_auth_agg:   { s: "talos", p: [[410,475],[410,519]] },
+    e_bac_agg:    { s: "talos", p: [[535,475],[535,519]] },
+    e_netbf_agg:  { s: "talos", p: [[665,475],[665,500],[565,500],[565,519]] },
+    e_agg_gate:   { s: "talos", p: [[470,571],[470,594]] },
+    e_gate_store: { s: "talos", p: [[400,646],[400,658],[330,658],[330,669]] },
+    e_store_api:  { s: "talos", p: [[415,695],[525,695]] },
+    e_api_ing:    { s: "soc",   p: [[695,695],[802,695],[802,90],[840,90]] },
+    e_ing_fdb:    { s: "soc",   p: [[925,116],[925,157]] },
+    e_asset_fdb:  { s: "soc",   p: [[1195,116],[1195,157]] },
+    e_fdb_tools:  { s: "soc",   p: [[1060,253],[1060,285]], bi: true },
+    e_tools_tri:  { s: "soc",   p: [[905,325],[905,380]], bi: true },
+    e_tools_inv:  { s: "soc",   p: [[1060,325],[1060,380]], bi: true },
+    e_tools_resp: { s: "soc",   p: [[1215,325],[1215,380]], bi: true },
+    e_tri_inv:    { s: "soc",   p: [[970,410],[995,410]] },
+    e_inv_resp:   { s: "soc",   p: [[1125,410],[1150,410]] },
+    e_resp_an:    { s: "soc",   p: [[1215,440],[1215,500]] },
+    e_an_pb:      { s: "mem",   p: [[1150,530],[975,530]] },
+    e_pb_tri:     { s: "mem",   p: [[905,500],[905,440]] }
+  };
+
+  /* -------- reusable flow fragments -------- */
+  var TALOS_WEB_AUTH = ["e_web_parse", "e_parse_win", "e_win_orch", "e_orch_web", "e_web_tc", "e_tc_auth", ["e_auth_agg", "e_auth_agg"], "e_agg_gate", "e_gate_store", "e_store_api"];
+  var TALOS_WEB_AUTH_NODES = ["weblog", "parser", "window", "orch", "webDA", "webTC", "auth", "agg", "gate", "store", "api"];
+  var INGEST = ["e_api_ing", "e_ing_fdb"];
+  var Q_TRI = ["~e_tools_tri", "~e_fdb_tools", "e_fdb_tools", "e_tools_tri"];
+  var Q_INV = ["~e_tools_inv", "~e_fdb_tools", "e_fdb_tools", "e_tools_inv"];
+  var Q_RESP = ["~e_tools_resp", "~e_fdb_tools", "e_fdb_tools", "e_tools_resp"];
+
+  /* ---------------- scenarios ---------------- */
+  var S = [
+    { id: "s1", name: "1 · Brute force that lands", steps: [
+      { sys: "talos", kind: "Sequential", t: "SSH log lines arrive", nodes: ["netlog", "parser"], flow: ["e_net_parse"],
+        b: "The scenario runner replays bastion-01's sshd log into Talos with <code>talos replay</code>. Talos reads one line at a time, in order. Twelve failed logins for <code>svc_deploy</code> from 203.0.113.7, then a successful one.",
+        d: "Input: raw text. Nothing has been decided yet.",
+        data: "Oct 16 10:02:11 bastion-01 sshd[811]: Failed password for svc_deploy from 203.0.113.7 port 52144 ssh2\nOct 16 10:02:15 bastion-01 sshd[811]: Failed password for svc_deploy from 203.0.113.7 port 52150 ssh2\n…  (12 failures in 90 seconds)\nOct 16 10:03:40 bastion-01 sshd[811]: Accepted password for svc_deploy from 203.0.113.7 port 52201 ssh2" },
+      { sys: "talos", kind: "Sequential", t: "Parse, then remember the event", nodes: ["parser", "window"], flow: ["e_parse_win"],
+        b: "The network parser turns the line into a <code>NormalizedEvent</code>, the one shape the whole Talos pipeline understands. The event goes into the event window first, so the detectors that run next can count it.",
+        d: "Order matters: window first, detectors second.",
+        data: '{\n  "event_id": "evt-0013",\n  "timestamp": "2026-10-16T10:03:40Z",\n  "domain": "network",\n  "telemetry_source": "sshd",\n  "actor":  { "source_ip": "203.0.113.7", "account": "svc_deploy" },\n  "target": { "host": "bastion-01", "port": 22 },\n  "auth":   { "protocol": "ssh", "outcome": "success" },\n  "raw": "Oct 16 10:03:40 bastion-01 sshd[811]: Accepted password for …"\n}' },
+      { sys: "talos", kind: "Sequential", t: "Route by domain", nodes: ["window", "orch", "netDA"], flow: ["e_win_orch", "e_orch_net"],
+        b: "The orchestrator looks at one field only: <code>domain</code>. It is <code>network</code>, so the event goes to the network domain agent. The orchestrator never knows which attacks exist.",
+        d: "domain == \"network\" → Network domain agent",
+        data: "orchestrator.submit(event)\n  ctx.event_window.add(event)\n  agent = registry.get(\"network\")\n  verdicts = await agent.process(event, ctx)" },
+      { sys: "talos", kind: "Sequential", t: "Which attack category?", nodes: ["netDA", "netTC", "netbf"], flow: ["e_net_tc", "e_tc_netbf"],
+        b: "The network type classifier sees login telemetry and routes it to <code>network_brute_force</code> on static signals alone. No model is called. A model is used only for events the static rules cannot place.",
+        d: "Login event → network_brute_force on static signals, no model call",
+        data: 'classify(event) → ("network_brute_force", routing_confidence)\n# a model is asked only if static rules cannot place the event,\n# and only these answers are accepted: network_brute_force | unclassified' },
+      { sys: "talos", kind: "Parallel", t: "Two detectors run at the same time", nodes: ["netbf", "agg", "window"], flow: [["e_netbf_agg", "e_netbf_agg"]],
+        b: "The brute-force sub-agent runs its SSH and RDP detectors in parallel (<code>asyncio.gather</code>). Each counts failures in the event window. The SSH detector finds 12 failures from 203.0.113.7 in 120 seconds, above its threshold of 8, and this event is a successful login. The RDP detector has nothing to say.",
+        d: "Confidence 0.70 at threshold + 0.02 × 4 extra = 0.78, then raised to the 0.90 floor because the login succeeded",
+        data: '{\n  "detector": "ssh_brute_force_detector",\n  "category": "network_brute_force",\n  "technique": "brute_force",\n  "attack_detected": true,\n  "confidence": 0.90,\n  "mitre": { "technique_id": "T1110" },\n  "scope": {\n    "affected_hosts": ["bastion-01"],\n    "affected_accounts": ["svc_deploy"],\n    "attempt_count": 12,\n    "succeeded": true\n  },\n  "evidence": [{ "kind": "statistic",\n    "detail": "12 failures in 120 s from 203.0.113.7, then success" }],\n  "model": { "used_llm": false }\n}' },
+      { sys: "talos", kind: "Sequential", t: "One incident from the verdicts", nodes: ["agg", "gate"], flow: ["e_agg_gate"],
+        b: "The aggregator merges the verdicts into one <code>IncidentReport</code>: dedupe, merge scope, score severity, combine confidence, recommend actions. Network brute force starts at medium; the login succeeded, so it moves up to high.",
+        d: "Severity: medium (category floor) → high (succeeded). Confidence 0.90 ≥ 0.5, so no step down.",
+        data: '{\n  "incident_id": "inc-7f3a",\n  "domain": "network",\n  "category": "network_brute_force",\n  "summary": "brute_force on bastion-01 against svc_deploy over 12 attempts -- succeeded (confidence 0.90)",\n  "severity": "high",\n  "confidence": 0.90,\n  "mitre_techniques": [{ "technique_id": "T1110" }],\n  "recommended_actions": [\n    "block source IP 203.0.113.7 at the perimeter",\n    "review authentication history for svc_deploy on bastion-01",\n    "rotate credentials for svc_deploy -- the attempt succeeded",\n    "hunt for follow-on activity on bastion-01"\n  ]\n}' },
+      { sys: "talos", kind: "Loop", t: "Report once, again only on escalation", nodes: ["gate", "store", "api"], flow: ["e_gate_store", "e_store_api"],
+        b: "Talos already reported this burst once, at 8 failures: medium, confidence 0.70, not succeeded. Every later failure fired the detector again, and the gate suppressed those repeats. This event is different: the login succeeded, so it counts as an escalation and is reported. The report is stored in PostgreSQL and served at <code>GET /reports</code>.",
+        d: "Previous: 8 attempts, not succeeded. Now: succeeded → escalated → report. (Also reported if attempts reach 2× the last report.)",
+        data: "signature = (network, network_brute_force, brute_force,\n             svc_deploy, bastion-01)\nprevious  = (attempts=8, succeeded=False)\ncurrent   = (attempts=12, succeeded=True)\nescalated = succeeded and not previous.succeeded  → True" },
+      { sys: "talos", kind: "Parallel", t: "Same attacker on the web app", nodes: TALOS_WEB_AUTH_NODES, flow: TALOS_WEB_AUTH,
+        b: "Minutes later the web access log shows 203.0.113.7 trying 18 accounts on <code>/login</code>, one or two failures each. The same pipeline runs on the web side: the web classifier routes it to auth failure, whose brute-force and credential-stuffing detectors run in parallel. Credential stuffing fires: 18 distinct accounts in 300 s, threshold 15. This stream runs independently of the SSH one.",
+        d: "Talos's view ends here: two separate incidents. Nothing in Talos links them.",
+        data: '{\n  "incident_id": "inc-81c2",\n  "domain": "web",\n  "category": "auth_failure",\n  "summary": "credential_stuffing on /login over 18 accounts -- did not succeed (confidence 0.76)",\n  "severity": "medium",\n  "mitre_techniques": [{ "technique_id": "T1110.004" }, { "technique_id": "T1110" }]\n}' },
+      { sys: "soc", kind: "Loop", t: "Into the graph", nodes: ["api", "ingestor", "falkordb", "asset"], flow: INGEST,
+        b: "The Argus SOC ingestor polls <code>GET /reports</code>, sees two new incident IDs, fetches each one, and writes it into <code>tenant_acme</code>. Host and user nodes already exist from the asset inventory, so the alert links straight into the environment.",
+        d: "MERGE on incident_id: reading the same report twice changes nothing.",
+        data: "MERGE (a:Alert {incident_id: 'inc-7f3a'})\n  SET a.category = 'network_brute_force', a.severity = 'high',\n      a.confidence = 0.90, a.succeeded = true\nMERGE (h:Host {hostname: 'bastion-01'})\nMERGE (u:User {username: 'svc_deploy'})\nMERGE (i:IOC {type: 'ip', value: '203.0.113.7'})\nMERGE (t:Technique {mitre_id: 'T1110'})\nMERGE (a)-[:ON_HOST]->(h)\nMERGE (a)-[:INVOLVES]->(u)\nMERGE (a)-[:INVOLVES]->(i)\nMERGE (a)-[:MAPS_TO]->(t)" },
+      { sys: "soc", kind: "Decision", t: "Triage: seen before? what belongs together?", nodes: ["triage", "tools", "falkordb", "playbook"], flow: Q_TRI,
+        b: "Triage picks up the two new alerts. No playbook matches. Recall (Q4) finds no earlier case with 203.0.113.7. Connected components (Q5) find both alerts linked through the same IP, so they become one case: Case #31. Priority is high: Talos said high and the login succeeded.",
+        d: "Playbook match? No → Seen before? No → Linked alerts? Yes, via IOC 203.0.113.7 → open Case #31 with both → hand off to Investigator",
+        data: "// Q5: alerts linked through a shared host, user or IP\nMATCH (a:Alert)-[:INVOLVES|ON_HOST]->(x)<-[:INVOLVES|ON_HOST]-(b:Alert)\nWHERE a.status = 'new'\nRETURN a.incident_id, collect(DISTINCT b.incident_id) AS linked\n\n→ inc-7f3a  linked: [inc-81c2]   via IOC 203.0.113.7\n→ CREATE (c:Case {id: 31, priority: 'high'})-[:CONTAINS]->(a), (c)-[:CONTAINS]->(b)" },
+      { sys: "soc", kind: "Sequential", t: "Investigator: what can the attacker reach?", nodes: ["triage", "inv", "tools", "falkordb"], flow: ["e_tri_inv"].concat(Q_INV),
+        b: "The Investigator takes Case #31. Blast radius (Q1): <code>svc_deploy</code> also logs into <code>app-02</code>. Shortest path (Q2) from bastion-01 to any crown-jewel host: bastion-01 → app-02 → db-prod-01, two hops. Talos could never see this; it needs the asset inventory and the login history together.",
+        d: "Path to crown jewel: yes, 2 hops. Attack succeeded: yes.",
+        data: "// Q2: shortest path to a crown jewel\nMATCH (src:Host {hostname: 'bastion-01'}),\n      (dst:Host)-[:TAGGED]->(:AssetTag {name: 'crown-jewel'})\nMATCH p = shortestPath((src)-[:CONNECTS_TO|LOGGED_INTO*1..6]-(dst))\nRETURN [n IN nodes(p) | coalesce(n.hostname, n.username)] AS path\n\n→ [bastion-01, svc_deploy, app-02, db-prod-01]" },
+      { sys: "soc", kind: "Decision", t: "Responder: rank, decide, explain", nodes: ["inv", "resp", "tools", "falkordb"], flow: ["e_inv_resp"].concat(Q_RESP),
+        b: "The Responder ranks the hosts in the case by centrality × criticality (Q3): bastion-01 comes first because every path out of it runs through it. The decision table says succeeded + path to crown jewel → isolate, disable, block, with analyst approval. Talos's recommended actions are an input; the final choice comes from the graph.",
+        d: "Succeeded = yes, path = yes → isolate bastion-01, disable svc_deploy, block 203.0.113.7 → needs approval",
+        data: "CREATE (d:Decision {\n  action: 'isolate_host+disable_user+block_ip',\n  reason: 'login succeeded; 2-hop path to db-prod-01',\n  agent: 'responder', needs_approval: true })\nMERGE (c:Case {id: 31})-[:HAS_DECISION]->(d)\nMERGE (d)-[:ACTED_ON]->(:Host {hostname: 'bastion-01'})\nMERGE (d)-[:ACTED_ON]->(:User {username: 'svc_deploy'})" },
+      { sys: "mem", kind: "Sequential", t: "Analyst approves", nodes: ["resp", "analyst", "playbook", "falkordb"], flow: ["e_resp_an", "e_an_pb"],
+        b: "The analyst sees the proposed actions with the graph path that justifies them (Q6) and approves. The approval becomes a Feedback node and the Decision's outcome. The case closes as confirmed malicious, so 203.0.113.7 is now known-bad for any future recall. The actions are simulated: recorded and shown, never sent to a real firewall.",
+        d: "Approved → Feedback(verdict: malicious) → Case #31 closed",
+        data: "CREATE (f:Feedback {analyst: 'harshit', verdict: 'malicious',\n                    note: 'confirmed, approved isolation'})\nMERGE (f)-[:ON]->(:Case {id: 31})\nSET d.outcome = 'approved'" }
+    ]},
+    { id: "s2", name: "2 · Learning loop across sessions", steps: [
+      { sys: "talos", kind: "Sequential", t: "A noisy burst from our own scanner", nodes: TALOS_WEB_AUTH_NODES, flow: TALOS_WEB_AUTH,
+        b: "Session 1. The internal pentest scanner, 10.0.5.20, runs a credential test against <code>/login</code> on web-01. Talos does exactly what it should: credential stuffing fires and a medium-severity incident is reported. Talos has no way to know this source is friendly.",
+        d: "Talos: credential_stuffing, medium, did not succeed",
+        data: '{\n  "incident_id": "inc-9b10",\n  "category": "auth_failure",\n  "summary": "credential_stuffing on /login over 16 accounts -- did not succeed (confidence 0.72)",\n  "severity": "medium"\n}' },
+      { sys: "soc", kind: "Loop", t: "Into the graph", nodes: ["api", "ingestor", "falkordb"], flow: INGEST,
+        b: "The ingestor fetches the new report and writes the Alert and IOC 10.0.5.20 into <code>tenant_acme</code>.",
+        d: "MERGE on incident_id",
+        data: "MERGE (a:Alert {incident_id: 'inc-9b10'})\nMERGE (i:IOC {type: 'ip', value: '10.0.5.20'})\nMERGE (a)-[:INVOLVES]->(i)\nMERGE (a)-[:TARGETED]->(:Endpoint {path: '/login'})" },
+      { sys: "soc", kind: "Decision", t: "Triage: nothing known yet", nodes: ["triage", "tools", "falkordb", "playbook"], flow: Q_TRI,
+        b: "No playbook covers 10.0.5.20. Recall finds no history. No other open alert shares this IP. Triage opens Case #32 at medium priority and hands off.",
+        d: "Playbook? No → Seen before? No → new Case #32",
+        data: "// Q4: have we seen this IOC before?\nMATCH (c:Case)-[:CONTAINS]->(:Alert)-[:INVOLVES]->(:IOC {value: '10.0.5.20'})\nRETURN c.id, c.verdict\n\n→ (no rows)" },
+      { sys: "soc", kind: "Sequential", t: "Investigator: low reach", nodes: ["triage", "inv", "tools", "falkordb"], flow: ["e_tri_inv"].concat(Q_INV),
+        b: "No login succeeded and the only thing touched is <code>/login</code> on web-01, which has no path to a crown jewel.",
+        d: "Succeeded: no. Path to crown jewel: no.",
+        data: "→ Q1 blast radius: [web-01 /login]\n→ Q2 paths to crown jewels: none within 6 hops" },
+      { sys: "soc", kind: "Decision", t: "Responder: low-impact action", nodes: ["inv", "resp", "tools", "falkordb"], flow: ["e_inv_resp"].concat(Q_RESP),
+        b: "Not succeeded and no path, so the Responder rate-limits 10.0.5.20 automatically and puts the case in the analyst's review queue.",
+        d: "Succeeded = no, path = no → rate-limit source IP, automatic, analyst can review",
+        data: "CREATE (d:Decision {action: 'rate_limit_ip', needs_approval: false,\n                    reason: 'no success, no path to crown jewel'})" },
+      { sys: "mem", kind: "Sequential", t: "Analyst: this is our scanner", nodes: ["resp", "analyst"], flow: ["e_resp_an"],
+        b: "The analyst reviews Case #32 and marks it benign with a reason. That verdict is the first piece of procedural memory.",
+        d: "Benign: \"internal pentest scanner\"",
+        data: "CREATE (f:Feedback {verdict: 'benign',\n                    note: 'internal pentest scanner 10.0.5.20'})\nMERGE (f)-[:ON]->(:Case {id: 32})" },
+      { sys: "mem", kind: "Loop", t: "Memory updates: a new playbook version", nodes: ["analyst", "playbook", "falkordb"], flow: ["e_an_pb"],
+        b: "The learning step turns the feedback into Playbook v2: auto-close auth-failure incidents from 10.0.5.20. The playbook links to the feedback with <code>LEARNED_FROM</code>, so any later auto-close can cite exactly which case taught it. A semantic fact is added to the IOC too.",
+        d: "Benign verdict for (source 10.0.5.20, category auth_failure) → Playbook v2. Demo threshold: 1 verdict (proposed: 2+ for real use).",
+        data: "CREATE (p:Playbook {name: 'auto-close internal scanner', version: 2,\n  condition: \"category = 'auth_failure' AND ioc = '10.0.5.20'\",\n  action: 'auto_close'})\nMERGE (p)-[:LEARNED_FROM]->(f)\nSET   (:IOC {value: '10.0.5.20'}).owner = 'internal scanner'" },
+      { sys: "mem", kind: "Loop", t: "Restart: nothing lives in the agents", nodes: ["falkordb"], flow: [],
+        b: "We restart the agents container live in the demo. The agents keep nothing in process memory. Case #32, the feedback and Playbook v2 are all in FalkorDB on a mounted volume, so they survive.",
+        d: "Session 1 ends. Session 2 begins with the same graph.",
+        data: "$ docker compose restart agents\n# FalkorDB volume untouched:\nMATCH (p:Playbook) RETURN p.name, p.version\n→ 'auto-close internal scanner', 2" },
+      { sys: "talos", kind: "Sequential", t: "Session 2: the same burst again", nodes: TALOS_WEB_AUTH_NODES.concat(["ingestor", "falkordb"]), flow: TALOS_WEB_AUTH.concat(INGEST),
+        b: "The scanner runs again next session. Talos reports it exactly as before, because Talos is unchanged and learns nothing. The ingestor writes the new alert into the graph.",
+        d: "Talos: same incident type, new incident_id",
+        data: '{ "incident_id": "inc-a412", "category": "auth_failure", "severity": "medium" }' },
+      { sys: "mem", kind: "Decision", t: "Triage auto-closes, citing what it learned", nodes: ["playbook", "triage", "tools", "falkordb"], flow: ["e_pb_tri"].concat(Q_TRI),
+        b: "Triage checks playbooks first. Playbook v2 matches, so the case is closed straight away, citing the playbook and Case #32. The Investigator and Responder are skipped and the analyst spends no time on it. This is the Track 02 proof: memory that persists, updates and changes behaviour.",
+        d: "Playbook v2 matched → auto-close Case #33 → no handoff",
+        data: "MATCH (p:Playbook)-[:LEARNED_FROM]->(:Feedback)-[:ON]->(src:Case)\nWHERE p.condition MATCHES this alert\nRETURN p.version, src.id\n→ v2, Case #32\n\nCREATE (c:Case {id: 33, status: 'auto_closed',\n  reason: 'Playbook v2, learned from Case #32'})" }
+    ]},
+    { id: "s3", name: "3 · SQL injection, no way in", steps: [
+      { sys: "talos", kind: "Sequential", t: "An injection attempt on the search API", nodes: ["weblog", "parser", "window"], flow: ["e_web_parse", "e_parse_win"],
+        b: "A request from 198.51.100.23 to web-01 carries a <code>UNION SELECT</code> payload in the query string. The web parser normalises it and keeps the raw line as evidence.",
+        d: "Input: one web request",
+        data: '198.51.100.23 - - [16/Oct/2026:11:20:04 +0000] "GET /api/search?q=1%27+UNION+SELECT+username,password+FROM+users-- HTTP/1.1" 200 512 "-" "python-requests/2.32"' },
+      { sys: "talos", kind: "Decision", t: "Classifier: injection first", nodes: ["window", "orch", "webDA", "webTC", "inj"], flow: ["e_win_orch", "e_orch_web", "e_web_tc", "e_tc_inj"],
+        b: "The orchestrator sends the event to the web domain agent. The web classifier checks injection markers before anything else, finds them, and routes the event to the injection sub-agent. No model is needed.",
+        d: "Injection markers present → injection (routing confidence 0.7)",
+        data: '("injection", 0.7)' },
+      { sys: "talos", kind: "Parallel", t: "SQLi and XSS detectors in parallel", nodes: ["inj", "agg"], flow: [["e_inj_agg", "e_inj_agg"]],
+        b: "Both injection detectors run at once. SQLi: <code>UNION SELECT</code> is a clear pattern hit, so the verdict is made without a model. A borderline hit would go to a code-aware model whose job is to clear false alarms. XSS: no hit.",
+        d: "SQLi: attack, clear pattern, no model. XSS: no attack.",
+        data: '{\n  "detector": "sql_injection_detector",\n  "technique": "sql_injection",\n  "attack_detected": true,\n  "mitre": { "technique_id": "T1190" },\n  "scope": { "affected_hosts": ["web-01"], "affected_endpoints": ["/api/search"] },\n  "evidence": [{ "kind": "matched_pattern", "detail": "UNION SELECT" }],\n  "model": { "used_llm": false }\n}' },
+      { sys: "talos", kind: "Sequential", t: "Scored, stored, served", nodes: ["agg", "gate", "store", "api"], flow: ["e_agg_gate", "e_gate_store", "e_store_api"],
+        b: "Injection starts at high severity. Talos recommends blocking the IP and patching input handling on <code>/api/search</code>. First time seen, so it is reported.",
+        d: "Severity: high (injection floor)",
+        data: '{\n  "incident_id": "inc-c5e0",\n  "category": "injection",\n  "severity": "high",\n  "recommended_actions": [\n    "block source IP 198.51.100.23",\n    "review and patch input handling on /api/search"\n  ]\n}' },
+      { sys: "soc", kind: "Loop", t: "Into the graph", nodes: ["api", "ingestor", "falkordb"], flow: INGEST,
+        b: "The ingestor writes the alert, IOC 198.51.100.23, endpoint <code>/api/search</code> and host web-01 into <code>tenant_acme</code>.",
+        d: "MERGE on incident_id",
+        data: "MERGE (a:Alert {incident_id: 'inc-c5e0'}) SET a.severity = 'high'\nMERGE (e:Endpoint {path: '/api/search'})-[:SERVED_BY]->(:Host {hostname: 'web-01'})\nMERGE (a)-[:TARGETED]->(e)" },
+      { sys: "soc", kind: "Decision", t: "Triage: a lone alert", nodes: ["triage", "tools", "falkordb", "playbook"], flow: Q_TRI,
+        b: "No playbook, no history for this IP, no other alert shares it. New Case #34 at Talos's priority: high.",
+        d: "→ Case #34, priority high, hand off",
+        data: "→ Q4 recall: no rows\n→ Q5 components: [inc-c5e0] alone" },
+      { sys: "soc", kind: "Sequential", t: "Investigator: no route to anything valuable", nodes: ["triage", "inv", "tools", "falkordb"], flow: ["e_tri_inv"].concat(Q_INV),
+        b: "web-01 sits in the DMZ. The shortest-path search finds no route from web-01 to any crown-jewel host within 6 hops, and nothing indicates the request succeeded beyond a normal 200 response.",
+        d: "Path to crown jewel: none. Success: not shown.",
+        data: "MATCH p = shortestPath((:Host {hostname:'web-01'})-[:CONNECTS_TO|LOGGED_INTO*1..6]-(:Host)-[:TAGGED]->(:AssetTag {name:'crown-jewel'}))\nRETURN p\n→ (no rows)" },
+      { sys: "soc", kind: "Decision", t: "Responder lowers the priority", nodes: ["inv", "resp", "tools", "falkordb", "analyst"], flow: ["e_inv_resp"].concat(Q_RESP).concat(["e_resp_an"]),
+        b: "No success and no path, so the Responder blocks the IP automatically, opens a ticket to patch <code>/api/search</code>, and drops the case to medium with the reason attached. The analyst sees it in the queue without being asked to approve anything.",
+        d: "Talos said high. The graph shows no way to anything valuable, so the case drops to medium. The graph can lower urgency as well as raise it.",
+        data: "CREATE (d:Decision {action: 'block_ip+ticket', needs_approval: false,\n  reason: 'no success; no path from web-01 to a crown jewel'})\nSET (:Case {id: 34}).priority = 'medium'" }
+    ]},
+    { id: "s4", name: "4 · Tenant isolation", steps: [
+      { sys: "talos", kind: "Sequential", t: "Globex sees the same attacker", nodes: ["netlog", "parser", "window", "orch", "netDA", "netTC", "netbf", "agg", "gate", "store", "api"], flow: ["e_net_parse", "e_parse_win", "e_win_orch", "e_orch_net", "e_net_tc", "e_tc_netbf", ["e_netbf_agg", "e_netbf_agg"], "e_agg_gate", "e_gate_store", "e_store_api"],
+        b: "A second client, Globex, has an SSH brute force from 203.0.113.7 on its <code>vpn-gw</code>. That's the IP Acme already confirmed as malicious in scenario 1.",
+        d: "Talos: network_brute_force, did not succeed, medium",
+        data: '{ "incident_id": "inc-d901", "category": "network_brute_force",\n  "summary": "brute_force on vpn-gw against admin over 9 attempts -- did not succeed (confidence 0.72)" }' },
+      { sys: "soc", kind: "Sequential", t: "Into Globex's own graph", nodes: ["api", "ingestor", "falkordb"], flow: INGEST,
+        b: "The ingestor assigns this incident to <code>tenant_globex</code>, either because it came from Globex's Talos instance or because <code>vpn-gw</code> is a Globex host. It is written into Globex's graph only.",
+        d: "Tenant = globex → GRAPH.QUERY tenant_globex …",
+        data: "graph = db.select_graph('tenant_globex')\ngraph.query(\"MERGE (a:Alert {incident_id: 'inc-d901'}) …\")" },
+      { sys: "soc", kind: "Decision", t: "No memory leaks across companies", nodes: ["triage", "tools", "falkordb"], flow: Q_TRI,
+        b: "Globex's Triage asks its own graph whether 203.0.113.7 has been seen before. Acme's Case #31 lives in a different graph that Globex's agents never query, so the answer is no and the alert is handled as new.",
+        d: "Recall in tenant_globex → no rows → new case. Acme's memory stays Acme's.",
+        data: "// tenant_globex\nMATCH (c:Case)-[:CONTAINS]->(:Alert)-[:INVOLVES]->(:IOC {value:'203.0.113.7'})\nRETURN c\n→ (no rows)\n\n// tenant_acme (never queried by Globex agents)\n→ Case #31, malicious" }
+    ]}
+  ];
+
+  /* ---------------- build svg ---------------- */
+  var svg = document.getElementById("map");
+  var gZones = document.getElementById("zones");
+  var gEdges = document.getElementById("edges");
+  var gNodes = document.getElementById("nodes");
+  var gPkts = document.getElementById("pkts");
+
+  function el(tag, attrs, parent) {
+    var e = document.createElementNS(SVGNS, tag);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+
+  var ZONES = [
+    { x: 20, y: 30, w: 175, h: 200, t: "INPUT", c: "" },
+    { x: 210, y: 30, w: 580, h: 715, t: "TALOS · DETECTION · ALREADY BUILT", c: "talos" },
+    { x: 815, y: 30, w: 490, h: 575, t: "ARGUS SOC · BUILT OCT 15–18", c: "soc" }
+  ];
+  ZONES.forEach(function (z) {
+    el("rect", { x: z.x, y: z.y, width: z.w, height: z.h, rx: 12, "class": "zone-rect" }, gZones);
+    var t = el("text", { x: z.x + 12, y: z.y + 20, "class": "zone-title " + z.c }, gZones);
+    t.textContent = z.t;
+  });
+  var tIn = el("text", { x: 32, y: 218, "class": "elabel" }, gZones); tIn.textContent = "via talos replay";
+  var tHttp = el("text", { x: 808, y: 640, "class": "elabel" }, gZones); tHttp.textContent = "HTTP · polls GET /reports";
+  var tNext = el("text", { x: 914, y: 478, "class": "elabel" }, gZones); tNext.textContent = "next session";
+
+  // legend inside svg, under Argus SOC zone
+  var lg = el("g", { "class": "legend-svg" }, gZones);
+  [["talos", "Talos data"], ["soc", "Argus SOC data and queries"], ["mem", "Memory and feedback"]].forEach(function (r, i) {
+    el("circle", { cx: 840, cy: 672 + i * 22, r: 5.5, "class": "pkt " + r[0] }, lg);
+    var t = el("text", { x: 854, y: 676 + i * 22 }, lg); t.textContent = r[1];
+  });
+
+  var edgeEls = {};
+  Object.keys(E).forEach(function (id) {
+    var e = E[id];
+    var d = "M" + e.p.map(function (pt) { return pt[0] + " " + pt[1]; }).join(" L");
+    var g = el("g", { "class": "edge " + e.s + (e.bi ? " bi" : "") }, gEdges);
+    var path = el("path", { d: d }, g);
+    edgeEls[id] = { g: g, path: path };
+  });
+
+  var nodeEls = {};
+  Object.keys(N).forEach(function (id) {
+    var n = N[id];
+    var g = el("g", { "class": "node " + n.sys, tabindex: "0", role: "button", "aria-label": n.l.join(", ") + ". Show details" }, gNodes);
+    el("rect", { x: n.x - n.w / 2, y: n.y - n.h / 2, width: n.w, height: n.h, rx: 8 }, g);
+    var x0 = n.x - n.w / 2 + 12;
+    var top = n.y - n.h / 2;
+    if (n.l.length === 1) {
+      var t = el("text", { x: x0, y: n.y + 5, "class": "t1" }, g); t.textContent = n.l[0];
+    } else {
+      n.l.forEach(function (line, i) {
+        var t2 = el("text", { x: x0, y: top + 21 + i * 16, "class": i === 0 ? "t1" : "t2" }, g);
+        t2.textContent = line;
+      });
+    }
+    g.addEventListener("click", function () { showNode(id); });
+    g.addEventListener("keydown", function (ev) { if (ev.key === "Enter" || ev.key === " ") { ev.preventDefault(); showNode(id); } });
+    nodeEls[id] = g;
+  });
+
+  /* ---------------- state + ui ---------------- */
+  var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  var sc = 0, cur = 0, playing = false, gen = 0;
+  var speedSel = document.getElementById("speed");
+  var playBtn = document.getElementById("play");
+  var tabs = document.getElementById("tabs");
+  var chips = document.getElementById("chips");
+  var pMeta = document.getElementById("pMeta"), pTitle = document.getElementById("pTitle"),
+      pBody = document.getElementById("pBody"), pDecision = document.getElementById("pDecision"),
+      pData = document.getElementById("pData"), pDataLabel = document.getElementById("pDataLabel");
+
+  var SYSNAME = { talos: "Talos", soc: "Argus SOC", mem: "Memory", "in": "Input" };
+
+  S.forEach(function (s, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "tab"; b.setAttribute("role", "tab");
+    b.id = "tab-" + s.id; b.textContent = s.name;
+    b.addEventListener("click", function () { setScenario(i); });
+    tabs.appendChild(b);
+  });
+
+  function speed() { return parseFloat(speedSel.value) || 1; }
+
+  function setScenario(i) {
+    sc = i; cur = 0;
+    Array.prototype.forEach.call(tabs.children, function (b, k) { b.setAttribute("aria-selected", k === i ? "true" : "false"); });
+    chips.innerHTML = "";
+    S[i].steps.forEach(function (st, k) {
+      var c = document.createElement("button");
+      c.type = "button"; c.className = "chip " + st.sys;
+      c.textContent = (k + 1) + ". " + st.t;
+      c.addEventListener("click", function () { go(k); });
+      chips.appendChild(c);
+    });
+    go(0);
+  }
+
+  function clearHighlights() {
+    Object.keys(nodeEls).forEach(function (k) { nodeEls[k].classList.remove("on"); });
+    Object.keys(edgeEls).forEach(function (k) { edgeEls[k].g.classList.remove("on"); });
+    while (gPkts.firstChild) gPkts.removeChild(gPkts.firstChild);
+  }
+
+  function flatFlow(flow) {
+    var out = [];
+    flow.forEach(function (f) { (Array.isArray(f) ? f : [f]).forEach(function (x) { out.push(x.replace("~", "")); }); });
+    return out;
+  }
+
+  function render(st, k, total) {
+    pMeta.innerHTML = "";
+    var a = document.createElement("span"); a.className = "pill " + st.sys; a.textContent = SYSNAME[st.sys]; pMeta.appendChild(a);
+    var b = document.createElement("span"); b.className = "pill kind"; b.textContent = st.kind; pMeta.appendChild(b);
+    var c = document.createElement("span"); c.className = "sub"; c.textContent = "Step " + (k + 1) + " of " + total; pMeta.appendChild(c);
+    pTitle.textContent = st.t;
+    pBody.innerHTML = st.b;
+    pDecision.className = "decision " + st.sys;
+    pDecision.innerHTML = "<b>" + (st.kind === "Decision" ? "Decision" : "Outcome") + "</b>";
+    pDecision.appendChild(document.createTextNode(st.d));
+    pDecision.hidden = !st.d;
+    pDataLabel.textContent = "Data at this step";
+    pData.textContent = st.data;
+    Array.prototype.forEach.call(chips.children, function (ch, i) {
+      if (i === k) ch.setAttribute("aria-current", "step"); else ch.removeAttribute("aria-current");
+    });
+    document.getElementById("prev").disabled = k === 0;
+    document.getElementById("next").disabled = k === total - 1;
+  }
+
+  function showNode(id) {
+    gen++; playing = false; setPlayBtn();
+    clearHighlights();
+    svg.classList.add("focus");
+    nodeEls[id].classList.add("on");
+    var n = N[id];
+    pMeta.innerHTML = "";
+    var a = document.createElement("span"); a.className = "pill " + (n.sys === "in" ? "talos" : n.sys); a.textContent = SYSNAME[n.sys]; pMeta.appendChild(a);
+    var b = document.createElement("span"); b.className = "pill kind"; b.textContent = "Component"; pMeta.appendChild(b);
+    pTitle.textContent = n.l[0];
+    pBody.textContent = n.info;
+    pDecision.hidden = true;
+    pDataLabel.textContent = "Connections";
+    var ins = [], outs = [];
+    Object.keys(E).forEach(function (eid) {
+      var p = E[eid].p, s = p[0], t = p[p.length - 1];
+      Object.keys(N).forEach(function (oid) {
+        if (oid === id) return;
+        if (inside(N[id], s) && inside(N[oid], t)) outs.push(N[oid].l[0]);
+        if (inside(N[oid], s) && inside(N[id], t)) ins.push(N[oid].l[0]);
+      });
+    });
+    pData.textContent = "from: " + (ins.length ? ins.join(", ") : "—") + "\nto:   " + (outs.length ? outs.join(", ") : "—");
+    Array.prototype.forEach.call(chips.children, function (ch) { ch.removeAttribute("aria-current"); });
+  }
+  function inside(n, pt) {
+    return pt[0] >= n.x - n.w / 2 - 6 && pt[0] <= n.x + n.w / 2 + 6 && pt[1] >= n.y - n.h / 2 - 6 && pt[1] <= n.y + n.h / 2 + 6;
+  }
+
+  function go(k) {
+    gen++;
+    var my = gen;
+    var steps = S[sc].steps;
+    cur = Math.max(0, Math.min(k, steps.length - 1));
+    var st = steps[cur];
+    clearHighlights();
+    svg.classList.add("focus");
+    st.nodes.forEach(function (id) { if (nodeEls[id]) nodeEls[id].classList.add("on"); });
+    flatFlow(st.flow).forEach(function (id) { if (edgeEls[id]) edgeEls[id].g.classList.add("on"); });
+    render(st, cur, steps.length);
+    animateStep(st, my).then(function () {
+      if (my !== gen || !playing) return;
+      var dwell = (reduce ? 5200 : 2600) / speed();
+      setTimeout(function () {
+        if (my !== gen || !playing) return;
+        if (cur < steps.length - 1) go(cur + 1);
+        else { playing = false; setPlayBtn(); }
+      }, dwell);
+    });
+  }
+
+  function animateStep(st, my) {
+    var chain = Promise.resolve();
+    st.flow.forEach(function (grp) {
+      var group = Array.isArray(grp) ? grp : [grp];
+      chain = chain.then(function () {
+        if (my !== gen) return;
+        return Promise.all(group.map(function (id, i) { return animEdge(id, i * 260, my); }));
+      });
+    });
+    return chain;
+  }
+
+  function animEdge(rawId, delay, my) {
+    return new Promise(function (resolve) {
+      var rev = rawId.charAt(0) === "~";
+      var id = rev ? rawId.slice(1) : rawId;
+      var ed = edgeEls[id];
+      if (!ed || reduce) { setTimeout(resolve, reduce ? 120 : 0); return; }
+      var path = ed.path;
+      var L = path.getTotalLength();
+      var dur = Math.max(420, L / 0.3) / speed();
+      var sys = E[id].s;
+      var dot = el("circle", { r: 5.5, "class": "pkt " + sys, cx: -20, cy: -20 }, gPkts);
+      var start = null;
+      function frame(ts) {
+        if (my !== gen) { if (dot.parentNode) dot.parentNode.removeChild(dot); resolve(); return; }
+        if (start === null) start = ts + delay;
+        var t = Math.min(1, Math.max(0, (ts - start) / dur));
+        var e = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
+        var pt = path.getPointAtLength((rev ? 1 - e : e) * L);
+        dot.setAttribute("cx", pt.x); dot.setAttribute("cy", pt.y);
+        if (ts - start < dur) requestAnimationFrame(frame);
+        else { if (dot.parentNode) dot.parentNode.removeChild(dot); resolve(); }
+      }
+      requestAnimationFrame(frame);
+    });
+  }
+
+  function setPlayBtn() { playBtn.textContent = playing ? "❚❚ Pause" : "▶ Play"; playBtn.setAttribute("aria-pressed", playing ? "true" : "false"); }
+
+  playBtn.addEventListener("click", function () {
+    playing = !playing; setPlayBtn();
+    if (playing) {
+      var steps = S[sc].steps;
+      go(cur >= steps.length - 1 ? 0 : cur);
+    } else { gen++; }
+  });
+  document.getElementById("next").addEventListener("click", function () { go(cur + 1); });
+  document.getElementById("prev").addEventListener("click", function () { go(cur - 1); });
+  document.getElementById("replay").addEventListener("click", function () { go(cur); });
+
+  setPlayBtn();
+  setScenario(0);
+})();
+</script>
+
+</body></html>

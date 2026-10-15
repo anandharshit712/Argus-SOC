@@ -1,0 +1,42 @@
+# Planning chat log (kept local, not committed)
+CHAT_LOG.md
+
+# Secrets — commit .env.example only
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# UI
+node_modules/
+ui/dist/
+*.log
+!data/scenarios/*.log
+
+# Local graph data
+falkordb-data/
+*.rdb
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local AI tooling
+.claude/settings.local.json
+graphify-out/
+.impeccable/
