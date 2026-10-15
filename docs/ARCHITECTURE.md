@@ -19,7 +19,7 @@ and the case lifecycle. Diagrams are Mermaid and render on GitHub. Detail behind
 | 7. Learning loop sequence | **A** (learning logic), **C** (feedback UI) | Scenario 2 |
 | 8. Trust boundaries | Everyone | What is untrusted and what stays private |
 
-Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (to be filled in) ·
+Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
 **C** = UI, API and submission (to be filled in).
 
 ---

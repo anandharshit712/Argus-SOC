@@ -21,7 +21,7 @@ the same pull request.
 | 11. Testing | Each owner for their layer; A for end-to-end | |
 | 12. Deployment detail | **B**; A provides the Talos Dockerfile | |
 
-Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (to be filled in) ·
+Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
 **C** = UI, API and submission (to be filled in).
 
 ---

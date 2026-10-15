@@ -22,7 +22,7 @@ stores** (D-numbered), rounded boxes are **external entities**.
 | 9. Data dictionary | **B** keeps it current; A and C add their flows | Field-level definitions |
 | 10. Trust and sensitivity | Everyone | Untrusted data and what must stay private |
 
-Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (to be filled in) ·
+Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
 **C** = UI, API and submission (to be filled in).
 
 ---

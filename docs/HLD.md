@@ -18,7 +18,7 @@ Diagrams are in `ARCHITECTURE.md`; module-level detail is in `LLD.md`; data flow
 | 9. Deployment | **B** | How it runs on OCI |
 | 10–11. Risks, open decisions | Everyone; owner named per row | What could go wrong, what's still undecided |
 
-Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (to be filled in) ·
+Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
 **C** = UI, API and submission (to be filled in).
 
 ---

@@ -15,7 +15,7 @@ its HTTP API. Talos is a pinned dependency: never copy it into this repo, never 
 | Folder | Owner |
 |---|---|
 | `src/argus_soc/agents/`, `src/argus_soc/ingestor/`, `data/scenarios/`, `deploy/talos/` | A — Harshit |
-| `src/argus_soc/graph/`, `data/inventory/`, `deploy/`, `docker-compose.yml` | B — database and graph |
+| `src/argus_soc/graph/`, `data/inventory/`, `deploy/`, `docker-compose.yml` | B — Md Adnan Afzal (database and graph) |
 | `src/argus_soc/api/`, `ui/`, `docs/`, `README.md` | C — UI, API and submission |
 | `src/argus_soc/core/`, contract files, these `.md` guideline files | shared — tell all three before changing |
 
@@ -80,6 +80,7 @@ Update this section whenever a checkpoint is reached. It is the only status line
 - **Oct 15:** design extended to cover every focus of both tracks: MCP deep dive (G9), agent-written
   semantic facts (G10), concurrency burst proof (G11). Graph contract additions (`entity_facts`,
   `record_semantic_facts`, `record_agent_run` worker/tool_calls, MCP server) need B and C to ack.
+- **Oct 15:** Workstream B owner named: Md Adnan Afzal. C owner still to be filled in.
 - **Next checkpoint (end of Oct 16):** scenario 1 end to end — Talos → ingestor → graph → three agents → UI.
 - **Open decisions:** agent framework, LLM provider, tenancy with Talos (one Talos per tenant, or map by host name).
 
