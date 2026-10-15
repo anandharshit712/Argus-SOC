@@ -31,11 +31,11 @@ Argus-SOC/                              repository root
 │   │   ├── falkor_client.py            connection, select graph by tenant
 │   │   ├── graph_schema.py             label, relationship, property and status constants
 │   │   ├── index_setup.py              indexes on lookup keys
-│   │   ├── read_queries.py             Q1, Q2, Q4, Q5, Q6, list_cases, get_case, matching_playbook
+│   │   ├── read_queries.py             Q1, Q2, Q4, Q5, Q6, entity_facts, list_cases, get_case, matching_playbook
 │   │   ├── algorithm_queries.py        Q3 ranking; shortest path, centrality, WCC wrappers
 │   │   ├── write_queries.py            upsert_alert_from_report … record_agent_run (all MERGE)
 │   │   ├── graph_stubs.py              same signatures, fixed sample data, for A and C
-│   │   └── mcp_server.py               optional: read functions exposed over MCP
+│   │   └── mcp_server.py               read functions exposed over MCP (stdio) for the deep dive
 │   │
 │   ├── ingestor/                       A        Talos → graph
 │   │   ├── talos_client.py             GET /healthz, /reports, /reports/{incident_id}
@@ -51,6 +51,7 @@ Argus-SOC/                              repository root
 │   │   ├── handoff_service.py          case status + HANDED_OFF_TO
 │   │   ├── learning_service.py         Feedback → Playbook version
 │   │   ├── llm_client.py               provider wrapper (provider chosen during the build)
+│   │   ├── graph_tool_client.py        MCP client: Investigator deep dive, tenant set by code
 │   │   ├── agent_runner.py             worker loop entry point
 │   │   └── prompts/                    <agent>_<purpose>_v<N>.md
 │   │
@@ -84,14 +85,14 @@ Argus-SOC/                              repository root
 ├── scripts/
 │   ├── seed_tenants.py                 B        load both inventories
 │   ├── reset_demo.py                   B        wipe and reseed for judges
-│   └── replay_scenario.py              A        replay a scenario log into Talos
+│   └── replay_scenario.py              A        replay a scenario log into Talos; --burst for the concurrency test
 │
 ├── tests/                              mirrors src/argus_soc/
 │   ├── graph/                          B
 │   ├── ingestor/                       A
 │   ├── agents/                         A
 │   ├── api/                            C
-│   └── e2e/                            A        test_scenario_01.py … one per demo scenario
+│   └── e2e/                            A        test_scenario_01.py … one per demo scenario; test_concurrency_burst.py
 │
 └── docs/                               C (A and B contribute)
     ├── ARCHITECTURE.md                 diagrams: context, deployment, components, sequences

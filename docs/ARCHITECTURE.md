@@ -123,6 +123,7 @@ flowchart LR
         HS["handoff_service"]
         LS["learning_service"]
         LLM["llm_client"]
+        GTC["graph_tool_client<br/>(MCP client, deep dive)"]
         PR[["prompts/*.md"]]
     end
 
@@ -133,7 +134,7 @@ flowchart LR
         AQ["algorithm_queries"]
         WQ["write_queries"]
         STUB["graph_stubs"]
-        MCP["mcp_server (optional)"]
+        MCP["mcp_server<br/>(read tools over stdio)"]
     end
 
     subgraph C_API["api/ — C"]
@@ -160,7 +161,9 @@ flowchart LR
 
     AR --> TRI & INVE & RESP
     TRI --> RQ & WQ & HS & LLM
-    INVE --> RQ & AQ & WQ & HS & LLM
+    INVE --> RQ & AQ & WQ & HS & LLM & GTC
+    GTC -- "MCP stdio" --> MCP
+    GTC --> LLM
     RESP --> AQ & RQ & WQ & DT & HS & LLM
     LS --> WQ & RQ
     LLM --> PR
@@ -268,6 +271,7 @@ sequenceDiagram
     TRI->>G: list_new_alerts(tenant)
     TRI->>G: matching_playbook(...) → none
     TRI->>G: recall(ioc=203.0.113.7) → none
+    TRI->>G: entity_facts(bastion-01, svc_deploy, 203.0.113.7) → none yet
     TRI->>G: linked_alerts(inc-7f3a) → [inc-81c2]
     TRI->>G: open_or_join_case → Case 31, set status triaged
     TRI->>G: record_agent_run(handed_to=investigator)
@@ -275,7 +279,12 @@ sequenceDiagram
     INV->>G: claim_case(status=triaged) → 31
     INV->>G: blast_radius(ioc) / paths_to_crown_jewels(bastion-01)
     G-->>INV: bastion-01 → app-02 → db-prod-01
-    INV->>G: record findings, status investigated, handoff
+    opt deep dive (LLM on)
+        INV->>G: MCP tool chosen by LLM, e.g. recall(user=svc_deploy)
+        G-->>INV: result stored as evidence (max DEEP_DIVE_MAX_CALLS)
+    end
+    INV->>G: record findings + semantic facts (svc_deploy suspected, bastion-01 targeted)
+    INV->>G: status investigated, handoff
 
     RSP->>G: claim_case(status=investigated) → 31
     RSP->>G: rank_hosts(31) → bastion-01 first

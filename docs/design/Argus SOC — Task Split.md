@@ -42,10 +42,13 @@ Owner: @Harshit Anand. Turns Talos incidents into graph alerts and runs the thre
 
 - [ ] Pick the agent framework and LLM provider.
 - [ ] Triage: playbook check → recall (Q4) → correlate (Q5) → open or join a case → hand off.
-- [ ] Investigator: blast radius (Q1) and paths to crown jewels (Q2) → findings on the case → hand off.
+- [ ] Investigator: blast radius (Q1) and paths to crown jewels (Q2) → findings on the case → semantic facts (host targeted, user suspected compromised, IOC seen in case) → hand off.
+- [ ] Triage reads semantic facts (`entity_facts`): a suspected-compromised user or a repeatedly targeted host raises priority one step, citing the fact.
+- [ ] Investigator deep dive (Track 01 "MCP tool selection"): MCP client in `graph_tool_client.py`; the LLM picks read-only graph tools from B's MCP server, up to `DEEP_DIVE_MAX_CALLS`; tenant set by code; calls and results stored as evidence; skipped when the LLM is off. Prompt `investigator_deepdive_v1.md`.
 - [ ] Responder: rank (Q3), apply the decision table, write Decision + explanation (Q6), mark whether approval is needed.
 - [ ] Handoffs: record `HANDED_OFF_TO` and case status; an agent that restarts reads the case from the graph and carries on.
 - [ ] Several cases in flight at once without clashes.
+- [ ] Concurrency proof (Track 02): `scripts/replay_scenario.py --burst` sends ~30 alerts over both tenants; `tests/e2e/test_concurrency_burst.py` runs it with `--scale agents=2` and checks one Decision per case, no alert in two cases, AgentRuns from both workers (`AGENT_WORKER_ID`).
 
 **Learning**
 
@@ -80,7 +83,9 @@ Owner: to be chosen. Owns everything inside FalkorDB and the way the rest of the
 - [ ] Write functions: alert from a Talos report, case, decision, feedback, playbook, agent run, handoff. All with `MERGE`, one short query each.
 - [ ] Check FalkorDB's algorithm procedure names (shortest path, PageRank or betweenness, WCC) against docs.falkordb.com on day 1.
 - [ ] Unit tests for each function against the seeded graph.
-- [ ] Optional: expose the read functions over MCP, which Track 01 names explicitly.
+- [ ] Semantic facts: `record_semantic_facts` (write, idempotent by storing case-id lists) and `entity_facts` (read); new Host, User and IOC fact properties (LLD §4.1, §4.4.1).
+- [ ] `record_agent_run` takes optional `worker` and `tool_calls`.
+- [ ] MCP server (`mcp_server.py`, stdio, official `mcp` SDK): expose the read functions only, `tenant` first, one-line description per tool. Needed for Track 01 "MCP tool selection" (LLD §4.7).
 
 **Deployment**
 
@@ -146,6 +151,7 @@ recall(tenant, ioc=None, host=None, user=None) -> list[dict]  # Q4
 linked_alerts(tenant, incident_id) -> list[str]         # Q5
 explain_decision(tenant, decision_id) -> dict           # Q6
 matching_playbook(tenant, alert) -> dict | None
+entity_facts(tenant, hosts, users, iocs) -> dict       # semantic facts
 list_cases(tenant, status=None) -> list[dict]
 get_case(tenant, case_id) -> dict
 
@@ -156,8 +162,11 @@ set_case_status(tenant, case_id, status, priority=None)
 record_decision(tenant, case_id, decision: dict) -> str
 record_feedback(tenant, case_id, verdict, note, analyst) -> str
 create_playbook_version(tenant, feedback_id, condition, action) -> str
-record_agent_run(tenant, agent, case_id, handed_to=None) -> str
+record_semantic_facts(tenant, case_id, facts: dict)
+record_agent_run(tenant, agent, case_id, handed_to=None, worker=None, tool_calls=None) -> str
 ```
+
+The read functions are also served over MCP (`mcp_server.py`) for the Investigator's deep dive. Full signatures are in `LLD.md` §4.4–4.7; where this list and the LLD differ, the LLD wins.
 
 **3. UI API (owner C, reads the graph through B's library)**
 
@@ -188,7 +197,7 @@ The only hard checkpoint is the end of Oct 16: scenario 1 runs end to end, Talos
 | --- | --- | --- | --- |
 | Oct 15 | Contracts call; Talos in Docker; scenario 1 log fires in Talos; ingestor against stubs | Contracts call; schema frozen; stubs for every function; FalkorDB up; Acme seed | Contracts call; API with mock JSON; case list + case detail screens |
 | Oct 16 | Triage, Investigator, Responder for scenario 1; handoffs | Real Q1, Q2, Q4, Q5 + all writes; Compose with all services | Switch to the real API; approve / reject flow; activity feed. **End of day: scenario 1 end to end** |
-| Oct 17 | Scenarios 2–4; learning loop; parallel cases | Q3, Q6; Globex seed; deploy on OCI with HTTPS; reset command | Playbook view; tenant switch; README draft; first full demo run |
+| Oct 17 | Scenarios 2–4; learning loop; semantic facts; deep dive over MCP; concurrency burst test | Q3, Q6; semantic fact queries; MCP server; Globex seed; deploy on OCI with HTTPS; reset command | Playbook view; tenant switch; README draft; first full demo run |
 | Oct 18 | Bug fixes only | Bug fixes only; final deploy | Record video; finish README; **submit by 8 PM** (4-hour buffer before 11:59 PM) |
 
 ## Working rules

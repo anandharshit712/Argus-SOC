@@ -79,8 +79,10 @@ flowchart TB
 
     D1 -- "F5 new alerts, playbooks, history, links" --> P3
     P3 -- "F6a cases, findings, agent runs" --> D1
-    D1 -- "F5 case, blast radius, paths" --> P4
-    P4 -- "F6b findings, status" --> D1
+    D1 -- "F5 case, blast radius, paths, MCP tool results" --> P4
+    P4 -- "F6b findings, status · F6c semantic facts" --> D1
+    P4 -- "F8 deep-dive prompt + tool list" --> E5
+    E5 -- "F9 tool choice" --> P4
     D1 -- "F5 case, findings, ranking" --> P5
     P5 -- "F7 decisions, status" --> D1
     P5 -- "F8 prompt" --> E5
@@ -99,7 +101,7 @@ flowchart TB
 | P1 Ingest incidents | A | F2 | F4 | Loop every 3 s |
 | P2 Seed environment | B | F3 | F3 into D1a | Once, and on reset |
 | P3 Triage | A | F5, F13 | F6a | Loop every 2 s, per tenant |
-| P4 Investigate | A | F5 | F6b | Per claimed case |
+| P4 Investigate | A | F5, F9 | F6b, F6c, F8 | Per claimed case |
 | P5 Respond | A | F5, F9 | F7, F8 | Per claimed case |
 | P6 Feedback and learning | A (logic), C (capture) | F11 | F12 | On each verdict |
 | P7 Serve the analyst | C | F10, F11 | F10, F11 | On request; UI polls every 2–3 s |
@@ -181,7 +183,8 @@ flowchart TB
         P41["4.1 Claim triaged case"]
         P42["4.2 Blast radius (Q1)"]
         P43["4.3 Paths to crown jewels (Q2)"]
-        P44["4.4 Write findings"]
+        P45["4.5 Deep dive: LLM picks<br/>read tools over MCP (optional)"]
+        P44["4.4 Write findings<br/>+ semantic facts"]
     end
 
     subgraph P5["P5 Respond"]
@@ -197,6 +200,7 @@ flowchart TB
     P32 -- yes --> P36 -- "auto_closed case" --> D1c
     P32 -- no --> P33
     D1c -- "past cases, verdicts" --> P33 --> P34
+    D1a -- "semantic facts (suspected, targeted)" --> P33
     D1b -- "alerts sharing host/user/IOC" --> P34 --> P35
     P35 -- "F6a case (triaged), agent run" --> D1c
 
@@ -205,7 +209,12 @@ flowchart TB
     D1a -- "logins" --> P42
     P42 --> P43
     D1a -- "links, crown-jewel tags" --> P43
-    P43 --> P44 -- "F6b findings (investigated)" --> D1c
+    P43 --> P45
+    P45 -- "F8 delimited excerpt + tool list" --> E5
+    E5 -- "F9 tool choice" --> P45
+    D1a & D1b & D1c -- "F5 read-tool results (MCP)" --> P45
+    P45 --> P44 -- "F6b findings (investigated), deep-dive calls" --> D1c
+    P44 -- "F6c semantic facts" --> D1a & D1b
 
     D1c -- "investigated case + findings" --> P51 --> P52
     D1a -- "host subgraph, criticality" --> P52
@@ -274,8 +283,8 @@ flowchart LR
 
 | Store | Technology | Contents | Written by | Read by | Kept |
 |---|---|---|---|---|---|
-| D1a Environment | FalkorDB, per-tenant graph | Host, User, Service, Endpoint, AssetTag and links | P2 (seed), P5 (simulated flags) | P1, P4, P5, P7 | Until reset |
-| D1b Activity | same graph | Alert, IOC, Technique and links | P1, P6 (IOC facts) | P3, P4, P7 | Until reset |
+| D1a Environment | FalkorDB, per-tenant graph | Host, User, Service, Endpoint, AssetTag and links | P2 (seed), P4 (semantic facts), P5 (simulated flags) | P1, P3, P4, P5, P7 | Until reset |
+| D1b Activity | same graph | Alert, IOC, Technique and links | P1, P4 (IOC seen in cases), P6 (IOC facts) | P3, P4, P7 | Until reset |
 | D1c Memory | same graph | Case, Decision, Feedback, Playbook, AgentRun | P3, P4, P5, P6 | P3–P7 | Until reset; survives restarts |
 | D2 Talos verdict log | PostgreSQL inside Talos | Talos IncidentReports | Talos | Talos API only | Talos's own |
 
@@ -294,7 +303,8 @@ between tenant graphs.
 | F4 | AlertInput | incident_id, domain, category, severity, confidence, succeeded, summary, talos_created_at, hosts[], users[], endpoints[], techniques[], source_ips[], evidence[], recommended_actions[] | P1 → D1b |
 | F5 | Agent read set | per query: Q1 blast radius rows, Q2 paths, Q3 ranking, Q4 history, Q5 linked ids, case detail | D1 → P3/P4/P5 |
 | F6a | Triage output | Case (id, status=triaged, priority), CONTAINS links, findings.recall, findings.linked, AgentRun | P3 → D1c |
-| F6b | Investigation output | findings.succeeded, findings.path_to_crown_jewel, findings.shortest_path, findings.blast_radius, status=investigated, AgentRun | P4 → D1c |
+| F6b | Investigation output | findings.succeeded, findings.path_to_crown_jewel, findings.shortest_path, findings.blast_radius, findings.deep_dive (tool, args, result, why), status=investigated, AgentRun (worker, tool_calls) | P4 → D1c |
+| F6c | Semantic facts | Host targeted_case_ids, last_targeted_at; User suspected_compromised, suspected_at, suspect_case_id; IOC seen_case_ids | P4 → D1a, D1b; read by P3 |
 | F7 | Decision | id, rule_id, actions[], targets, needs_approval, reason, explanation, evidence (query results), outcome, status | P5 → D1c |
 | F8 | Explanation prompt | prompt name, case summary, rule, ranking, delimited evidence excerpts (≤ 500 chars each) | P5 → LLM |
 | F9 | Explanation | text ≤ 1,000 chars, or none (template used) | LLM → P5 |

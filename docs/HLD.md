@@ -12,7 +12,7 @@ Diagrams are in `ARCHITECTURE.md`; module-level detail is in `LLD.md`; data flow
 | 4. Components: FalkorDB, graph tools, inventory, deployment | **B — Database and graph** | Your components and their responsibilities |
 | 4. Components: API, UI, submission | **C — UI, API and submission** | Your components and their responsibilities |
 | 5. Data model | **B** owns; **A** and **C** follow | The three layers every part reads and writes |
-| 6. External interfaces | **A** (Talos API), **C** (UI API), **B** (MCP, optional) | The boundaries you own |
+| 6. External interfaces | **A** (Talos API, MCP client), **C** (UI API), **B** (MCP server) | The boundaries you own |
 | 7. Design decisions | Everyone | Why things are the way they are; don't reopen without the team |
 | 8. Non-functional requirements | A: reliability of agents and ingestor · B: performance, isolation, persistence · C: usability, security at the edge | Targets you're measured against |
 | 9. Deployment | **B** | How it runs on OCI |
@@ -58,6 +58,24 @@ investigate, decide and learn, explaining every decision as a path through the g
 | G6 | Shared state and handoffs | 02 | Case handed Triage → Investigator → Responder through the graph |
 | G7 | Tenant isolation | 02 | Scenario 4: same IP in Globex, no Acme memory |
 | G8 | The graph is essential | Rules | Remove FalkorDB and no decision can be made |
+| G9 | The agent selects graph tools over MCP | 01 | Investigator deep dive: the LLM picks read-only graph tools from the MCP server, up to `DEEP_DIVE_MAX_CALLS`; each call and result shown on the case |
+| G10 | Agents write and use semantic memory | 02 | Scenario 1 marks `svc_deploy` suspected compromised and `bastion-01` targeted; a later alert on them is raised one priority step, citing the fact |
+| G11 | Concurrent reads and writes without clashes | 02 | Burst of ~30 alerts over both tenants with two agent workers: every case processed once, one Decision each, both workers in the activity feed |
+
+How each track's focus maps to these goals:
+
+| Track | Focus named in the brief | Goals |
+|---|---|---|
+| 01 | Multi-hop reasoning | G1 |
+| 01 | Graph queries and algorithms as tools | G1, G2 |
+| 01 | MCP tool selection | G9 |
+| 01 | Actions from graph results | G3 |
+| 01 | Explainable results | G1, G3 (Decision evidence, Q6 path, deep-dive calls) |
+| 02 | Episodic, semantic, procedural memory | G4 (episodic), G10 (semantic), G5 (procedural) |
+| 02 | Persistent history | G4 |
+| 02 | Shared state and handoffs | G6 |
+| 02 | High-concurrency reads and writes | G11 |
+| 02 | Per-tenant memory | G7 |
 
 ## 3. Architecture overview
 
@@ -68,7 +86,8 @@ Four layers, each with one job:
 2. **Context (ingestor + FalkorDB).** Merges each incident into the tenant's graph next to
    the seeded environment and all earlier memory.
 3. **Reasoning (three agents).** Read the graph through fixed queries, decide, and write
-   cases, findings and decisions back.
+   cases, findings, semantic facts and decisions back. The Investigator can also let the LLM
+   choose extra read-only graph tools over MCP; their results are evidence, never the decision.
 4. **Human loop (API + UI).** Shows cases with their evidence paths, collects analyst verdicts,
    and turns them into memory.
 
@@ -81,12 +100,13 @@ See `ARCHITECTURE.md` §1–3 for the context, deployment and component diagrams
 | Talos service | Detect attacks in replayed logs; serve reports over HTTP | Talos (pinned), FastAPI, PostgreSQL | A |
 | Scenario logs + replay | Fixed log files per scenario; replay into Talos | Talos log formats, `talos replay` | A |
 | Ingestor | Poll Talos, map new reports into the right tenant graph | Python async, httpx | A |
-| Triage agent | Playbook check, recall, correlation, case creation, priority | Python, graph tools, LLM (optional) | A |
-| Investigator agent | Blast radius and paths to crown jewels | Python, graph tools, LLM (optional) | A |
+| Triage agent | Playbook check, recall and semantic facts, correlation, case creation, priority | Python, graph tools, LLM (optional) | A |
+| Investigator agent | Blast radius and paths to crown jewels; writes semantic facts; optional MCP deep dive | Python, graph tools, MCP client, LLM (optional) | A |
 | Responder agent | Rank hosts, apply decision table, record explained decision | Python, graph tools, LLM (optional) | A |
 | Learning service | Analyst feedback → versioned playbooks | Python, graph tools | A |
 | FalkorDB | The only state store; one named graph per tenant | FalkorDB (Docker) | B |
 | Graph tools library | All Cypher: reads Q1–Q6, algorithms, writes, stubs | Python, `falkordb` client | B |
+| MCP server | Read-only graph tools exposed over MCP (stdio) for the deep dive | Python `mcp` SDK | B |
 | Asset inventory + seed | Environment per tenant; reset command | YAML + Python script | B |
 | Deployment | Compose, Dockerfiles, nginx, HTTPS, OCI | Docker Compose, nginx | B |
 | Backend API | REST endpoints for the UI | FastAPI, Pydantic v2 | C |
@@ -106,7 +126,8 @@ One FalkorDB graph per tenant (`tenant_acme`, `tenant_globex`), in three layers:
 The memory types the Track 02 brief names map to it directly:
 
 - **Episodic:** Case, Decision, AgentRun.
-- **Semantic:** facts stored on Host, User and IOC.
+- **Semantic:** facts stored on Host, User and IOC, written by the Investigator (targeted,
+  suspected compromised, seen in cases) and by analyst feedback (owner, verdict), read by Triage.
 - **Procedural:** Playbook versions.
 
 Full schema: `ARCHITECTURE.md` §4 and `LLD.md` §4.1.
@@ -119,7 +140,7 @@ Full schema: `ARCHITECTURE.md` §4 and `LLD.md` §4.1.
 | UI API | browser → api | HTTPS REST under `/api/{tenant}/…` | C | `api_models.py` |
 | Graph tools | agents, ingestor, api → graph | Python function calls | B | `read_queries.py`, `write_queries.py` signatures |
 | LLM | agents → provider | HTTPS, provider TBD | A | `llm_client.complete(prompt, schema)` |
-| MCP (optional) | agents → graph tools | MCP | B | Read functions only |
+| MCP | Investigator → graph tools | MCP over stdio | B (server), A (client) | Read functions only; tenant set by code, never by the LLM |
 
 ## 7. Key design decisions
 
@@ -135,6 +156,8 @@ Full schema: `ARCHITECTURE.md` §4 and `LLD.md` §4.1.
 | D8 | Ingestor polls instead of Talos pushing | Talos must not change; polling is idempotent with MERGE | Webhook from Talos |
 | D9 | Response actions are simulated | Safe demo; no real infrastructure | Real firewall or IAM calls |
 | D10 | UI talks only to our API, never to FalkorDB | One place for validation; UI can use mocks from day one | UI querying the graph directly |
+| D11 | MCP tool selection is a bounded, read-only deep dive after the fixed queries | Shows the agent choosing tools (Track 01) without letting the LLM decide, write or cross tenants | LLM drives the whole investigation through MCP |
+| D12 | Semantic facts store case-id lists, not counters | Writing the same case twice changes nothing (D7) | Incrementing counters |
 
 ## 8. Non-functional requirements
 
@@ -177,12 +200,14 @@ Targets are for the demo on one OCI instance. All numbers are proposed and can b
 | Judges see Talos as most of the project | Lower score | README and video show the boundary clearly | C |
 | Agent work runs late (critical path) | No end-to-end demo | Stubs from day 1; C can take over learning logic | A, C |
 | Contract drift between streams | Integration breaks on Oct 16 | Contracts frozen; changes announced to all three | Everyone |
+| LLM picks poor tools in the deep dive | Noisy or empty extra evidence | Call cap, schema validation, unknown tool ends the dive; decision never depends on it | A |
+| MCP server or SDK doesn't fit in time | G9 missing | Fallback: code picks from a short tool menu, still called over MCP | A, B |
 
 ## 11. Open decisions
 
 | Decision | Options | Decide by | Owner |
 |---|---|---|---|
-| Agent framework | Plain Python + LLM tool use · LangGraph · either plus FalkorDB MCP | Oct 15 | A |
+| Agent framework | Plain Python + `mcp` client (recommended; fits stateless workers and rule A4) · LangGraph | Oct 15 | A |
 | LLM provider | Whatever is at hand during the build | Oct 16 | A |
 | Tenancy with Talos | One Talos per tenant · one Talos + host-name mapping | Oct 15 | A, B |
 | UI framework | React + TypeScript + Vite suggested | Oct 15 | C |

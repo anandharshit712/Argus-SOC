@@ -35,7 +35,8 @@ src/argus_soc/
              algorithm_queries.py · write_queries.py · graph_stubs.py · mcp_server.py
   ingestor/  talos_client.py · report_mapper.py · tenant_resolver.py · ingest_loop.py
   agents/    agent_runner.py · triage_agent.py · investigator_agent.py · responder_agent.py
-             decision_table.py · handoff_service.py · learning_service.py · llm_client.py · prompts/
+             decision_table.py · handoff_service.py · learning_service.py · llm_client.py
+             graph_tool_client.py · prompts/
   api/       api_server.py · case_routes.py · playbook_routes.py · activity_routes.py
              api_models.py · mock_data.py
 ```
@@ -58,6 +59,11 @@ Entry points (console scripts in `pyproject.toml`): `argus-ingest` → `ingest_l
 | `AGENT_CLAIM_TTL_SECONDS` | `120` | agents | A |
 | `CORRELATION_WINDOW_HOURS` | `24` | triage | A |
 | `MAX_PATH_HOPS` | `6` | investigator | A |
+| `REPEAT_TARGET_THRESHOLD` | `2` | triage | A |
+| `DEEP_DIVE_ENABLED` | `true` (runs only when `LLM_ENABLED` is also true) | investigator | A |
+| `DEEP_DIVE_MAX_CALLS` | `4` | investigator | A |
+| `MCP_SERVER_COMMAND` | `python -m argus_soc.graph.mcp_server` | investigator | B |
+| `AGENT_WORKER_ID` | host name of the container | agents | A |
 | `PLAYBOOK_MIN_FEEDBACK` | `1` (demo) | learning | A |
 | `LLM_ENABLED` | `false` | agents | A |
 | `LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY` | unset | agents | A |
@@ -88,19 +94,19 @@ string anywhere else.
 
 | Label | Key | Properties |
 |---|---|---|
-| `Host` | `hostname` | `ip`, `os`, `zone` (`dmz`/`app`/`data`/`corp`), `criticality` (1–5), `isolated` (bool, simulated) |
-| `User` | `username` | `role`, `department`, `privileged` (bool), `disabled` (bool, simulated) |
+| `Host` | `hostname` | `ip`, `os`, `zone` (`dmz`/`app`/`data`/`corp`), `criticality` (1–5), `isolated` (bool, simulated); semantic facts: `targeted_case_ids` (list), `last_targeted_at` |
+| `User` | `username` | `role`, `department`, `privileged` (bool), `disabled` (bool, simulated); semantic facts: `suspected_compromised` (bool), `suspected_at`, `suspect_case_id` |
 | `Service` | `name` | `port`, `exposed` (bool) |
 | `Endpoint` | `path` + `app` | `method` |
 | `AssetTag` | `name` | — (`crown-jewel`, `pci`, …) |
 | `Alert` | `incident_id` | `category`, `domain`, `severity`, `confidence`, `succeeded`, `summary`, `evidence` (JSON string), `recommended_actions` (list), `talos_created_at`, `ingested_at`, `status` (`new`/`cased`) |
-| `IOC` | `type` + `value` | `first_seen`, `last_seen`, `verdict` (`unknown`/`malicious`/`benign`), `owner` (semantic fact) |
+| `IOC` | `type` + `value` | `first_seen`, `last_seen`, `verdict` (`unknown`/`malicious`/`benign`), `owner` (semantic fact), `seen_case_ids` (list, semantic fact) |
 | `Technique` | `mitre_id` | `name`, `tactic` |
 | `Case` | `id` (int) | `status`, `priority`, `opened_at`, `updated_at`, `claimed_by`, `claimed_at`, `findings` (JSON string), `verdict`, `closed_reason` |
 | `Decision` | `id` (uuid) | `actions` (list), `needs_approval`, `rule_id`, `reason`, `explanation`, `evidence` (JSON: query names + results), `outcome` (`pending`/`approved`/`rejected`/`auto`), `created_at` |
 | `Feedback` | `id` (uuid) | `verdict` (`approve`/`reject`/`benign`), `note`, `analyst`, `created_at` |
 | `Playbook` | `name` + `version` | `condition` (JSON), `action` (`auto_close`), `active` (bool), `created_at` |
-| `AgentRun` | `id` (uuid) | `agent`, `case_id`, `started_at`, `finished_at`, `outcome`, `summary` |
+| `AgentRun` | `id` (uuid) | `agent`, `worker`, `case_id`, `started_at`, `finished_at`, `outcome`, `summary`, `tool_calls` (JSON: deep-dive calls, Investigator only) |
 
 Relationships: as in `ARCHITECTURE.md` §4. `LOGGED_INTO` carries `last_seen`; `CONNECTS_TO`
 carries `port`.
@@ -143,6 +149,7 @@ Every function is `async`, takes `tenant` first, returns plain Python types.
 | `recall(tenant, ioc=None, host=None, user=None)` | Q4: closed cases containing alerts with that IOC/host/user, with verdict and feedback | `[{case_id, verdict, closed_at, note}]` |
 | `linked_alerts(tenant, incident_id, window_hours)` | Q5: alerts sharing a host, user or IOC within the window; connected components when more than one hop | `[incident_id]` |
 | `explain_decision(tenant, decision_id)` | Q6: decision, case, alerts, acted-on nodes, playbook and source case | `dict` |
+| `entity_facts(tenant, hosts, users, iocs)` | Semantic facts on those nodes (§4.4.1) | `{hosts: {name: facts}, users: {...}, iocs: {...}}` |
 | `matching_playbook(tenant, alert)` | Active playbooks whose `condition` matches the alert's category and IOC | `dict | None` |
 | `list_new_alerts(tenant, limit)` | Alerts with `status = 'new'`, oldest first | `[alert dict]` |
 | `known_incident_ids(tenant, ids)` | Which of these incident ids already exist | `set[str]` |
@@ -150,6 +157,12 @@ Every function is `async`, takes `tenant` first, returns plain Python types.
 | `get_case(tenant, case_id)` | Case with alerts, findings, decisions, feedback | `dict` |
 | `list_playbooks(tenant)` | Playbooks with version and source case | `[dict]` |
 | `list_activity(tenant, since)` | AgentRun entries after a timestamp | `[dict]` |
+
+#### 4.4.1 Semantic facts
+
+Facts are written by agents (`record_semantic_facts`) and by analyst feedback (`set_ioc_fact`), and
+read back with `entity_facts`. Counts are stored as lists of case ids, never as counters, so
+writing the same case twice changes nothing (rule A3): times targeted = `size(targeted_case_ids)`.
 
 Q2 draft (verify `shortestPath` placement against FalkorDB docs on day 1):
 
@@ -182,7 +195,8 @@ All single `MERGE`-based queries (rule A3).
 | `record_feedback(tenant, case_id, verdict, note, analyst)` | CREATE Feedback ON Case; set Decision outcome; set IOC `verdict` |
 | `create_playbook_version(tenant, feedback_id, condition, action)` | Deactivate older versions with the same name; CREATE new version; LEARNED_FROM feedback |
 | `set_ioc_fact(tenant, ioc, key, value)` | Semantic fact on an IOC (e.g. `owner`) |
-| `record_agent_run(tenant, agent, case_id, summary, handed_to=None)` | CREATE AgentRun; WROTE case; HANDED_OFF_TO previous run when `handed_to` is set |
+| `record_semantic_facts(tenant, case_id, facts: SemanticFactsInput)` | One query: add `case_id` to `targeted_case_ids` of each host and `seen_case_ids` of each IOC (only if absent), set `last_targeted_at`; for `facts.suspected_users` set `suspected_compromised`, `suspected_at`, `suspect_case_id` |
+| `record_agent_run(tenant, agent, case_id, summary, handed_to=None, worker=None, tool_calls=None)` | CREATE AgentRun; WROTE case; HANDED_OFF_TO previous run when `handed_to` is set; `worker` and `tool_calls` stored as given |
 
 FalkorDB runs write queries on a graph one at a time, so each single-query write (including
 `claim_case`) is atomic.
@@ -192,7 +206,19 @@ FalkorDB runs write queries on a graph one at a time, so each single-query write
 Same signatures, fixed return values taken from scenario 1. Selected with
 `ARGUS_GRAPH_BACKEND=stub`. Shipped on Oct 15 so A and C never wait.
 
-### 4.7 Seeding (`scripts/seed_tenants.py`, `data/inventory/*.yaml`)
+### 4.7 MCP server (`mcp_server.py`)
+
+Exposes the **read** functions as MCP tools for the Investigator's deep dive (§6.9):
+`blast_radius`, `paths_to_crown_jewels`, `rank_hosts`, `recall`, `linked_alerts`, `entity_facts`.
+Built with the official `mcp` Python SDK over stdio: the agents process starts it as a subprocess
+with `MCP_SERVER_COMMAND`, so there is no extra service or port.
+
+- Every tool takes `tenant` as its first argument and passes it through unchanged.
+- Each tool has a one-line description and typed arguments; that is what the LLM chooses from.
+- No write function is ever exposed.
+- Returns are the same plain types as the Python functions, cut to 4 000 characters.
+
+### 4.8 Seeding (`scripts/seed_tenants.py`, `data/inventory/*.yaml`)
 
 ```yaml
 tenant: acme
@@ -314,7 +340,10 @@ RETURN c.id
 
 A crashed worker's claim expires after `AGENT_CLAIM_TTL_SECONDS`; another worker picks the case
 up and redoes the step. Every write in a step is a MERGE, so redoing it is safe. Several runner
-containers can run at once (`docker compose up --scale agents=2`).
+containers can run at once (`docker compose up --scale agents=2`). Each worker passes
+`<role>@<AGENT_WORKER_ID>` as `agent` to `claim_case` and `worker=AGENT_WORKER_ID` to
+`record_agent_run`, so the activity feed shows which worker did each step (needed for the
+concurrency proof, §11).
 
 ### 6.2 `triage_agent.py`
 
@@ -327,11 +356,15 @@ step(tenant):
             graph.record_agent_run(tenant, "triage", case, summary="auto-closed by playbook")
             continue
         history = graph.recall(tenant, ioc=alert.iocs, host=alert.hosts, user=alert.users)
+        facts   = graph.entity_facts(tenant, alert.hosts, alert.users, alert.iocs)
         linked  = graph.linked_alerts(tenant, alert.id, CORRELATION_WINDOW_HOURS)
         priority = alert.severity
-        if any(h.verdict == "malicious" for h in history): priority = raise_one(priority)
+        memory_hit = (any(h.verdict == "malicious" for h in history)
+                      or any(u.suspected_compromised for u in facts.users)
+                      or any(len(h.targeted_case_ids) >= REPEAT_TARGET_THRESHOLD for h in facts.hosts))
+        if memory_hit: priority = raise_one(priority)       # at most one step, whatever matched
         case = graph.open_or_join_case(tenant, [alert.id] + linked, priority)
-        graph.record_findings(tenant, case, {"recall": history, "linked": linked})
+        graph.record_findings(tenant, case, {"recall": history, "facts": facts, "linked": linked})
         graph.set_case_status(tenant, case, TRIAGED, priority)
         graph.record_agent_run(tenant, "triage", case, summary=..., handed_to="investigator")
 ```
@@ -352,10 +385,19 @@ run(tenant, case_id):
         "shortest_path": min(paths, key=len) or None,
         "blast_radius": radius,
     }
+    deep = deep_dive(tenant, case, findings) if DEEP_DIVE_ENABLED and LLM_ENABLED else []   # §6.9
+    findings["deep_dive"] = deep                     # evidence only; decide() never reads it
     graph.record_findings(tenant, case_id, findings)
+    graph.record_semantic_facts(tenant, case_id, SemanticFactsInput(
+        hosts=case.hosts, iocs=case.iocs,
+        suspected_users=case.users if findings["succeeded"] else []))
     graph.set_case_status(tenant, case_id, INVESTIGATED)
-    graph.record_agent_run(tenant, "investigator", case_id, summary=..., handed_to="responder")
+    graph.record_agent_run(tenant, "investigator", case_id, summary=..., handed_to="responder",
+                           worker=AGENT_WORKER_ID, tool_calls=deep)
 ```
+
+The fixed Q1 + Q2 run always comes first, so the decision never depends on the deep dive. A user is
+marked suspected compromised only when an alert in the case `succeeded`.
 
 ### 6.4 `decision_table.py`
 
@@ -424,7 +466,41 @@ async def complete(prompt_name: str, variables: dict, schema: type[BaseModel]) -
 - Prompts live in `agents/prompts/<agent>_<purpose>_v<N>.md`, e.g. `responder_explain_v1.md`.
 - Untrusted content (evidence, log lines, summaries) goes inside a fenced block marked
   `UNTRUSTED DATA`, each item cut to 500 characters, with an instruction that it is data only.
-- The LLM never chooses actions, Cypher, or targets. It writes explanations and short summaries.
+- The LLM never chooses actions, Cypher, or targets. It writes explanations and short summaries,
+  and in the deep dive (§6.9) it picks which read-only graph tool to call next.
+
+### 6.9 `graph_tool_client.py`: the deep dive (MCP tool selection)
+
+The Investigator's optional second step, where the LLM chooses which graph tools to call. This is
+the Track 01 "MCP tool selection" proof.
+
+```
+deep_dive(tenant, case, findings):
+    tools = mcp.list_tools()                               # names, descriptions, argument schemas
+    calls = []
+    for i in range(DEEP_DIVE_MAX_CALLS):
+        choice = llm.complete("investigator_deepdive_v1",
+                              {tools (tenant hidden), case summary, findings,
+                               calls so far as UNTRUSTED DATA}, schema=ToolChoice)
+        if choice is None or choice.done: break
+        if choice.tool not in tools: break                 # unknown tool → stop, never guess
+        result = mcp.call_tool(choice.tool, {**choice.args, "tenant": tenant})
+        calls.append({"tool": choice.tool, "args": choice.args,
+                      "result": truncate(result), "why": choice.reason})
+    return calls
+```
+
+- **Tenant is set by code.** `tenant` is removed from the tool schemas shown to the LLM and added
+  back by the client; a `tenant` key in `choice.args` is overwritten.
+- **Read-only.** The MCP server exposes only read functions (§4.7).
+- **Bounded.** At most `DEEP_DIVE_MAX_CALLS` calls; arguments validated against the tool schema;
+  any error ends the dive and keeps what was collected.
+- **Evidence, not decision.** Calls and results are stored in `findings.deep_dive` and on the
+  AgentRun (`tool_calls`). The UI shows them and the Responder's explanation may cite them;
+  `decision_table.decide` never reads them (rule A8).
+- `ToolChoice` = `{done: bool, tool: str | None, args: dict, reason: str}`.
+- LLM off, MCP failure or bad choice → the step returns what it has (possibly `[]`) and the case
+  moves on unchanged.
 
 ---
 
@@ -500,6 +576,7 @@ shown, labelled "Talos suggested", next to the agent's decision.
 | Ingestor | One report fails to map or write | Log with incident id, skip, continue | A |
 | Agent step | Graph call fails | Leave the claim; it expires and the step is retried | A |
 | Agent step | LLM fails or times out | Use the template explanation, continue | A |
+| Deep dive | MCP server won't start, tool error, bad tool choice | End the dive, keep calls so far, continue | A |
 | Graph | Query error | Raise `GraphError` with query name and tenant; never swallow | B |
 | API | FalkorDB down | 503 with message; UI shows a banner and keeps polling | C |
 
@@ -515,10 +592,13 @@ JSON lines: `ts`, `level`, `service` (`ingestor`/`agents`/`api`), `tenant`, `cas
 |---|---|---|---|
 | Graph | One test per read and write function; idempotency (write twice, count once); tenant isolation | FalkorDB test container seeded with a small inventory | B |
 | Ingestor | Mapping from real Talos report JSON fixtures; IP extraction; skip on bad report | Fixtures, stub graph | A |
-| Agents | Triage paths (playbook / join / new), decision table rows R1–R4, claim expiry | `graph_stubs` | A |
+| Agents | Triage paths (playbook / join / new / memory-hit raise), decision table rows R1–R4, claim expiry | `graph_stubs` | A |
+| Deep dive | Stops at `DEEP_DIVE_MAX_CALLS`; unknown tool stops; `tenant` from the LLM is ignored; LLM off → `[]` | Fake LLM + stub MCP tools | A |
+| MCP server | Lists only read tools; each tool returns the same as the Python function | FalkorDB test container | B |
 | Learning | Benign → playbook version; approve → IOC malicious | `graph_stubs` | A |
 | API | Each endpoint, status codes, mock mode | FastAPI test client + stub graph | C |
 | End to end | Scenarios 1–4 produce the expected case statuses and decisions | Full Compose stack | A (with B and C) |
+| Concurrency (`tests/e2e/test_concurrency_burst.py`) | Burst of ~30 alerts over both tenants with `--scale agents=2`: each case has exactly one Decision, no alert in two cases, AgentRuns from both workers, no node shared across tenants | Full Compose stack + `scripts/replay_scenario.py --burst` | A |
 
 ## 12. Deployment detail
 

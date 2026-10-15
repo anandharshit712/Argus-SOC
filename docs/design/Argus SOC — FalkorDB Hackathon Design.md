@@ -77,8 +77,8 @@ Alerts flow left to right through the agents; every arrow into the graph is a Cy
 
 | Agent | Job | Graph tools it uses | Writes |
 | --- | --- | --- | --- |
-| Triage | Groups alerts into cases, checks memory for known patterns, auto-closes matches | Q4 recall, Q5 connected components, Playbook match | Case, AgentRun |
-| Investigator | Finds blast radius and attack paths to crown-jewel hosts | Q1 blast radius, Q2 shortest path | Findings on the Case, semantic facts |
+| Triage | Groups alerts into cases, checks memory for known patterns and facts, auto-closes matches | Q4 recall, semantic facts, Q5 connected components, Playbook match | Case, AgentRun |
+| Investigator | Finds blast radius and attack paths to crown-jewel hosts; then lets the LLM choose extra read-only graph tools over MCP (bounded deep dive) | Q1 blast radius, Q2 shortest path, any read tool via MCP | Findings on the Case (including the tool calls), semantic facts |
 | Responder | Picks and explains the action; waits for approval on high-impact actions | Q3 centrality ranking, Q6 explain | Decision, ACTED\_ON edges |
 
 **Handoffs.** Each agent finishes by recording a `HANDED_OFF_TO` edge and setting the Case status. The next agent polls for cases in its status, so any agent can crash and resume.
@@ -135,7 +135,7 @@ All memory lives in the tenant's graph, so every agent reads and writes the same
 | Memory type | What it stores | Written by | Read by | Example recall |
 | --- | --- | --- | --- | --- |
 | Episodic | Cases, decisions, agent runs, timestamps | All agents | Triage, Investigator | "IOC 185.x was in Case #12 three weeks ago" |
-| Semantic | Facts about hosts, users, IOCs (criticality, normal behaviour, reputation) | Investigator, analyst feedback | All agents | "10.0.5.20 is the internal pentest scanner; benign" |
+| Semantic | Facts about hosts, users, IOCs (criticality, times targeted, suspected compromised, owner, reputation) | Investigator, analyst feedback | All agents | "10.0.5.20 is the internal pentest scanner; benign"; "svc\_deploy suspected compromised in Case #31" |
 | Procedural | Playbooks with conditions and versions | Feedback loop | Triage, Responder | "Playbook v2: auto-close this pattern" |
 
 **Feedback loop (the Track 02 "updates over time" proof)**
@@ -147,7 +147,7 @@ All memory lives in the tenant's graph, so every agent reads and writes the same
 
 **Shared state and handoffs.** A Case node is the shared work item. Each agent claims it, writes its findings and Decision nodes, then records a `HANDED_OFF_TO` edge between AgentRun nodes. Any agent restarted mid-case can rebuild its context with one query.
 
-**Concurrency.** Several alerts arrive at once in the demo, and the agents work on different cases in parallel. Use `MERGE` for idempotent writes and keep each write to one short query, so parallel agents don't clash on the same nodes.
+**Concurrency.** Several alerts arrive at once in the demo, and the agents work on different cases in parallel. Use `MERGE` for idempotent writes and keep each write to one short query, so parallel agents don't clash on the same nodes. The demo proves it with a burst of about 30 alerts across both tenants and two agent workers: every case gets exactly one decision, and the activity feed shows both workers.
 
 **Forgetting.** Old low-value episodes can be summarised into a single node and pruned. This is optional; skip it if time is short.
 
