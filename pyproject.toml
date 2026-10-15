@@ -48,6 +48,8 @@ select = ["E", "F", "I", "B", "UP", "ASYNC"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = ["src"]          # tests run without installing the package
+addopts = "--import-mode=importlib"
 asyncio_mode = "auto"
 markers = [
     "falkordb: needs a running FalkorDB (docker compose up -d falkordb)",
