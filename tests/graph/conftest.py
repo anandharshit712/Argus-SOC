@@ -6,8 +6,10 @@ from argus_soc.core.settings import Settings, get_settings
 from argus_soc.graph import falkor_client
 
 # Where the developer's FalkorDB is: `docker compose up -d falkordb` publishes it on
-# localhost:6379. Read once, before the per-test clean-up below removes the variables.
-DB_HOST = os.environ.get("FALKORDB_HOST", "localhost")
+# 127.0.0.1:6379. Read once, before the per-test clean-up below removes the variables.
+# 127.0.0.1, not "localhost": on Windows "localhost" tries IPv6 (::1) first, and the
+# port is only published on IPv4, so every new connection waits about 2 s.
+DB_HOST = os.environ.get("FALKORDB_HOST", "127.0.0.1")
 DB_PORT = os.environ.get("FALKORDB_PORT", "6379")
 
 # Tests only ever write to these throwaway graphs, never to tenant_acme or tenant_globex.
