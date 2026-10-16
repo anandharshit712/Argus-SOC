@@ -1,7 +1,5 @@
-"""The graph tools contract: names, parameters and defaults (docs/LLD.md §4.4, §4.5).
-
-Step 7 adds the same check for the real FalkorDB functions.
-"""
+"""The graph tools contract: names, parameters and defaults (docs/LLD.md §4.4, §4.5),
+checked for the stubs and for every real FalkorDB function written so far."""
 
 import inspect
 
@@ -9,7 +7,7 @@ import pytest
 
 from argus_soc import graph
 from argus_soc.core.settings import get_settings
-from argus_soc.graph import graph_stubs
+from argus_soc.graph import algorithm_queries, graph_stubs, read_queries, write_queries
 
 # name -> parameters in order, with defaults where there is one
 SIGNATURES: dict[str, list[tuple[str, object]]] = {
@@ -70,6 +68,32 @@ def test_stub_matches_contract(name):
     assert _params(fn) == SIGNATURES[name]
 
 
+REAL_MODULES = (read_queries, algorithm_queries, write_queries)
+REAL = {name: getattr(m, name) for m in REAL_MODULES for name in SIGNATURES if hasattr(m, name)}
+
+
+@pytest.mark.parametrize("name", sorted(REAL))
+def test_real_function_matches_contract(name):
+    fn = REAL[name]
+    assert inspect.iscoroutinefunction(fn), f"{name} must be async"
+    assert _params(fn) == SIGNATURES[name]
+
+
+def test_each_real_function_lives_in_one_module():
+    names = [n for m in REAL_MODULES for n in SIGNATURES if hasattr(m, n)]
+    assert len(names) == len(set(names))
+
+
+def test_scenario_1_functions_are_real():
+    step7 = {
+        "upsert_alert_from_report", "list_new_alerts", "known_incident_ids",
+        "open_or_join_case", "claim_case", "set_case_status", "record_findings",
+        "record_decision", "record_agent_run", "blast_radius", "paths_to_crown_jewels",
+        "rank_hosts", "get_case", "list_cases",
+    }  # fmt: skip
+    assert step7 <= set(REAL)
+
+
 @pytest.fixture
 def backend(monkeypatch):
     def use(value: str) -> None:
@@ -89,11 +113,9 @@ def test_backend_is_read_at_each_lookup(backend):
     backend("stub")
     assert graph.list_cases is graph_stubs.list_cases
     backend("falkordb")
-    try:
-        fn = graph.implementation("rank_hosts")
-    except NotImplementedError:
-        fn = None  # no FalkorDB version yet (step 7)
-    assert fn is not graph_stubs.rank_hosts
+    assert graph.rank_hosts is algorithm_queries.rank_hosts
+    assert graph.get_case is read_queries.get_case
+    assert graph.claim_case is write_queries.claim_case
 
 
 def test_real_backend_says_what_is_missing(backend):

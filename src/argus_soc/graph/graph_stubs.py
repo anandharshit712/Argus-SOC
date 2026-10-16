@@ -443,9 +443,12 @@ def _apply_actions(s: dict[str, Any], d: dict[str, Any]) -> None:
 
 
 async def record_decision(tenant: str, case_id: int, decision: DecisionInput) -> str:
-    """Store the decision. Actions that need approval are applied only once approved."""
+    """Store the decision. Actions that need approval are applied only once approved.
+    One decision per case: calling again returns the existing one."""
     s = _t(tenant)
     case = _get_case(s, case_id)
+    if case["decision_id"]:  # one decision per case; a retried step gets the same one
+        return case["decision_id"]
     did = _new_id("dec")
     d = {
         **decision.model_dump(mode="json"),
