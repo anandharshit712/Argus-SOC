@@ -1,0 +1,24 @@
+# Globex: second synthetic tenant (Workstream B). Shares no host, user or IP with Acme,
+# so scenario 4 can show that Globex has no memory of Acme's attacks.
+tenant: globex
+
+hosts:
+  - {hostname: vpn-gw,    ip: 10.20.1.10, os: ubuntu-22.04, zone: dmz,  criticality: 3}
+  - {hostname: gx-app-01, ip: 10.20.2.10, os: ubuntu-22.04, zone: app,  criticality: 3}
+  - {hostname: gx-db-01,  ip: 10.20.3.10, os: ubuntu-22.04, zone: data, criticality: 5, tags: [crown-jewel]}
+
+users:
+  - {username: gx_ops, role: admin, department: it, privileged: true, logs_into: [vpn-gw, gx-app-01]}
+
+links:
+  - {from: vpn-gw,    to: gx-app-01, port: 443}
+  - {from: gx-app-01, to: gx-db-01,  port: 5432}
+
+iocs: []
+
+filler:
+  seed: 20261016
+  gateway: vpn-gw
+  subnets: {dmz: 10.20.1.0/24, app: 10.20.2.0/24, data: 10.20.3.0/24, corp: 10.20.4.0/24}
+  hosts: {dmz: 4, app: 14, data: 6, corp: 28}
+  users: 24
