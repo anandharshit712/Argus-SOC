@@ -30,6 +30,7 @@ Argus-SOC/                              repository root
 │   │   └── logging_setup.py            structured logging
 │   │
 │   ├── graph/                          B        the ONLY place Cypher is written
+│   │   ├── README.md                   graph data model and every query (for the submission README)
 │   │   ├── falkor_client.py            connection, select graph by tenant
 │   │   ├── graph_schema.py             label, relationship, property and status constants
 │   │   ├── index_setup.py              indexes on lookup keys
