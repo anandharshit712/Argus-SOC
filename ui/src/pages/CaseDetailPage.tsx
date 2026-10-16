@@ -1,13 +1,12 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import type { Priority } from '../api/apiTypes.ts'
-import { fetchCaseDetail } from '../api/mockCaseDetail.ts'
-import NotFoundView from '../components/NotFoundView.tsx'
+import { fetchCaseDetail } from '../api/argusApi.ts'
 import { PriorityBadge, StatusBadge } from '../components/CaseBadges.tsx'
 import CaseDecisionPanel from '../components/CaseDecisionPanel.tsx'
 import CaseFeedbackForm from '../components/CaseFeedbackForm.tsx'
 import { HostRankingList, KeyFindingsList, LinkedAlertsList, MemoryPanel, TimelineList } from '../components/CasePanels.tsx'
 import CasePathGraph from '../components/CasePathGraph.tsx'
+import NotFoundView from '../components/NotFoundView.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { caseTitle } from '../lib/caseTitle.ts'
 import { timeAgo } from '../lib/formatTime.ts'
@@ -32,34 +31,57 @@ export default function CaseDetailPage() {
   const { tenant, live, username } = useApp()
   const id = Number(caseId)
   const [tab, setTab] = useState<TabKey>('overview')
-  // Mock only: the contract has no "change priority" call yet, so this stays in the browser.
-  const [priorityOverride, setPriorityOverride] = useState<Priority | null>(null)
 
   const { data, error, loading, refresh } = usePoll(() => fetchCaseDetail(tenant, id), POLL_MS, live, [tenant, id])
 
-  if (loading && data === null) return <p className="muted">Loading case…</p>
-  if (data === null) return <NotFoundView message={`There is no case #${caseId} for this tenant.`} />
+  if (data === null) {
+    if (loading) return <p className="muted">Loading case…</p>
+    if (error) {
+      return (
+        <section className="panel" style={{ maxWidth: 560 }}>
+          <h2>Could not load case #{caseId}</h2>
+          <p className="muted">{error} Retrying…</p>
+        </section>
+      )
+    }
+    return <NotFoundView message={`There is no case #${caseId} for this tenant.`} />
+  }
 
-  const priority = priorityOverride ?? data.priority
-
-  const decisionPanel = (
-    <CaseDecisionPanel key={data.id} decision={data.decision} priority={priority} onApplyPriority={setPriorityOverride} />
+  const decision = data.decision
+  const path = decision?.path.length ? (
+    <CasePathGraph path={decision.path} />
+  ) : (
+    <p className="muted">
+      {data.findings.path_to_crown_jewel === false ? 'No path from this case’s hosts to a crown jewel.' : 'No path yet.'}
+    </p>
   )
-  const path = data.decision ? <CasePathGraph path={data.decision.path} /> : <p className="muted">No path yet.</p>
-  const ranking = <HostRankingList ranking={data.decision?.ranking ?? []} />
+  const ranking = <HostRankingList ranking={decision?.ranking ?? []} />
 
   return (
     <div className="case-detail">
       <header className="case-head">
         <div className="case-title">
-          <Link to="/cases" className="back-link">← Cases</Link>
+          <Link to="/cases" className="back-link">
+            ← Cases
+          </Link>
           <h1>
             #{data.id} <span>{caseTitle(data.category)}</span>
           </h1>
-          <PriorityBadge priority={priority} />
+          <PriorityBadge priority={data.priority} />
         </div>
         <div className="case-meta">
           <StatusBadge status={data.status} />
+          {data.auto_closed_by && (
+            <span>
+              by {data.auto_closed_by}
+              {data.auto_closed_source_case !== null && (
+                <>
+                  {' '}
+                  (learned from <Link to={`/cases/${data.auto_closed_source_case}`}>#{data.auto_closed_source_case}</Link>)
+                </>
+              )}
+            </span>
+          )}
           <span>Updated {timeAgo(data.updated_at)}</span>
         </div>
       </header>
@@ -81,13 +103,16 @@ export default function CaseDetailPage() {
             onClick={() => setTab(t.key)}
           >
             {t.label}
+            {t.key === 'feedback' && data.needs_approval && <span className="tab-dot" aria-label="needs your verdict" />}
           </button>
         ))}
       </div>
 
       {tab === 'overview' && (
         <div className="overview-grid">
-          <section className="panel area-decision">{decisionPanel}</section>
+          <section className="panel area-decision">
+            <CaseDecisionPanel case={data} onGiveFeedback={() => setTab('feedback')} />
+          </section>
           <section className="panel area-path">
             <h2>Path to Crown Jewel</h2>
             {path}
@@ -98,7 +123,7 @@ export default function CaseDetailPage() {
           </section>
           <section className="panel area-findings">
             <h2>Key Findings</h2>
-            <KeyFindingsList findings={data.findings.key_findings} />
+            <KeyFindingsList findings={data.findings} />
           </section>
           <section className="panel area-memory">
             <h2>Memory</h2>
@@ -138,7 +163,7 @@ export default function CaseDetailPage() {
       {tab === 'feedback' && (
         <section className="panel">
           <h2>Feedback</h2>
-          <CaseFeedbackForm tenant={tenant} analyst={username} detail={data} onSubmitted={refresh} />
+          <CaseFeedbackForm key={data.id} tenant={tenant} analyst={username} detail={data} onSubmitted={refresh} />
         </section>
       )}
     </div>

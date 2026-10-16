@@ -1,11 +1,13 @@
 import { createContext, useContext } from 'react'
-import type { Tenant } from '../api/mockData.ts'
 
-// Shared by the shell and every page: which tenant is shown, whether polling is on, who is signed in.
+// Shared by the shell and every page: who is signed in, which tenant is shown, whether polling is on.
 export type AppState = {
   username: string
-  tenant: Tenant
-  setTenant: (tenant: Tenant) => void
+  displayName: string
+  /** Tenants the signed-in user may see (from the session). */
+  tenants: string[]
+  tenant: string
+  setTenant: (tenant: string) => void
   live: boolean
   setLive: (live: boolean) => void
   signOut: () => void

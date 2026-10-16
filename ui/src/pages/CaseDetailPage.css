@@ -73,31 +73,32 @@
 
 /* ---------- decision panel ---------- */
 .action-list { list-style: none; margin: 0 0 8px; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.action-list button {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+.action-item {
+  display: block;
   padding: 12px 14px;
   background: var(--field);
   border: 1px solid var(--border);
   border-radius: 6px;
   color: var(--text);
   font: 500 1.05rem 'Rajdhani', sans-serif;
-  cursor: pointer;
 }
-.action-list button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
-.action-list button:disabled { cursor: default; opacity: 0.8; }
+.case-detail .panel p.small { margin: 4px 0; }
 
-.priority-row { display: flex; gap: 12px; }
-.priority-row select {
-  flex: 1;
-  padding: 10px 12px;
-  background: var(--field);
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  color: var(--text);
-  font: 500 1.05rem 'Rajdhani', sans-serif;
+.decision-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tab-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 8px;
+  border-radius: 50%;
+  background: var(--warn);
+  vertical-align: middle;
 }
 
 .btn-primary {

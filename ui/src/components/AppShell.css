@@ -172,6 +172,19 @@
   padding: 20px;
 }
 
+.health-text.is-bad { color: var(--danger); }
+.user-name { color: var(--text); font: 500 1.05rem 'Rajdhani', sans-serif; }
+
+.health-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  background: rgba(255, 107, 107, 0.08);
+  color: var(--danger);
+  font: 0.9rem 'Share Tech Mono', monospace;
+}
+
 @media (max-width: 900px) {
   .shell-body { grid-template-columns: 1fr; }
   .brand { width: auto; }
@@ -184,5 +197,5 @@
 }
 @media (max-width: 700px) {
   .topbar { gap: 12px; padding: 0 12px; }
-  .health-text, .brand span { display: none; }
+  .health-text, .brand span, .user-name { display: none; }
 }

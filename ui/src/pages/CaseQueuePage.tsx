@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { OPEN_STATUSES, type CaseStatus, type CaseSummary, type Priority } from '../api/apiTypes.ts'
-import { fetchCases, TENANT_LABEL } from '../api/mockData.ts'
+import { fetchCases } from '../api/argusApi.ts'
 import { CaseTable } from '../components/CaseTable.tsx'
 import Icon from '../components/Icon.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { caseTitle } from '../lib/caseTitle.ts'
+import { tenantLabel } from '../lib/tenantLabel.ts'
 import { useApp } from '../state/AppContext.tsx'
 import './CaseQueuePage.css'
 
@@ -38,9 +39,10 @@ const PRIORITY_OPTIONS: { value: string; label: string }[] = [
   { value: 'high', label: 'High' },
   { value: 'medium', label: 'Medium' },
   { value: 'low', label: 'Low' },
+  { value: 'info', label: 'Info' },
 ]
 
-const PRIORITY_RANK: Record<Priority, number> = { critical: 0, high: 1, medium: 2, low: 3 }
+const PRIORITY_RANK: Record<Priority, number> = { critical: 0, high: 1, medium: 2, low: 3, info: 4 }
 
 function inTab(c: CaseSummary, tab: TabKey): boolean {
   const statuses = TABS.find((t) => t.key === tab)?.statuses
@@ -88,8 +90,8 @@ export default function CaseQueuePage() {
     .filter((c) => priority === 'all' || c.priority === priority)
     .filter((c) => matchesQuery(c, query))
     .sort((a, b) => {
-      if (byPriority && a.priority !== b.priority) return PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority]
-      return new Date(b.opened_at).getTime() - new Date(a.opened_at).getTime()
+      if (byPriority && a.priority !== b.priority) return (PRIORITY_RANK[a.priority] ?? 9) - (PRIORITY_RANK[b.priority] ?? 9)
+      return new Date(b.opened_at ?? 0).getTime() - new Date(a.opened_at ?? 0).getTime()
     })
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
@@ -101,7 +103,7 @@ export default function CaseQueuePage() {
     <div className="queue">
       <section className="queue-head">
         <h1>Case Queue</h1>
-        <p>All cases for {TENANT_LABEL[tenant]}, newest first.</p>
+        <p>All cases for {tenantLabel(tenant)}, newest first.</p>
         <div className="queue-tabs" role="group" aria-label="Case groups">
           {TABS.map((t) => (
             <button

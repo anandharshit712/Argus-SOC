@@ -1,21 +1,21 @@
 import { useState, type FormEvent } from 'react'
 import type { CaseDetail, FeedbackVerdict } from '../api/apiTypes.ts'
-import { submitFeedback } from '../api/mockCaseDetail.ts'
-import type { Tenant } from '../api/mockData.ts'
+import { submitFeedback } from '../api/argusApi.ts'
 import { timeAgo } from '../lib/formatTime.ts'
 
 type CaseFeedbackFormProps = {
-  tenant: Tenant
+  tenant: string
+  /** Shown only: the API records the signed-in user from the session token. */
   analyst: string
   detail: CaseDetail
   onSubmitted: () => void
 }
 
 const NOTE_MAX = 500
-const VERDICTS: { value: FeedbackVerdict; label: string }[] = [
-  { value: 'approve', label: 'Approve' },
-  { value: 'reject', label: 'Reject' },
-  { value: 'benign', label: 'Mark benign' },
+const VERDICTS: { value: FeedbackVerdict; label: string; hint: string }[] = [
+  { value: 'approve', label: 'Approve', hint: 'Runs the simulated actions and closes the case' },
+  { value: 'reject', label: 'Reject', hint: 'Closes the case without the actions' },
+  { value: 'benign', label: 'Mark benign', hint: 'Closes it as benign; the system may learn a playbook' },
 ]
 
 export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted }: CaseFeedbackFormProps) {
@@ -25,6 +25,8 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
 
+  // Same rules as the API (409 otherwise): approve / reject only while awaiting approval;
+  // benign also on a closed or auto-closed case.
   const awaiting = detail.status === 'awaiting_approval'
   const closed = detail.status === 'closed' || detail.status === 'auto_closed'
   const canAnswer = (v: FeedbackVerdict) => (v === 'benign' ? awaiting || closed : awaiting)
@@ -37,8 +39,10 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
     setError(null)
     setResult(null)
     try {
-      const out = await submitFeedback(tenant, detail.id, { verdict: effective, note: note.trim(), analyst })
-      setResult(out.playbook_created ? `Feedback saved. Playbook created: ${out.playbook_created}.` : 'Feedback saved.')
+      const out = await submitFeedback(tenant, detail.id, { verdict: effective, note: note.trim() })
+      setResult(
+        out.playbook_created ? `Feedback saved. New playbook learned: ${out.playbook_created}.` : 'Feedback saved.',
+      )
       setNote('')
       onSubmitted()
     } catch (err) {
@@ -50,13 +54,19 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
 
   return (
     <div className="feedback">
+      {result && (
+        <p className="form-ok" role="status">
+          {result}
+        </p>
+      )}
+
       {anyAllowed ? (
         <form onSubmit={handleSubmit}>
           <fieldset disabled={busy}>
             <legend>Your verdict</legend>
             <div className="verdict-options">
               {VERDICTS.map((v) => (
-                <label key={v.value} className={!canAnswer(v.value) ? 'is-disabled' : ''}>
+                <label key={v.value} className={!canAnswer(v.value) ? 'is-disabled' : ''} title={v.hint}>
                   <input
                     type="radio"
                     name="verdict"
@@ -69,6 +79,7 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
                 </label>
               ))}
             </div>
+            <p className="muted small">{VERDICTS.find((v) => v.value === effective)?.hint}</p>
           </fieldset>
 
           <label className="note-field">
@@ -80,18 +91,24 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
               onChange={(e) => setNote(e.target.value)}
               placeholder="Why? For example: internal pentest scanner"
             />
-            <small className="muted">{note.length}/{NOTE_MAX}</small>
+            <small className="muted">
+              {note.length}/{NOTE_MAX}
+            </small>
           </label>
 
-          {error && <p className="form-error" role="alert">{error}</p>}
-          {result && <p className="form-ok" role="status">{result}</p>}
+          {error && (
+            <p className="form-error" role="alert">
+              {error}
+            </p>
+          )}
 
+          <p className="muted small">Submitting as {analyst}</p>
           <button type="submit" className="btn-primary" disabled={busy}>
             {busy ? 'Saving…' : 'Submit feedback'}
           </button>
         </form>
       ) : (
-        <p className="muted">This case is not awaiting approval, so it takes no verdict yet.</p>
+        <p className="muted">This case is still with the agents, so it takes no verdict yet.</p>
       )}
 
       <h3>Feedback so far</h3>
@@ -100,8 +117,8 @@ export default function CaseFeedbackForm({ tenant, analyst, detail, onSubmitted 
       ) : (
         <ul className="feedback-list">
           {detail.feedback.map((f) => (
-            <li key={f.feedback_id}>
-              <strong>{f.verdict}</strong> by {f.analyst} · {timeAgo(f.at)}
+            <li key={f.id}>
+              <strong>{f.verdict}</strong> by {f.analyst} · {timeAgo(f.created_at)}
               {f.note && <p>{f.note}</p>}
             </li>
           ))}

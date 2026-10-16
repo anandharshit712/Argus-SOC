@@ -15,13 +15,14 @@ const PRIORITY_LABEL: Record<Priority, string> = {
   high: 'High',
   medium: 'Medium',
   low: 'Low',
+  info: 'Info',
 }
 
 // The text label always carries the meaning; colour only reinforces it.
 export function PriorityBadge({ priority }: { priority: Priority }) {
-  return <span className={`badge badge-priority-${priority}`}>{PRIORITY_LABEL[priority]}</span>
+  return <span className={`badge badge-priority-${priority}`}>{PRIORITY_LABEL[priority] ?? priority}</span>
 }
 
 export function StatusBadge({ status }: { status: CaseStatus }) {
-  return <span className={`badge badge-status-${status}`}>{STATUS_LABEL[status]}</span>
+  return <span className={`badge badge-status-${status}`}>{STATUS_LABEL[status] ?? status}</span>
 }

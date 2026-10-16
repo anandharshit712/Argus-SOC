@@ -1,13 +1,15 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { fetchHealth, TENANTS, TENANT_LABEL, type Tenant } from '../api/mockData.ts'
+import type { SessionOut } from '../api/apiTypes.ts'
+import { fetchHealth } from '../api/argusApi.ts'
 import { usePoll } from '../hooks/usePoll.ts'
+import { tenantLabel } from '../lib/tenantLabel.ts'
 import { AppContext } from '../state/AppContext.tsx'
 import ArgusLogo from './ArgusLogo.tsx'
 import Icon, { type IconName } from './Icon.tsx'
 import './AppShell.css'
 
-type AppShellProps = { username: string; onSignOut: () => void }
+type AppShellProps = { session: SessionOut; onSignOut: () => void }
 
 const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/dashboard', label: 'Dashboard', icon: 'home' },
@@ -16,14 +18,42 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
   { to: '/activity', label: 'Activity', icon: 'activity' },
 ]
 
-export default function AppShell({ username, onSignOut }: AppShellProps) {
-  const [tenant, setTenant] = useState<Tenant>('acme')
+const HEALTH_POLL_MS = 10_000
+
+type HealthView = { label: string; detail: string; bad: boolean; banner: string | null }
+
+function healthView(status: string | undefined, unreachable: boolean): HealthView {
+  if (unreachable) {
+    return { label: 'API down', detail: 'Can’t reach the API', bad: true, banner: 'Can’t reach the API. Showing the last data received; retrying.' }
+  }
+  if (status === 'ok') return { label: 'OK', detail: 'All systems operational', bad: false, banner: null }
+  if (status === 'mock') return { label: 'Mock data', detail: 'Mock mode: sample data, no database', bad: false, banner: null }
+  if (status === 'degraded') {
+    return { label: 'Degraded', detail: 'Graph database unreachable', bad: true, banner: 'The graph database is unreachable. Data may be out of date; retrying.' }
+  }
+  return { label: '…', detail: 'Checking…', bad: false, banner: null }
+}
+
+export default function AppShell({ session, onSignOut }: AppShellProps) {
+  const tenants = session.tenants
+  const [tenant, setTenant] = useState<string>(tenants[0] ?? '')
   const [live, setLive] = useState(true)
-  const health = usePoll(fetchHealth, 10_000, live, [])
-  const healthy = health.data ? health.data.status === 'ok' && health.data.falkordb : null
+  const health = usePoll(fetchHealth, HEALTH_POLL_MS, live, [])
+  const view = healthView(health.data?.status, health.error !== null)
+
+  const context = {
+    username: session.username,
+    displayName: session.display_name,
+    tenants,
+    tenant,
+    setTenant,
+    live,
+    setLive,
+    signOut: onSignOut,
+  }
 
   return (
-    <AppContext.Provider value={{ username, tenant, setTenant, live, setLive, signOut: onSignOut }}>
+    <AppContext.Provider value={context}>
       <div className="shell">
         <header className="topbar">
           <div className="brand">
@@ -31,16 +61,15 @@ export default function AppShell({ username, onSignOut }: AppShellProps) {
             <span>Argus SOC</span>
           </div>
 
-          <select
-            className="tenant-select"
-            value={tenant}
-            onChange={(e) => setTenant(e.target.value as Tenant)}
-            aria-label="Tenant"
-          >
-            {TENANTS.map((t) => (
-              <option key={t} value={t}>{TENANT_LABEL[t]}</option>
-            ))}
-          </select>
+          {tenants.length > 0 && (
+            <select className="tenant-select" value={tenant} onChange={(e) => setTenant(e.target.value)} aria-label="Tenant">
+              {tenants.map((t) => (
+                <option key={t} value={t}>
+                  {tenantLabel(t)}
+                </option>
+              ))}
+            </select>
+          )}
 
           <div className="topbar-status">
             <button
@@ -52,12 +81,13 @@ export default function AppShell({ username, onSignOut }: AppShellProps) {
             >
               <span className="dot" /> {live ? 'Live' : 'Paused'}
             </button>
-            <span className="health-text">
-              Health: {healthy === null ? '…' : healthy ? 'OK' : 'Degraded'}
+            <span className={`health-text${view.bad ? ' is-bad' : ''}`}>Health: {view.label}</span>
+            <span className="user-name" title={session.username}>
+              {session.display_name}
             </span>
-            <button type="button" className="user-button" onClick={onSignOut} title={`Sign out ${username}`}>
+            <button type="button" className="user-button" onClick={onSignOut} title={`Sign out ${session.username}`}>
               <Icon name="user" size={18} />
-              <span className="visually-hidden">Sign out {username}</span>
+              <span className="visually-hidden">Sign out {session.display_name}</span>
             </button>
           </div>
         </header>
@@ -74,7 +104,7 @@ export default function AppShell({ username, onSignOut }: AppShellProps) {
 
             <div className="tenant-switcher">
               <h2>Tenant Switcher</h2>
-              {TENANTS.map((t) => (
+              {tenants.map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -82,25 +112,35 @@ export default function AppShell({ username, onSignOut }: AppShellProps) {
                   onClick={() => setTenant(t)}
                   aria-pressed={t === tenant}
                 >
-                  <Icon name="building" /> {TENANT_LABEL[t]}
+                  <Icon name="building" /> {tenantLabel(t)}
                   {t === tenant && <Icon name="check" size={16} />}
                 </button>
               ))}
             </div>
 
-            <div className={`system-health${healthy === false ? ' is-bad' : ''}`}>
+            <div className={`system-health${view.bad ? ' is-bad' : ''}`}>
               <span className="dot" />
               <div>
                 <strong>System Health</strong>
-                <small>
-                  {healthy === null ? 'Checking…' : healthy ? 'All systems operational' : 'Degraded — check graph'}
-                </small>
+                <small>{view.detail}</small>
               </div>
             </div>
           </aside>
 
           <main className="shell-main">
-            <Outlet />
+            {view.banner && (
+              <p className="health-banner" role="alert">
+                {view.banner}
+              </p>
+            )}
+            {tenants.length === 0 ? (
+              <section className="panel" style={{ maxWidth: 520 }}>
+                <h2>No tenants</h2>
+                <p className="muted">This account has no tenant to show. Ask an admin to add one.</p>
+              </section>
+            ) : (
+              <Outlet />
+            )}
           </main>
         </div>
       </div>

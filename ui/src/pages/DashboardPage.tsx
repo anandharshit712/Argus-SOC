@@ -1,15 +1,22 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchDashboard, TENANT_LABEL, type TimeWindow } from '../api/mockData.ts'
+import type { Kpi, TimeWindow } from '../api/apiTypes.ts'
+import { fetchCases, fetchDashboard } from '../api/argusApi.ts'
 import { CaseTable } from '../components/CaseTable.tsx'
 import Icon, { type IconName } from '../components/Icon.tsx'
 import StatTile from '../components/StatTile.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { formatSeconds } from '../lib/formatTime.ts'
+import { tenantLabel } from '../lib/tenantLabel.ts'
 import { useApp } from '../state/AppContext.tsx'
 import './DashboardPage.css'
 
 const POLL_MS = 5000
+const RECENT_CASES = 5
+
+const count = (kpi: Kpi) => (kpi.value === null ? '—' : String(kpi.value))
+/** Change vs the previous window, when the API has both numbers. */
+const delta = (kpi: Kpi) => (kpi.value !== null && kpi.previous !== null ? kpi.value - kpi.previous : null)
 
 const WINDOWS: { value: TimeWindow; label: string }[] = [
   { value: '30m', label: '30m' },
@@ -25,20 +32,19 @@ const QUICK_ACTIONS: { to: string; label: string; icon: IconName }[] = [
 ]
 
 export default function DashboardPage() {
-  const { tenant, live } = useApp()
+  const { tenant, live, displayName } = useApp()
   const [window, setWindow] = useState<TimeWindow>('1h')
   const { data, error, loading } = usePoll(() => fetchDashboard(tenant, window), POLL_MS, live, [tenant, window])
+  const recent = usePoll(() => fetchCases(tenant, RECENT_CASES), POLL_MS, live, [tenant])
 
-  const label = TENANT_LABEL[tenant]
-  const m = data?.metrics
-  const p = data?.previous
-  const delta = (pick: (x: NonNullable<typeof m>) => number) => (m && p ? pick(m) - pick(p) : null)
+  const label = tenantLabel(tenant)
+  const k = data?.kpis
 
   return (
     <div className="dashboard">
       <section className="welcome">
         <div>
-          <h1>Welcome back, {label} Analyst</h1>
+          <h1>Welcome back, {displayName}</h1>
           <p>Here’s what’s happening in your SOC today.</p>
         </div>
         <div className="window-select" role="group" aria-label="Time window">
@@ -65,39 +71,46 @@ export default function DashboardPage() {
       {loading && !data ? (
         <p className="dash-loading">Loading {label}…</p>
       ) : (
-        m &&
-        data && (
+        k && (
           <>
             <section className="tile-grid" aria-label={`${label} summary`}>
-              <StatTile label="Open cases" value={String(m.open)} delta={delta((x) => x.open)} to="/cases?status=open" />
+              <StatTile label="Open cases" value={count(k.open_cases)} delta={null} to="/cases?status=open" />
               <StatTile
                 label="Awaiting approval"
-                value={String(m.awaiting)}
-                delta={delta((x) => x.awaiting)}
+                value={count(k.awaiting_approval)}
+                delta={null}
                 to="/cases?status=awaiting_approval"
-                warn={m.awaiting > 0}
+                warn={(k.awaiting_approval.value ?? 0) > 0}
               />
               <StatTile
                 label="Critical / high open"
-                value={String(m.criticalHighOpen)}
-                delta={delta((x) => x.criticalHighOpen)}
+                value={count(k.critical_high_open)}
+                delta={null}
                 to="/cases?sort=priority"
               />
               <StatTile
                 label="Auto-closed"
-                value={String(m.autoClosed)}
-                suffix={`(${m.autoClosedPct}%)`}
-                delta={delta((x) => x.autoClosed)}
+                value={count(k.auto_closed)}
+                suffix={k.auto_closed_pct.value !== null ? `(${k.auto_closed_pct.value}%)` : undefined}
+                delta={delta(k.auto_closed)}
                 to="/cases?status=auto_closed"
               />
-              <StatTile label="Median time to decision" value={formatSeconds(m.medianDecisionSeconds)} delta={null} />
-              <StatTile label="Active playbooks" value={String(data.activePlaybooks)} delta={null} to="/playbooks" />
+              <StatTile
+                label="Median time to decision"
+                value={formatSeconds(k.median_decision_seconds.value)}
+                delta={null}
+              />
+              <StatTile label="Active playbooks" value={count(k.active_playbooks)} delta={null} to="/playbooks" />
             </section>
 
             <div className="dash-lower">
               <section className="panel">
                 <h2>Recent Cases</h2>
-                <CaseTable cases={data.recentCases} />
+                {recent.data ? (
+                  <CaseTable cases={recent.data} />
+                ) : (
+                  <p className="muted">{recent.error ? `Could not load cases: ${recent.error}` : 'Loading cases…'}</p>
+                )}
               </section>
 
               <section className="panel">

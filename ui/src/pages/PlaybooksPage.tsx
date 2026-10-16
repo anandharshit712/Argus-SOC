@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PlaybookOut } from '../api/apiTypes.ts'
-import { fetchPlaybooks } from '../api/mockPlaybooks.ts'
+import { fetchPlaybooks } from '../api/argusApi.ts'
 import Icon from '../components/Icon.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { useApp } from '../state/AppContext.tsx'
 import './PlaybooksPage.css'
 
-const POLL_MS = 5000
+const POLL_MS = 10_000
 
 type SortKey = 'name' | 'version' | 'updated'
 type Sort = { key: SortKey; dir: 'asc' | 'desc' }
@@ -21,11 +21,18 @@ const COLUMNS: { key: SortKey; label: string }[] = [
 function compare(a: PlaybookOut, b: PlaybookOut, key: SortKey): number {
   if (key === 'name') return a.name.localeCompare(b.name) || b.version - a.version
   if (key === 'version') return a.version - b.version || a.name.localeCompare(b.name)
-  return new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+  return new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
 }
 
-const describe = (condition: Record<string, string>) =>
-  `Matches ${Object.entries(condition).map(([k, v]) => `${k} = ${v}`).join(', ')}`
+/** A condition value as text: `ioc_in` is a list of IOCs. */
+const conditionValue = (v: unknown) => (Array.isArray(v) ? v.join(', ') : typeof v === 'object' ? JSON.stringify(v) : String(v))
+
+const describe = (condition: Record<string, unknown>) => {
+  const parts = Object.entries(condition).map(([k, v]) => `${k} = ${conditionValue(v)}`)
+  return parts.length ? `Matches ${parts.join('; ')}` : 'No condition'
+}
+
+const day = (iso: string | null) => (iso ? iso.slice(0, 10) : '—')
 
 const rowKey = (p: PlaybookOut) => `${p.name}@${p.version}`
 
@@ -104,7 +111,7 @@ function PlaybookRow({ playbook: p, open, onToggle }: PlaybookRowProps) {
           v{p.version}
           <span className={`active-tag ${p.active ? 'is-active' : ''}`}>{p.active ? 'Active' : 'Inactive'}</span>
         </td>
-        <td>{p.created_at.slice(0, 10)}</td>
+        <td>{day(p.created_at)}</td>
         <td className="row-toggle">
           <button type="button" onClick={onToggle} aria-expanded={open} aria-label={`Details for ${p.name} v${p.version}`}>
             <Icon name={open ? 'chevronDown' : 'chevronRight'} size={18} />
@@ -118,7 +125,7 @@ function PlaybookRow({ playbook: p, open, onToggle }: PlaybookRowProps) {
               {Object.entries(p.condition).map(([k, v]) => (
                 <div key={k}>
                   <dt>{k}</dt>
-                  <dd>{v}</dd>
+                  <dd>{conditionValue(v)}</dd>
                 </div>
               ))}
               <div>
@@ -127,7 +134,11 @@ function PlaybookRow({ playbook: p, open, onToggle }: PlaybookRowProps) {
               </div>
               <div>
                 <dt>Created</dt>
-                <dd>{p.created_at.slice(0, 10)}</dd>
+                <dd>{day(p.created_at)}</dd>
+              </div>
+              <div>
+                <dt>Action</dt>
+                <dd>{p.action ? p.action.replace(/_/g, ' ') : '—'}</dd>
               </div>
             </dl>
           </td>

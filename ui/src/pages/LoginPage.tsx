@@ -1,9 +1,9 @@
 import ArgusLogo from '../components/ArgusLogo.tsx'
 import LoginForm from '../components/LoginForm.tsx'
-import type { Session } from '../api/authMock.ts'
+import type { SessionOut } from '../api/apiTypes.ts'
 import './LoginPage.css'
 
-type LoginPageProps = { onSignedIn: (session: Session) => void }
+type LoginPageProps = { onSignedIn: (session: SessionOut) => void }
 
 export default function LoginPage({ onSignedIn }: LoginPageProps) {
   return (

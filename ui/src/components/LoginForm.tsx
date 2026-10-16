@@ -1,8 +1,17 @@
 import { useState, type FormEvent } from 'react'
-import { signIn, type Session } from '../api/authMock.ts'
+import { ApiError } from '../api/apiClient.ts'
+import type { SessionOut } from '../api/apiTypes.ts'
+import { login } from '../api/argusApi.ts'
 import './LoginForm.css'
 
-type LoginFormProps = { onSignedIn: (session: Session) => void }
+type LoginFormProps = { onSignedIn: (session: SessionOut) => void }
+
+// Same message for an unknown user and a wrong password (the API does not say which).
+function signInError(err: unknown): string {
+  if (err instanceof ApiError && err.status === 401) return 'Wrong username or password.'
+  if (err instanceof ApiError && err.status !== 0 && err.status < 500) return err.message
+  return 'Can’t reach the server. Try again shortly.'
+}
 
 export default function LoginForm({ onSignedIn }: LoginFormProps) {
   const [username, setUsername] = useState('')
@@ -13,13 +22,19 @@ export default function LoginForm({ onSignedIn }: LoginFormProps) {
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!username.trim() || !password) {
+      setError('Enter your username and password.')
+      return
+    }
     setBusy(true)
     setError(null)
     try {
-      onSignedIn(await signIn(username, password))
+      const session = await login(username.trim(), password)
+      setBusy(false)
+      onSignedIn(session)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Sign in failed.')
-    } finally {
+      setError(signInError(err))
+      setPassword('') // never keep a rejected password in the form
       setBusy(false)
     }
   }
