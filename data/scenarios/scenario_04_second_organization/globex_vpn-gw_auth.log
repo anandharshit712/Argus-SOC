@@ -1,0 +1,47 @@
+Sep 29 16:03:08 vpn-gw sshd[2182]: Accepted publickey for netops from 10.20.9.22 port 50180 ssh2
+Sep 29 16:03:09 vpn-gw sshd[2182]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 29 16:05:10 vpn-gw sshd[2206]: Disconnected from user netops 10.20.9.22 port 50183
+Sep 29 16:06:58 vpn-gw sshd[2289]: Failed password for netops from 10.20.9.13 port 50319 ssh2
+Sep 29 16:07:04 vpn-gw sshd[2302]: Accepted password for netops from 10.20.9.13 port 50321 ssh2
+Sep 29 16:07:05 vpn-gw sshd[2302]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 29 16:16:28 vpn-gw sshd[2354]: Invalid user zabbix from 203.0.113.165 port 50439
+Sep 29 16:16:28 vpn-gw sshd[2354]: Failed password for invalid user zabbix from 203.0.113.165 port 50439 ssh2
+Sep 29 16:16:34 vpn-gw sshd[2388]: Invalid user zabbix from 203.0.113.165 port 50482
+Sep 29 16:16:34 vpn-gw sshd[2388]: Failed password for invalid user zabbix from 203.0.113.165 port 50482 ssh2
+Sep 29 16:19:58 vpn-gw sshd[2211]: Accepted publickey for l.ferreira from 10.20.9.47 port 50193 ssh2
+Sep 29 16:19:59 vpn-gw sshd[2211]: pam_unix(sshd:session): session opened for user l.ferreira by (uid=0)
+Sep 29 16:22:50 vpn-gw sshd[2216]: Received disconnect from 10.20.9.47 port 50211:11: disconnected by user
+Sep 29 16:27:36 vpn-gw sshd[2255]: Accepted publickey for netops from 10.20.9.26 port 50254 ssh2
+Sep 29 16:27:37 vpn-gw sshd[2255]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 29 16:30:00 vpn-gw sshd[3400]: Failed password for admin from 203.0.113.7 port 49478 ssh2
+Sep 29 16:30:08 vpn-gw sshd[3403]: Failed password for admin from 203.0.113.7 port 49489 ssh2
+Sep 29 16:30:15 vpn-gw sshd[3418]: Failed password for admin from 203.0.113.7 port 49522 ssh2
+Sep 29 16:30:20 vpn-gw sshd[3449]: Failed password for admin from 203.0.113.7 port 49542 ssh2
+Sep 29 16:30:26 vpn-gw sshd[3456]: Failed password for admin from 203.0.113.7 port 49576 ssh2
+Sep 29 16:30:31 vpn-gw sshd[3457]: Failed password for admin from 203.0.113.7 port 49615 ssh2
+Sep 29 16:30:36 vpn-gw sshd[3474]: Failed password for admin from 203.0.113.7 port 49622 ssh2
+Sep 29 16:30:43 vpn-gw sshd[3512]: Failed password for admin from 203.0.113.7 port 49673 ssh2
+Sep 29 16:30:51 vpn-gw sshd[3519]: Failed password for admin from 203.0.113.7 port 49721 ssh2
+Sep 29 16:31:54 vpn-gw sshd[2262]: Connection closed by 10.20.9.26 port 50282 [preauth]
+Sep 29 16:33:39 vpn-gw sshd[2459]: Invalid user hadoop from 198.51.100.231 port 50582
+Sep 29 16:33:39 vpn-gw sshd[2459]: Failed password for invalid user hadoop from 198.51.100.231 port 50582 ssh2
+Sep 29 16:33:51 vpn-gw sshd[2466]: Invalid user hadoop from 198.51.100.231 port 50642
+Sep 29 16:33:51 vpn-gw sshd[2466]: Failed password for invalid user hadoop from 198.51.100.231 port 50642 ssh2
+Sep 29 16:34:00 vpn-gw sshd[2468]: Invalid user hadoop from 198.51.100.231 port 50668
+Sep 29 16:34:00 vpn-gw sshd[2468]: Failed password for invalid user hadoop from 198.51.100.231 port 50668 ssh2
+Sep 29 16:37:41 vpn-gw sshd[2131]: Accepted publickey for netops from 10.20.9.49 port 50067 ssh2
+Sep 29 16:37:42 vpn-gw sshd[2131]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 29 16:39:05 vpn-gw sshd[2136]: Received disconnect from 10.20.9.49 port 50112:11: disconnected by user
+Sep 29 16:39:17 vpn-gw sshd[2304]: Invalid user nagios from 203.0.113.232 port 50357
+Sep 29 16:39:17 vpn-gw sshd[2304]: Failed password for invalid user nagios from 203.0.113.232 port 50357 ssh2
+Sep 29 16:39:31 vpn-gw sshd[2311]: Invalid user nagios from 203.0.113.232 port 50359
+Sep 29 16:39:31 vpn-gw sshd[2311]: Failed password for invalid user nagios from 203.0.113.232 port 50359 ssh2
+Sep 29 16:39:49 vpn-gw sshd[2326]: Invalid user nagios from 203.0.113.232 port 50381
+Sep 29 16:39:49 vpn-gw sshd[2326]: Failed password for invalid user nagios from 203.0.113.232 port 50381 ssh2
+Sep 29 16:45:57 vpn-gw sshd[2154]: Accepted publickey for l.ferreira from 10.20.9.44 port 50122 ssh2
+Sep 29 16:45:58 vpn-gw sshd[2154]: pam_unix(sshd:session): session opened for user l.ferreira by (uid=0)
+Sep 29 16:48:17 vpn-gw sshd[2173]: Received disconnect from 10.20.9.44 port 50151:11: disconnected by user
+Sep 29 16:52:11 vpn-gw sshd[2395]: Invalid user tomcat from 198.51.100.195 port 50523
+Sep 29 16:52:11 vpn-gw sshd[2395]: Failed password for invalid user tomcat from 198.51.100.195 port 50523 ssh2
+Sep 29 16:52:36 vpn-gw sshd[2434]: Invalid user tomcat from 198.51.100.195 port 50579
+Sep 29 16:52:36 vpn-gw sshd[2434]: Failed password for invalid user tomcat from 198.51.100.195 port 50579 ssh2

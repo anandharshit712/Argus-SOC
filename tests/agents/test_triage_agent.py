@@ -1,5 +1,7 @@
 """Triage agent against the stub graph's sample data (see graph_stubs.py docstring)."""
 
+import asyncio
+
 from argus_soc import graph
 from argus_soc.agents import triage_agent
 from argus_soc.agents.priority_rules import highest, lower_one, raise_one
@@ -45,7 +47,9 @@ async def test_playbook_match_auto_closes_and_cites_playbook():
 
 
 async def test_new_alert_is_triaged_and_handed_to_investigator():
-    assert await triage_agent.step("acme") == 2
+    assert (
+        await triage_agent.step("acme") == 3
+    )  # 2 alerts routed, 1 case triaged (the other is auto-closed)
     case = await _case_of("acme", "inc-c5e0")
     assert case["status"] == CaseStatus.TRIAGED
     assert case["priority"] == Priority.HIGH  # no memory hit: severity as is
@@ -103,5 +107,18 @@ async def test_joining_a_case_past_triage_does_not_move_it_back():
 
 async def test_one_bad_alert_does_not_block_the_rest():
     await _add_alert("acme", "inc-bad", severity="not-a-severity", hosts=("db-prod-01",))
-    assert await triage_agent.step("acme") == 2
+    assert await triage_agent.step("acme") == 3
     assert [a["incident_id"] for a in await graph.list_new_alerts("acme")] == ["inc-bad"]
+
+
+async def test_two_workers_at_once_triage_each_case_once(monkeypatch):
+    async def worker(name: str) -> int:
+        monkeypatch.setenv("AGENT_WORKER_ID", name)
+        return await triage_agent.step("acme")
+
+    # Interleave two workers on the same new alerts, as two containers would.
+    await asyncio.gather(worker("w1"), worker("w2"))
+    case = await _case_of("acme", "inc-c5e0")
+    triage_runs = [r for r in case["agent_runs"] if r["agent"] == "triage"]
+    assert len(triage_runs) == 1
+    assert case["status"] == CaseStatus.TRIAGED

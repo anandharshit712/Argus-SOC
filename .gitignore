@@ -24,7 +24,8 @@ htmlcov/
 node_modules/
 ui/dist/
 *.log
-!data/scenarios/*.log
+# Scenario logs are demo data, not runtime logs (Workstream A).
+!data/scenarios/**/*.log
 
 # Local graph data
 falkordb-data/

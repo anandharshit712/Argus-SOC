@@ -1,12 +1,17 @@
 """Triage agent (docs/LLD.md §6.2): turns new alerts into cases.
 
-For each new alert, oldest first:
-1. A learned playbook matches → open the case already auto-closed, citing the playbook.
-2. Otherwise read memory (closed cases, semantic facts) and correlated alerts, raise the
-   priority one step if memory says this is a known bad actor or target, open or join a
-   case, store what was read as findings and hand the case to the Investigator.
+Two phases per step, each safe with several workers running at once:
 
-Deterministic: no LLM. Stateless: everything it needs is read from the graph each step.
+1. **Route** each new alert, oldest first, with one atomic graph write: a learned playbook
+   matches → a case opened already auto-closed, citing the playbook; otherwise the alert and
+   the alerts correlated with it (shared IOC or user) go into a case, new or open.
+2. **Triage** each new case this worker can claim (`claim_case`, like the other agents): read
+   memory (closed cases, semantic facts) for every host, user and IOC in the case, take the
+   priority of its most severe alert, raise it one step if memory says this is a known bad
+   actor or target, store what was read as findings and hand the case to the Investigator.
+
+The claim makes the triage of a case happen once, even when two workers routed its alerts
+at the same moment. Deterministic, no LLM; nothing is kept between steps.
 """
 
 from typing import Any
@@ -23,7 +28,7 @@ ALERTS_PER_STEP = 20
 
 
 def memory_reasons(history: list[dict[str, Any]], facts: dict[str, dict]) -> list[str]:
-    """Why memory says this alert matters more than its severity. Empty list: no hit."""
+    """Why memory says this case matters more than its severity. Empty list: no hit."""
     threshold = get_settings().repeat_target_threshold
     reasons = [
         f"case {h['case_id']} with these entities was closed as malicious"
@@ -50,57 +55,57 @@ def memory_reasons(history: list[dict[str, Any]], facts: dict[str, dict]) -> lis
     return reasons
 
 
-async def _auto_close(tenant: str, alert: dict[str, Any], playbook: dict[str, Any]) -> int:
-    ref = PlaybookRef(name=playbook["name"], version=playbook["version"])
-    reason = f"Playbook {ref.name} v{ref.version}, learned from Case {playbook.get('source_case')}"
-    case_id = await graph.close_case_auto(tenant, [alert["incident_id"]], ref, reason)
-    await graph.record_agent_run(
-        tenant,
-        AGENT,
-        case_id,
-        f"auto-closed {alert['incident_id']} by playbook {ref.name} v{ref.version}",
-        worker=get_settings().agent_worker_id,
-    )
+async def route_alert(tenant: str, alert: dict[str, Any]) -> int:
+    """Put one alert in a case (auto-closed if a playbook matches); returns the case id.
+    Raises ValueError when another worker already put it in a closed case."""
+    worker = get_settings().agent_worker_id
+    iid = alert["incident_id"]
+    playbook = await graph.matching_playbook(tenant, alert)
+    if playbook:
+        ref = PlaybookRef(name=playbook["name"], version=playbook["version"])
+        reason = (
+            f"Playbook {ref.name} v{ref.version}, learned from Case {playbook.get('source_case')}"
+        )
+        case_id = await graph.close_case_auto(tenant, [iid], ref, reason)
+        summary = f"auto-closed {iid} by playbook {ref.name} v{ref.version}"
+        await graph.record_agent_run(tenant, AGENT, case_id, summary, worker=worker)
+        return case_id
+
+    linked = await graph.linked_alerts(tenant, iid, get_settings().correlation_window_hours)
+    case_id = await graph.open_or_join_case(tenant, [iid, *linked], Priority(alert["severity"]))
+    status = (await graph.get_case(tenant, case_id))["status"]
+    if status not in (CaseStatus.NEW, CaseStatus.TRIAGED):
+        # A late alert (e.g. the successful login) joining a case already investigated: it is
+        # recorded, never sent back through triage, so the case keeps its one decision.
+        summary = f"{iid} joined case {case_id} ({status}); not re-triaged"
+        await graph.record_agent_run(tenant, AGENT, case_id, summary, worker=worker)
     return case_id
 
 
-async def triage_alert(tenant: str, alert: dict[str, Any]) -> int:
-    """Triage one alert; returns the id of the case it ended up in."""
-    playbook = await graph.matching_playbook(tenant, alert)
-    if playbook:
-        return await _auto_close(tenant, alert, playbook)
-
-    iid = alert["incident_id"]
-    hosts, users, iocs = alert["hosts"], alert["users"], alert["iocs"]
-    history = await graph.recall(tenant, ioc=iocs, host=hosts, user=users)
-    facts = await graph.entity_facts(tenant, hosts, users, iocs)
-    linked = await graph.linked_alerts(tenant, iid, get_settings().correlation_window_hours)
-
-    reasons = memory_reasons(history, facts)
-    case_id = await graph.open_or_join_case(tenant, [iid, *linked], Priority(alert["severity"]))
+async def triage_case(tenant: str, case_id: int) -> None:
+    """Memory, priority, findings and the handoff for one claimed new case."""
     case = await graph.get_case(tenant, case_id)
-    if case["status"] != CaseStatus.NEW:
-        # Joined a case another agent already moved on. Moving it back to triaged could give
-        # it a second decision (chat log turn 19), so the alert just joins it.
-        await graph.record_agent_run(
-            tenant,
-            AGENT,
-            case_id,
-            f"{iid} joined case {case_id} ({case['status']}); not re-triaged",
-            worker=get_settings().agent_worker_id,
-        )
-        return case_id
-
+    if case is None:
+        return
+    hosts, users, iocs = case["hosts"], case["users"], case["iocs"]
+    history = [
+        h
+        for h in await graph.recall(tenant, ioc=iocs, host=hosts, user=users)
+        if h["case_id"] != case_id
+    ]
+    facts = await graph.entity_facts(tenant, hosts, users, iocs)
+    reasons = memory_reasons(history, facts)
     # The most severe alert in the case (a linked success counts), then memory: one step at most.
     severity = highest([a["severity"] for a in case["alerts"]])
     priority = raise_one(severity) if reasons else severity
+    alert_ids = [a["incident_id"] for a in case["alerts"]]
     await graph.record_findings(
         tenant,
         case_id,
         {
             "recall": history,
             "facts": facts,
-            "linked": linked,
+            "linked": alert_ids[1:],  # correlated with the first (oldest) alert
             "severity": str(severity),
             "memory_reasons": reasons,
         },
@@ -114,16 +119,17 @@ async def triage_alert(tenant: str, alert: dict[str, Any]) -> int:
         priority=priority,
         handed_to=AgentName.INVESTIGATOR,
         summary=(
-            f"{iid} triaged into case {case_id} with {len(linked)} linked alerts, "
-            f"{len(history)} past cases; priority {priority}{raised}"
+            f"case {case_id} triaged: {len(alert_ids)} alerts, {len(history)} past cases; "
+            f"priority {priority}{raised}"
         ),
     )
-    return case_id
 
 
 async def step(tenant: str) -> int:
-    """Triage the tenant's new alerts; returns how many were handled."""
+    """Route the tenant's new alerts, then triage the new cases this worker can claim.
+    Returns how many alerts and cases were handled."""
     log = get_logger(__name__, tenant=tenant, agent=AGENT)
+    settings = get_settings()
     cased: set[str] = set()  # this step only: alerts already pulled into a case as linked
     done = 0
     for alert in await graph.list_new_alerts(tenant, limit=ALERTS_PER_STEP):
@@ -131,13 +137,19 @@ async def step(tenant: str) -> int:
         if iid in cased:
             continue
         try:
-            case_id = await triage_alert(tenant, alert)
+            case_id = await route_alert(tenant, alert)
         except Exception:
-            # The alert stays 'new' and is retried next step; the others still get triaged.
-            log.exception("triage failed for %s", iid)
+            # The alert stays 'new' and is retried next step; the others still get routed.
+            # (Also the case when another worker closed it a moment ago: then it is not new.)
+            log.exception("routing failed for %s", iid)
             continue
         done += 1
-        case = await graph.get_case(tenant, case_id)
-        cased.update(a["incident_id"] for a in case["alerts"])
+        cased.update(a["incident_id"] for a in (await graph.get_case(tenant, case_id))["alerts"])
         log.info("%s -> case %s", iid, case_id, extra={"case_id": case_id})
+
+    claimer = f"{AGENT}@{settings.agent_worker_id}"
+    ttl = settings.agent_claim_ttl_seconds
+    while (case_id := await graph.claim_case(tenant, CaseStatus.NEW, claimer, ttl)) is not None:
+        await triage_case(tenant, case_id)
+        done += 1
     return done

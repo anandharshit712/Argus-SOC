@@ -1,0 +1,2 @@
+# Scenario logs are replayed into Talos byte for byte: keep LF on every checkout.
+data/scenarios/** text eol=lf
