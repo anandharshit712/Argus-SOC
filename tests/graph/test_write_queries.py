@@ -87,7 +87,8 @@ async def test_open_join_and_new_case(acme, s1):
     assert case["alert_count"] == 2 and case["priority"] == "high"  # priority set on create
     assert case["category"] == "network_brute_force" and case["status"] == NEW
     await wq.set_case_status(acme, first, CLOSED)
-    assert await wq.open_or_join_case(acme, ["inc-7f3a"], "high") == 2  # closed: new case
+    with pytest.raises(ValueError):  # its alerts were dealt with: no second case for them
+        await wq.open_or_join_case(acme, ["inc-7f3a"], "high")
 
 
 async def test_claim_is_exclusive_and_expires(acme, s1):
@@ -222,3 +223,57 @@ async def test_scenario_1_end_to_end(acme, s1):
     (summary,) = await rq.list_cases(acme, status=AWAITING_APPROVAL)
     assert (summary["id"], summary["alert_count"], summary["priority"]) == (cid, 2, "critical")
     assert summary["needs_approval"] is True and summary["auto_closed_by"] is None
+
+
+# --- Closed-case safety net, auto-close, semantic facts --------------------------------
+
+
+async def test_closed_alert_never_goes_into_a_second_case(acme, s1):
+    await wq.upsert_alert_from_report(acme, s1.brute_force)
+    await wq.upsert_alert_from_report(acme, s1.stuffing)
+    first = await wq.open_or_join_case(acme, ["inc-7f3a"], "high")
+    await wq.set_case_status(acme, first, CLOSED)
+    second = await wq.open_or_join_case(acme, ["inc-81c2", "inc-7f3a"], "medium")
+    assert second != first
+    assert [a["incident_id"] for a in (await rq.get_case(acme, second))["alerts"]] == ["inc-81c2"]
+    assert (await rq.get_case(acme, first))["alert_count"] == 1
+    with pytest.raises(ValueError):
+        await wq.open_or_join_case(acme, ["inc-7f3a"], "high")  # only closed alerts
+    with pytest.raises(ValueError):
+        await wq.open_or_join_case(acme, ["inc-unknown"], "high")
+
+
+async def test_close_case_auto(acme, s1):
+    await run(acme, f"CREATE (:{Label.PLAYBOOK} {{name: 'scanner', version: 2, active: true}})")
+    await wq.upsert_alert_from_report(acme, s1.stuffing)
+    ref = PlaybookRef(name="scanner", version=2)
+    cid = await wq.close_case_auto(acme, ["inc-81c2"], ref, "Playbook scanner v2, from case 32")
+    case = await rq.get_case(acme, cid)
+    assert (case["status"], case["priority"], case["verdict"]) == ("auto_closed", "info", "benign")
+    assert case["auto_closed_by"] == "scanner v2" and case["closed_at"]
+    assert case["closed_reason"] == "Playbook scanner v2, from case 32"
+    assert case["alert_count"] == 1 and await rq.list_new_alerts(acme) == []
+    with pytest.raises(ValueError):
+        await wq.close_case_auto(acme, ["inc-81c2"], ref, "twice")  # already auto-closed
+
+
+async def test_entity_facts(acme, s1):
+    await run(
+        acme,
+        f"MATCH (h:{Label.HOST} {{hostname: 'bastion-01'}}), (u:{Label.USER} "
+        "{username: 'svc_deploy'}), (i:IOC {value: '10.0.5.20'}) "
+        "SET h.targeted_case_ids = [31], h.last_targeted_at = 't1', "
+        "u.suspected_compromised = true, u.suspect_case_id = 31, "
+        "i.verdict = 'benign', i.owner = 'pentest', i.seen_case_ids = [32]",
+    )
+    facts = await rq.entity_facts(acme, ["bastion-01", "web-01", "nowhere"], ["svc_deploy"],
+                                  ["10.0.5.20", s1.attacker])  # fmt: skip
+    assert facts["hosts"]["bastion-01"] == {"targeted_case_ids": [31], "last_targeted_at": "t1"}
+    assert facts["hosts"]["web-01"] == {"targeted_case_ids": [], "last_targeted_at": None}
+    assert facts["hosts"]["nowhere"] == {"targeted_case_ids": [], "last_targeted_at": None}
+    user = facts["users"]["svc_deploy"]
+    assert (user["suspected_compromised"], user["suspect_case_id"]) == (True, 31)
+    assert facts["iocs"]["10.0.5.20"] == {"verdict": "benign", "owner": "pentest",
+                                          "seen_case_ids": [32]}  # fmt: skip
+    assert facts["iocs"][s1.attacker]["verdict"] == "unknown"
+    assert await rq.entity_facts(acme, [], [], []) == {"hosts": {}, "users": {}, "iocs": {}}

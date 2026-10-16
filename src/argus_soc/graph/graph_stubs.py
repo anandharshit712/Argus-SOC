@@ -48,6 +48,7 @@ from argus_soc.graph.graph_stub_data import (
     make_case,
     sample_state,
 )
+from argus_soc.graph.property_codec import canonical_condition
 
 # Re-exported so tests and teammates can use the sample values.
 __all__ = ["ATTACKER_IP", "SCANNER_IP", "SCANNER_PLAYBOOK", "SQLI_IP", "reset_stubs"]
@@ -171,20 +172,25 @@ async def recall(
 
 
 async def linked_alerts(tenant: str, incident_id: str, window_hours: int = 24) -> list[str]:
-    """Q5: other alerts sharing a host, user or IOC within the time window."""
+    """Q5: other live alerts that share an IOC or a user with this one, within the window.
+
+    A shared host alone does not link (two attackers can hit the same web server), and
+    alerts already in a closed or auto-closed case are never returned.
+    """
     s = _t(tenant)
     alert = s["alerts"].get(incident_id)
     if alert is None:
         return []
-    keys = set(alert["hosts"]) | set(alert["users"]) | set(alert["iocs"])
+    keys = set(alert["users"]) | set(alert["iocs"])
     at = datetime.fromisoformat(alert["talos_created_at"])
     window = timedelta(hours=window_hours)
     return sorted(
         other["incident_id"]
         for other in s["alerts"].values()
         if other["incident_id"] != incident_id
-        and keys & (set(other["hosts"]) | set(other["users"]) | set(other["iocs"]))
+        and keys & (set(other["users"]) | set(other["iocs"]))
         and abs(datetime.fromisoformat(other["talos_created_at"]) - at) <= window
+        and not _in_closed_case(s, other["incident_id"])
     )
 
 
@@ -290,6 +296,11 @@ async def list_cases(tenant: str, status: str | None = None, limit: int = 100) -
     return sorted(rows, key=lambda r: r["opened_at"], reverse=True)[:limit]
 
 
+def _feedback_item(f: dict[str, Any]) -> dict[str, Any]:
+    """Feedback as get_case returns it (CONTRACT_GAPS GAP-4)."""
+    return {k: f[k] for k in ("id", "verdict", "note", "analyst", "created_at")}
+
+
 async def get_case(tenant: str, case_id: int) -> dict[str, Any] | None:
     """Everything about one case, or None if there is no such case."""
     s = _t(tenant)
@@ -309,7 +320,7 @@ async def get_case(tenant: str, case_id: int) -> dict[str, Any] | None:
             "iocs": _case_entities(s, c, "iocs"),
             "findings": c["findings"],
             "decision": s["decisions"].get(c["decision_id"]) if c["decision_id"] else None,
-            "feedback": [s["feedback"][f] for f in c["feedback_ids"]],
+            "feedback": [_feedback_item(s["feedback"][f]) for f in c["feedback_ids"]],
             "agent_runs": [r for r in s["runs"] if r["case_id"] == c["id"]],
         }
     )
@@ -349,6 +360,21 @@ async def upsert_alert_from_report(tenant: str, alert: AlertInput) -> str:
     return alert.incident_id
 
 
+def _in_closed_case(s: dict[str, Any], incident_id: str) -> bool:
+    return any(
+        incident_id in c["alert_ids"] and c["status"] in (CaseStatus.CLOSED, CaseStatus.AUTO_CLOSED)
+        for c in s["cases"].values()
+    )
+
+
+def _eligible(s: dict[str, Any], incident_ids: list[str]) -> list[str]:
+    """Safety net: an alert already in a closed case never goes into another case."""
+    ids = [i for i in dict.fromkeys(incident_ids) if not _in_closed_case(s, i)]
+    if not ids:
+        raise ValueError(f"all of {list(incident_ids)} are already in closed cases")
+    return ids
+
+
 def _open_case(s: dict[str, Any], ids: list[str], status: str, priority: str, **extra: Any) -> int:
     case_id = max(s["cases"], default=0) + 1
     first = s["alerts"].get(ids[0], {}) if ids else {}
@@ -362,29 +388,32 @@ def _open_case(s: dict[str, Any], ids: list[str], status: str, priority: str, **
 
 
 async def open_or_join_case(tenant: str, incident_ids: list[str], priority: str) -> int:
-    """Add the alerts to the open case that holds one of them, or open a new case."""
+    """Add the alerts to the open case that holds one of them, or open a new case.
+    Alerts already in a closed case are left out; ValueError if that leaves none."""
     s = _t(tenant)
     Priority(priority)
+    ids = _eligible(s, incident_ids)
     for case in s["cases"].values():
-        if case["status"] in OPEN_CASE_STATUSES and set(incident_ids) & set(case["alert_ids"]):
-            case["alert_ids"] += [i for i in incident_ids if i not in case["alert_ids"]]
-            for i in incident_ids:
+        if case["status"] in OPEN_CASE_STATUSES and set(ids) & set(case["alert_ids"]):
+            case["alert_ids"] += [i for i in ids if i not in case["alert_ids"]]
+            for i in ids:
                 if i in s["alerts"]:
                     s["alerts"][i]["status"] = str(AlertStatus.CASED)
             case["updated_at"] = _now()
             return case["id"]
-    return _open_case(s, list(incident_ids), CaseStatus.NEW, priority)
+    return _open_case(s, ids, CaseStatus.NEW, priority)
 
 
 async def close_case_auto(
     tenant: str, incident_ids: list[str], playbook_ref: PlaybookRef, reason: str
 ) -> int:
-    """Open a case directly as auto_closed, citing the playbook that closed it."""
+    """Open a case directly as auto_closed, citing the playbook that closed it.
+    Alerts already in a closed case are left out; ValueError if that leaves none."""
     s = _t(tenant)
     now = _now()
     return _open_case(
         s,
-        list(incident_ids),
+        _eligible(s, incident_ids),
         CaseStatus.AUTO_CLOSED,
         Priority.INFO,
         closed_at=now,
@@ -501,11 +530,18 @@ async def record_feedback(tenant: str, case_id: int, verdict: str, note: str, an
 async def create_playbook_version(
     tenant: str, feedback_id: str, condition: dict[str, Any], action: str
 ) -> dict[str, Any]:
-    """Next version of the playbook with this condition; older versions are deactivated."""
+    """Next version of the playbook with this condition; older versions are deactivated.
+    Asking again for the same feedback returns the version it already created."""
     s = _t(tenant)
+    if feedback_id not in s["feedback"]:
+        raise KeyError(f"no feedback {feedback_id}")
     fb = s["feedback"][feedback_id]
     PlaybookAction(action)
-    same = [p for p in s["playbooks"] if p["condition"] == condition]
+    done = next((p for p in s["playbooks"] if p["learned_from"] == feedback_id), None)
+    if done:
+        return {"name": done["name"], "version": done["version"]}
+    condition = canonical_condition(condition)
+    same = [p for p in s["playbooks"] if canonical_condition(p["condition"]) == condition]
     category = condition.get("category")
     name = same[0]["name"] if same else f"auto-close {category} learned from case {fb['case_id']}"
     for p in same:
@@ -540,20 +576,20 @@ async def record_semantic_facts(tenant: str, case_id: int, facts: SemanticFactsI
     _get_case(s, case_id)
     now = _now()
     for host in facts.hosts:
-        h = s["hosts"].setdefault(host, {"targeted_case_ids": []})
+        h = s["hosts"].setdefault(host, {})
         h.setdefault("targeted_case_ids", [])
         if case_id not in h["targeted_case_ids"]:
             h["targeted_case_ids"].append(case_id)
-        h["last_targeted_at"] = now
+            h["last_targeted_at"] = now
     for ioc in facts.iocs:
         i = s["iocs"].setdefault(ioc, {})
         i.setdefault("seen_case_ids", [])
         if case_id not in i["seen_case_ids"]:
             i["seen_case_ids"].append(case_id)
     for user in facts.suspected_users:
-        s["users"].setdefault(user, {}).update(
-            suspected_compromised=True, suspected_at=now, suspect_case_id=case_id
-        )
+        u = s["users"].setdefault(user, {})
+        if u.get("suspect_case_id") != case_id or not u.get("suspected_compromised"):
+            u.update(suspected_compromised=True, suspected_at=now, suspect_case_id=case_id)
 
 
 async def record_agent_run(

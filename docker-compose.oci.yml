@@ -1,0 +1,15 @@
+# OCI override: HTTPS on ports 80/443 for ARGUS_DOMAIN. Owner: Workstream B.
+#   docker compose -f docker-compose.yml -f docker-compose.oci.yml --profile app up -d --build
+# Steps (certificate first): deploy/oci_runbook.md
+services:
+  nginx:
+    environment:
+      ARGUS_DOMAIN: ${ARGUS_DOMAIN:-}
+    volumes: !override
+      - ./deploy/nginx/proxy-common.conf:/etc/nginx/argus/proxy-common.conf:ro
+      - ./deploy/nginx/oci:/etc/nginx/templates:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    ports: !override
+      - "80:80"
+      - "443:443"

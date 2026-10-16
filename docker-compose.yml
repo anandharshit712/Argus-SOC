@@ -1,6 +1,33 @@
-# Argus SOC — local and OCI stack. Owner: Workstream B (Md Adnan Afzal).
-# Only FalkorDB for now; talos, ingestor, agents, api, ui and nginx are added as they are built.
+# Argus SOC: every service, one command. Owner: Workstream B (Md Adnan Afzal).
+#
+#   docker compose up -d                       FalkorDB + seed (works today)
+#   docker compose --profile app up -d --build the whole stack: Talos, ingestor, agents,
+#                                              API, UI and the nginx front at 127.0.0.1:8088
+#   docker compose --profile app up -d --scale agents=2   two agent workers (G11)
+#   On OCI add the override: -f docker-compose.yml -f docker-compose.oci.yml (HTTPS)
+#
+# The "app" profile holds the services whose code lives on other branches (Talos Dockerfile
+# and agents: A; API and UI: C). Drop the profile once they are on main.
+# Only nginx is published on OCI; everything else stays on the private soc-net network.
 name: argus-soc
+
+x-python-image: &python-image
+  build:
+    context: .
+    dockerfile: deploy/agents.Dockerfile
+  image: argus-soc-python:local
+
+x-env-file: &env-file
+  env_file:
+    - path: .env
+      required: false
+
+# Inside Compose the database and Talos are reached by service name, whatever .env says
+# for running Python on the host.
+x-in-network: &in-network
+  FALKORDB_HOST: falkordb
+  FALKORDB_PORT: "6379"
+  TALOS_URL: http://talos:8000
 
 services:
   falkordb:
@@ -14,8 +41,8 @@ services:
       # This image keeps its data in FALKORDB_DATA_PATH=/var/lib/falkordb/data (not /data).
       - falkordb-data:/var/lib/falkordb/data
     ports:
-      # Bound to 127.0.0.1 only: reachable from this machine (tests, seed script, Browser),
-      # never from the internet. FalkorDB has no password, so it must stay private on OCI too.
+      # 127.0.0.1 only: reachable from this machine (tests, seed script, Browser), never from
+      # the internet. FalkorDB has no password, so it must stay private on OCI too.
       - "127.0.0.1:6379:6379"   # database
       - "127.0.0.1:3000:3000"   # FalkorDB Browser (web UI)
     healthcheck:
@@ -23,6 +50,124 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks: [soc-net]
+
+  seed:
+    # One-shot: indexes + tenant inventories. Safe to run on every start (MERGE only).
+    <<: [*python-image, *env-file]
+    command: ["python", "scripts/seed_tenants.py"]
+    environment:
+      <<: *in-network
+    depends_on:
+      falkordb:
+        condition: service_healthy
+    restart: "no"
+    networks: [soc-net]
+
+  talos-postgres:
+    profiles: [app]
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: talos
+      POSTGRES_USER: talos
+      POSTGRES_PASSWORD: ${TALOS_DB_PASSWORD:-}
+    volumes:
+      - talos-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U talos -d talos"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [soc-net]
+
+  talos:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: deploy/talos/Dockerfile   # Workstream A: Talos at a pinned commit
+    restart: unless-stopped
+    environment:
+      TALOS_DB_DSN: postgresql://talos:${TALOS_DB_PASSWORD:-}@talos-postgres:5432/talos
+    depends_on:
+      talos-postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks: [soc-net]
+
+  ingestor:
+    profiles: [app]
+    <<: [*python-image, *env-file]
+    command: ["argus-ingest"]
+    restart: unless-stopped
+    environment:
+      <<: *in-network
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+      talos:
+        condition: service_healthy
+    networks: [soc-net]
+
+  agents:
+    # No container_name, so `--scale agents=2` works; each worker's id is its host name.
+    profiles: [app]
+    <<: [*python-image, *env-file]
+    command: ["argus-agents"]
+    restart: unless-stopped
+    environment:
+      <<: *in-network
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    networks: [soc-net]
+
+  api:
+    profiles: [app]
+    <<: *env-file
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    restart: unless-stopped
+    environment:
+      <<: *in-network
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    networks: [soc-net]
+
+  ui:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: deploy/ui.Dockerfile
+    restart: unless-stopped
+    networks: [soc-net]
+
+  nginx:
+    profiles: [app]
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - ./deploy/nginx/proxy-common.conf:/etc/nginx/argus/proxy-common.conf:ro
+      - ./deploy/nginx/local:/etc/nginx/templates:ro
+    ports:
+      - "127.0.0.1:8088:80"     # local: http://127.0.0.1:8088
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    networks: [soc-net]
+
+networks:
+  soc-net: {}
 
 volumes:
   falkordb-data:
+  talos-pg-data:

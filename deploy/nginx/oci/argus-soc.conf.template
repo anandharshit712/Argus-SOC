@@ -1,0 +1,32 @@
+# OCI front proxy: HTTPS for ${ARGUS_DOMAIN}; plain HTTP only redirects (and serves the
+# certificate challenge for renewals). Certificates come from the host's /etc/letsencrypt.
+server {
+    listen 80;
+    server_name ${ARGUS_DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${ARGUS_DOMAIN};
+    client_max_body_size 1m;
+
+    ssl_certificate /etc/letsencrypt/live/${ARGUS_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${ARGUS_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_session_cache shared:SSL:10m;
+
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header X-Frame-Options DENY always;
+
+    include /etc/nginx/argus/proxy-common.conf;
+}

@@ -2,8 +2,9 @@
 
 FalkorDB properties hold strings, numbers, booleans and lists of those. Nested data
 (findings, decision evidence, Talos evidence, tool calls) is stored as a JSON string and
-parsed on the way out. Timestamps are ISO 8601 strings in UTC with second precision, so
-they compare correctly as strings (claim expiry, "since" filters).
+parsed on the way out. Timestamps are ISO 8601 strings in UTC, always with microseconds,
+so they compare correctly as strings (claim expiry, "since" filters) and two agent steps in
+the same second still sort in the order they happened.
 """
 
 import json
@@ -12,11 +13,11 @@ from typing import Any
 
 
 def utc_now() -> str:
-    return datetime.now(UTC).isoformat(timespec="seconds")
+    return datetime.now(UTC).isoformat(timespec="microseconds")
 
 
 def utc_ago(seconds: float) -> str:
-    return (datetime.now(UTC) - timedelta(seconds=seconds)).isoformat(timespec="seconds")
+    return (datetime.now(UTC) - timedelta(seconds=seconds)).isoformat(timespec="microseconds")
 
 
 def _plain(value: Any) -> Any:
@@ -37,3 +38,12 @@ def from_json(text: str | None, default: Any) -> Any:
     if not text:
         return default
     return json.loads(text)
+
+
+def canonical_condition(condition: dict[str, Any]) -> dict[str, Any]:
+    """A playbook condition with list values sorted, so the same condition written in a
+    different order is recognised as the same playbook."""
+    return {
+        key: sorted(value) if isinstance(value, list | tuple | set) else value
+        for key, value in condition.items()
+    }
