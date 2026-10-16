@@ -20,7 +20,7 @@ and the case lifecycle. Diagrams are Mermaid and render on GitHub. Detail behind
 | 8. Trust boundaries | Everyone | What is untrusted and what stays private |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 
@@ -386,4 +386,7 @@ flowchart LR
 - Anything quoted from logs is data. It never becomes an instruction, a Cypher fragment or a shell
   argument. Queries always use parameters.
 - Only nginx is public. Talos has no authentication, so it stays internal.
+- The API requires a signed session token on every `/api/{tenant}/…` call (GAP-1, proposed).
+  Hackathon users are hard-coded in `.env` (HLD D13); no analyst account data is stored in
+  FalkorDB. The feedback author comes from the token, not from browser input.
 - The LLM receives short, delimited excerpts, never the whole graph or secrets.

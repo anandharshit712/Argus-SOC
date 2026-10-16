@@ -23,7 +23,7 @@ stores** (D-numbered), rounded boxes are **external entities**.
 | 10. Trust and sensitivity | Everyone | Untrusted data and what must stay private |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission (to be filled in).
+**C** = UI, API and submission (Satya).
 
 ---
 
@@ -287,9 +287,11 @@ flowchart LR
 | D1b Activity | same graph | Alert, IOC, Technique and links | P1, P4 (IOC seen in cases), P6 (IOC facts) | P3, P4, P7 | Until reset |
 | D1c Memory | same graph | Case, Decision, Feedback, Playbook, AgentRun | P3, P4, P5, P6 | P3–P7 | Until reset; survives restarts |
 | D2 Talos verdict log | PostgreSQL inside Talos | Talos IncidentReports | Talos | Talos API only | Talos's own |
+| D3 Demo users | `.env` on the server (`ARGUS_DEMO_USERS`) | Hard-coded analyst usernames, passwords, allowed tenants (D13) | Team, by hand | API login only | Until changed |
+| D4 Session token | Browser `sessionStorage` | Signed token: username, expiry | API (P7) | API guard on every call | Until the tab closes or the token expires |
 
 D1a–D1c are logical areas of one graph per tenant (`tenant_acme`, `tenant_globex`). Nothing flows
-between tenant graphs.
+between tenant graphs. D3 and D4 are never written to FalkorDB (GAP-1, proposed).
 
 ---
 
@@ -309,9 +311,10 @@ between tenant graphs.
 | F8 | Explanation prompt | prompt name, case summary, rule, ranking, delimited evidence excerpts (≤ 500 chars each) | P5 → LLM |
 | F9 | Explanation | text ≤ 1,000 chars, or none (template used) | LLM → P5 |
 | F10 | Analyst view | CaseSummary, CaseDetail (alerts, findings, decision, path, ranking, feedback, agent runs), PlaybookOut, ActivityItem | D1 → P7 → Analyst |
-| F11 | Analyst verdict | tenant, case_id, verdict (approve/reject/benign), note ≤ 500 chars, analyst | Analyst → P7 → P6 |
+| F11 | Analyst verdict | tenant, case_id, verdict (approve/reject/benign), note ≤ 500 chars, analyst (taken from the session token, not the form — GAP-1) | Analyst → P7 → P6 |
 | F12 | Learning output | Feedback node, Decision outcome, Playbook (name, version, condition, action, active), IOC verdict/owner | P6 → D1 |
 | F13 | Active playbooks | name, version, condition (category, ioc_in), source case | D1c → P3 |
+| F14 | Sign in | username, password → token, display name, allowed tenants | Analyst → P7 (checked against D3) → D4 |
 
 ---
 
@@ -325,5 +328,6 @@ between tenant graphs.
 | D2 Talos log | Internal | Talos port never published |
 | D1 tenant graphs | Internal, isolated | One graph per tenant; FalkorDB port never published |
 | Secrets (LLM key, DB passwords) | Secret | `.env` only, never in git or logs |
+| D3 demo passwords, session secret, D4 tokens | Secret | `.env` / browser only; compared with `hmac.compare_digest`; never logged |
 
 All scenario data is synthetic; external addresses use documentation IP ranges.

@@ -4,7 +4,7 @@ Every file has one owner, set by the folder it lives in. If you need a file some
 isn't listed here, add it to this document in the same pull request.
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
-**C** = UI, API and submission · **shared** = change only after telling all three.
+**C** = UI, API and submission (Satya) · **shared** = change only after telling all three.
 
 ## Tree
 
@@ -61,6 +61,8 @@ Argus-SOC/                              repository root
 │       ├── playbook_routes.py          /api/{tenant}/playbooks
 │       ├── activity_routes.py          /api/{tenant}/activity
 │       ├── api_models.py               Pydantic response shapes (this IS the UI contract)
+│       ├── auth_routes.py              /api/auth/login, /me, /logout (GAP-1, proposed)
+│       ├── session_tokens.py           sign and check session tokens (GAP-1, proposed)
 │       └── mock_data.py                mock responses until the real graph is ready
 │
 ├── ui/                                 C        framework chosen by C (React + TypeScript + Vite suggested)
@@ -102,6 +104,8 @@ Argus-SOC/                              repository root
     ├── graph_schema.md                 B
     ├── cypher_queries.md               B        Q1–Q6 with explanations (required for submission)
     ├── demo_script.md                  C
+    ├── UI_PAGES.md                     C        every UI page, field by field
+    ├── CONTRACT_GAPS.md                all      open contract gaps and who does what
     └── design/                         design doc, task split, HTML explainer
 ```
 

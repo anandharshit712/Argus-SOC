@@ -50,7 +50,7 @@ and demo scenarios are in the design doc.
 |---|---|---|
 | A. Agents + Talos integration | Harshit | `src/argus_soc/agents/`, `src/argus_soc/ingestor/`, `data/scenarios/`, `deploy/talos/` |
 | B. Database and graph | Md Adnan Afzal | `src/argus_soc/graph/`, `data/inventory/`, `deploy/`, `docker-compose.yml` |
-| C. UI, API and submission | to be filled in | `src/argus_soc/api/`, `ui/`, `docs/`, `README.md` |
+| C. UI, API and submission | Satya | `src/argus_soc/api/`, `ui/`, `docs/`, `README.md` |
 
 You own your folders: you decide how things work inside them. Anything shared (`core/`, the
 contract files, these guideline files) changes only after telling the other two.

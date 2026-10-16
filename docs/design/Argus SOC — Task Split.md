@@ -10,9 +10,9 @@ Three workstreams, one owner each. The streams meet only at three agreed interfa
 | --- | --- | --- |
 | A. Agents + Talos integration | @Harshit Anand | Talos running, ingestor, scenario logs, Triage / Investigator / Responder agents, learning logic |
 | B. Database and graph | Md Adnan Afzal | FalkorDB, schema, asset inventory, graph tools library (Q1–Q6 + writes), Docker Compose and OCI deployment |
-| C. UI, API and submission | To be chosen by the team | Backend API for the UI, analyst UI, live demo view, README, demo video |
+| C. UI, API and submission | Satya | Backend API for the UI, analyst UI, live demo view, README, demo video |
 
-B is taken by Md Adnan Afzal; the remaining teammate takes C and puts their name in this table.
+B is taken by Md Adnan Afzal and C by Satya.
 
 Reference: the design doc, "Argus SOC — FalkorDB Hackathon Design", for the full data model, queries and demo scenarios.
 
@@ -97,7 +97,7 @@ Owner: Md Adnan Afzal. Owns everything inside FalkorDB and the way the rest of t
 
 ## Workstream C — UI, API and submission
 
-Owner: to be chosen. Owns everything a judge sees: the analyst screen, the live view of the agents, and the submission package.
+Owner: Satya. Owns everything a judge sees: the analyst screen, the live view of the agents, and the submission package.
 
 **Backend API for the UI (Python, FastAPI)**
 
@@ -125,6 +125,17 @@ Owner: to be chosen. Owns everything a judge sees: the analyst screen, the live 
 - [ ] Optional: blog post for the AirPods side prize.
 
 **How:** start with the case detail screen; it carries the demo. Build against mock data that matches the agreed JSON shapes, then switch to the real API on Oct 16.
+
+## Oct 16 — contract gaps found
+
+Checking the UI against the contracts found seven gaps (login, worker and tool calls on activity,
+typed feedback, previous priority on decisions, typed findings, `APPLIED` in the docs). Each one
+names its owners and the exact change in `docs/CONTRACT_GAPS.md`; the UI spec is in
+`docs/UI_PAGES.md`. Login for the hackathon is hard-coded demo users (HLD D13).
+
+- **A:** ack GAP-5, GAP-6; Responder sets `previous_priority`; keep findings key names.
+- **B:** ack GAP-1 (settings), GAP-2…5; extend the read/write functions; draw `APPLIED`.
+- **C:** ack all; build login (GAP-1) and the model additions once agreed.
 
 ## Interface contracts
 
