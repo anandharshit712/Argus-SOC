@@ -90,6 +90,8 @@ def test_scenario_1_functions_are_real():
         "open_or_join_case", "claim_case", "set_case_status", "record_findings",
         "record_decision", "record_agent_run", "blast_radius", "paths_to_crown_jewels",
         "rank_hosts", "get_case", "list_cases",
+        # what Triage needs too (Harshit, Oct 16)
+        "matching_playbook", "recall", "entity_facts", "linked_alerts", "close_case_auto",
     }  # fmt: skip
     assert step7 <= set(REAL)
 

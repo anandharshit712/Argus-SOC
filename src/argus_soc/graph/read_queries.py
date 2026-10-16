@@ -283,18 +283,24 @@ async def recall(
     return [{**c, "note": latest.get(c["case_id"], ("", None))[1]} for c in cases]
 
 
+# Linked through a shared IOC or user (both are INVOLVES edges). A shared host alone does
+# not link: two different attackers can hit the same web server.
 _LINKED = f"""
-MATCH (a:{ALERT} {{incident_id: $id}})-[:{Rel.ON_HOST}|{Rel.INVOLVES}]->(shared)
-      <-[:{Rel.ON_HOST}|{Rel.INVOLVES}]-(b:{ALERT})
+MATCH (a:{ALERT} {{incident_id: $id}})-[:{Rel.INVOLVES}]->(shared)
+      <-[:{Rel.INVOLVES}]-(b:{ALERT})
 WHERE b <> a
+OPTIONAL MATCH (b)<-[:{Rel.CONTAINS}]-(done:{CASE}) WHERE done.status IN $closed
+WITH a, b, count(done) AS closed_cases
+WHERE closed_cases = 0
 RETURN DISTINCT b.incident_id AS id, b.talos_created_at AS at, a.talos_created_at AS origin
 """
 
 
 async def linked_alerts(tenant: str, incident_id: str, window_hours: int = 24) -> list[str]:
-    """Q5: other alerts that share a host, user or IOC with this one and were raised within
-    `window_hours` of it (either side). Sorted by incident id."""
-    rows = await run_read(tenant, _LINKED, {"id": incident_id})
+    """Q5: other live alerts that share an IOC or a user with this one and were raised
+    within `window_hours` of it (either side). Alerts in a closed or auto-closed case are
+    never returned, so Triage cannot pull a finished alert into a new case. Sorted by id."""
+    rows = await run_read(tenant, _LINKED, {"id": incident_id, "closed": _CLOSED})
     window = timedelta(hours=window_hours)
     linked = set()
     for r in rows:
@@ -415,3 +421,49 @@ async def list_activity(tenant: str, since: str | None = None) -> list[dict[str,
     each one and the Investigator's tool calls (the UI's live activity feed)."""
     rows = await run_read(tenant, _ACTIVITY, {"since": since})
     return sorted((activity_item(r["r"]) for r in rows), key=lambda r: (r["at"] or "", r["id"]))
+
+
+# ---------------------------------------------------------------------------
+# Semantic facts (LLD §4.4.1)
+# ---------------------------------------------------------------------------
+
+_HOST_FACTS = f"""
+UNWIND $names AS name
+OPTIONAL MATCH (n:{HOST} {{hostname: name}})
+RETURN name, n.targeted_case_ids AS targeted_case_ids, n.last_targeted_at AS last_targeted_at
+"""
+_USER_FACTS = f"""
+UNWIND $names AS name
+OPTIONAL MATCH (n:{USER} {{username: name}})
+RETURN name, coalesce(n.suspected_compromised, false) AS suspected_compromised,
+       n.suspected_at AS suspected_at, n.suspect_case_id AS suspect_case_id
+"""
+_IOC_FACTS = f"""
+UNWIND $names AS name
+OPTIONAL MATCH (n:{IOC} {{value: name}})
+RETURN name, coalesce(n.verdict, 'unknown') AS verdict, n.owner AS owner,
+       n.seen_case_ids AS seen_case_ids
+"""
+
+
+async def entity_facts(
+    tenant: str, hosts: list[str], users: list[str], iocs: list[str]
+) -> dict[str, dict[str, dict[str, Any]]]:
+    """What the graph remembers about these hosts, users and IOCs (semantic memory).
+    Names the graph has never seen get empty facts, so callers can read keys directly."""
+    out: dict[str, dict[str, dict[str, Any]]] = {}
+    for kind, query, names in (
+        ("hosts", _HOST_FACTS, hosts),
+        ("users", _USER_FACTS, users),
+        ("iocs", _IOC_FACTS, iocs),
+    ):
+        rows = await run_read(tenant, query, {"names": list(dict.fromkeys(names))}) if names else []
+        facts = {}
+        for row in rows:
+            name = row.pop("name")
+            for key in ("targeted_case_ids", "seen_case_ids"):
+                if key in row:
+                    row[key] = list(row[key] or [])
+            facts[name] = row
+        out[kind] = facts
+    return out

@@ -171,20 +171,25 @@ async def recall(
 
 
 async def linked_alerts(tenant: str, incident_id: str, window_hours: int = 24) -> list[str]:
-    """Q5: other alerts sharing a host, user or IOC within the time window."""
+    """Q5: other live alerts that share an IOC or a user with this one, within the window.
+
+    A shared host alone does not link (two attackers can hit the same web server), and
+    alerts already in a closed or auto-closed case are never returned.
+    """
     s = _t(tenant)
     alert = s["alerts"].get(incident_id)
     if alert is None:
         return []
-    keys = set(alert["hosts"]) | set(alert["users"]) | set(alert["iocs"])
+    keys = set(alert["users"]) | set(alert["iocs"])
     at = datetime.fromisoformat(alert["talos_created_at"])
     window = timedelta(hours=window_hours)
     return sorted(
         other["incident_id"]
         for other in s["alerts"].values()
         if other["incident_id"] != incident_id
-        and keys & (set(other["hosts"]) | set(other["users"]) | set(other["iocs"]))
+        and keys & (set(other["users"]) | set(other["iocs"]))
         and abs(datetime.fromisoformat(other["talos_created_at"]) - at) <= window
+        and not _in_closed_case(s, other["incident_id"])
     )
 
 
@@ -354,6 +359,21 @@ async def upsert_alert_from_report(tenant: str, alert: AlertInput) -> str:
     return alert.incident_id
 
 
+def _in_closed_case(s: dict[str, Any], incident_id: str) -> bool:
+    return any(
+        incident_id in c["alert_ids"] and c["status"] in (CaseStatus.CLOSED, CaseStatus.AUTO_CLOSED)
+        for c in s["cases"].values()
+    )
+
+
+def _eligible(s: dict[str, Any], incident_ids: list[str]) -> list[str]:
+    """Safety net: an alert already in a closed case never goes into another case."""
+    ids = [i for i in dict.fromkeys(incident_ids) if not _in_closed_case(s, i)]
+    if not ids:
+        raise ValueError(f"all of {list(incident_ids)} are already in closed cases")
+    return ids
+
+
 def _open_case(s: dict[str, Any], ids: list[str], status: str, priority: str, **extra: Any) -> int:
     case_id = max(s["cases"], default=0) + 1
     first = s["alerts"].get(ids[0], {}) if ids else {}
@@ -367,29 +387,32 @@ def _open_case(s: dict[str, Any], ids: list[str], status: str, priority: str, **
 
 
 async def open_or_join_case(tenant: str, incident_ids: list[str], priority: str) -> int:
-    """Add the alerts to the open case that holds one of them, or open a new case."""
+    """Add the alerts to the open case that holds one of them, or open a new case.
+    Alerts already in a closed case are left out; ValueError if that leaves none."""
     s = _t(tenant)
     Priority(priority)
+    ids = _eligible(s, incident_ids)
     for case in s["cases"].values():
-        if case["status"] in OPEN_CASE_STATUSES and set(incident_ids) & set(case["alert_ids"]):
-            case["alert_ids"] += [i for i in incident_ids if i not in case["alert_ids"]]
-            for i in incident_ids:
+        if case["status"] in OPEN_CASE_STATUSES and set(ids) & set(case["alert_ids"]):
+            case["alert_ids"] += [i for i in ids if i not in case["alert_ids"]]
+            for i in ids:
                 if i in s["alerts"]:
                     s["alerts"][i]["status"] = str(AlertStatus.CASED)
             case["updated_at"] = _now()
             return case["id"]
-    return _open_case(s, list(incident_ids), CaseStatus.NEW, priority)
+    return _open_case(s, ids, CaseStatus.NEW, priority)
 
 
 async def close_case_auto(
     tenant: str, incident_ids: list[str], playbook_ref: PlaybookRef, reason: str
 ) -> int:
-    """Open a case directly as auto_closed, citing the playbook that closed it."""
+    """Open a case directly as auto_closed, citing the playbook that closed it.
+    Alerts already in a closed case are left out; ValueError if that leaves none."""
     s = _t(tenant)
     now = _now()
     return _open_case(
         s,
-        list(incident_ids),
+        _eligible(s, incident_ids),
         CaseStatus.AUTO_CLOSED,
         Priority.INFO,
         closed_at=now,

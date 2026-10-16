@@ -19,6 +19,7 @@ from argus_soc.graph.graph_schema import (
     IocType,
     IocVerdict,
     Label,
+    PlaybookRef,
     Priority,
     Rel,
 )
@@ -95,28 +96,46 @@ async def upsert_alert_from_report(tenant: str, alert: AlertInput) -> str:
 # Cases
 # ---------------------------------------------------------------------------
 
-_OPEN_OR_JOIN = f"""
+# Safety net shared by both case-opening writes: an alert that is already in a closed or
+# auto-closed case is never put into another case. If that leaves none, the query returns
+# no row and the caller raises ValueError.
+_ELIGIBLE_ALERTS = f"""
+MATCH (a:{ALERT}) WHERE a.incident_id IN $ids
+OPTIONAL MATCH (a)<-[:{Rel.CONTAINS}]-(done:{CASE}) WHERE done.status IN $closed
+WITH a, count(done) AS closed_cases
+WHERE closed_cases = 0
+WITH collect(a) AS alerts, collect(a.incident_id) AS eligible
+WHERE size(alerts) > 0
+"""
+
+_OPEN_OR_JOIN = (
+    _ELIGIBLE_ALERTS
+    + f"""
 OPTIONAL MATCH (open:{CASE})-[:{Rel.CONTAINS}]->(x:{ALERT})
-WHERE x.incident_id IN $ids AND open.status IN $open_statuses
-WITH open ORDER BY open.id LIMIT 1
+WHERE x.incident_id IN eligible AND open.status IN $open_statuses
+WITH alerts, open ORDER BY open.id LIMIT 1
 OPTIONAL MATCH (any:{CASE})
-WITH open, coalesce(max(any.id), 0) + 1 AS next_id
+WITH alerts, open, coalesce(max(any.id), 0) + 1 AS next_id
 MERGE (c:{CASE} {{id: coalesce(open.id, next_id)}})
 ON CREATE SET c.status = '{CaseStatus.NEW}', c.priority = $priority, c.opened_at = $now,
               c.findings = '{{}}'
 SET c.updated_at = $now
-WITH c
-OPTIONAL MATCH (a:{ALERT}) WHERE a.incident_id IN $ids
-FOREACH (_ IN {_when("a IS NOT NULL")} |
-    MERGE (c)-[:{Rel.CONTAINS}]->(a)
-    SET a.status = '{AlertStatus.CASED}', c.category = coalesce(c.category, a.category))
+WITH c, alerts
+UNWIND alerts AS a
+MERGE (c)-[:{Rel.CONTAINS}]->(a)
+SET a.status = '{AlertStatus.CASED}', c.category = coalesce(c.category, a.category)
 RETURN DISTINCT c.id AS id
 """
+)
 
 
 async def open_or_join_case(tenant: str, incident_ids: list[str], priority: str) -> int:
     """Add the alerts to the open case that already holds one of them, or open a new case
-    with the next id. Either way the alerts become 'cased'."""
+    with the next id. Either way the alerts become 'cased'.
+
+    Alerts already in a closed or auto-closed case are left out (they were dealt with);
+    ValueError if that leaves no alert at all.
+    """
     rows = await run(
         tenant,
         _OPEN_OR_JOIN,
@@ -124,9 +143,55 @@ async def open_or_join_case(tenant: str, incident_ids: list[str], priority: str)
             "ids": list(incident_ids),
             "priority": str(Priority(priority)),
             "open_statuses": [str(s) for s in OPEN_CASE_STATUSES],
+            "closed": _CLOSED,
             "now": utc_now(),
         },
     )
+    if not rows:
+        raise ValueError(f"no alert of {list(incident_ids)} can go in a case: unknown or closed")
+    return rows[0]["id"]
+
+
+_CLOSE_AUTO = (
+    _ELIGIBLE_ALERTS
+    + f"""
+OPTIONAL MATCH (any:{CASE})
+WITH alerts, coalesce(max(any.id), 0) + 1 AS next_id
+CREATE (c:{CASE} {{id: next_id, status: '{CaseStatus.AUTO_CLOSED}', priority: $priority,
+                   opened_at: $now, updated_at: $now, closed_at: $now,
+                   closed_reason: $reason, verdict: 'benign', findings: '{{}}'}})
+WITH c, alerts
+OPTIONAL MATCH (p:{PLAYBOOK} {{name: $playbook_name, version: $playbook_version}})
+FOREACH (_ IN {_when("p IS NOT NULL")} | MERGE (c)-[:{Rel.APPLIED}]->(p))
+WITH c, alerts
+UNWIND alerts AS a
+MERGE (c)-[:{Rel.CONTAINS}]->(a)
+SET a.status = '{AlertStatus.CASED}', c.category = coalesce(c.category, a.category)
+RETURN DISTINCT c.id AS id
+"""
+)
+
+
+async def close_case_auto(
+    tenant: str, incident_ids: list[str], playbook_ref: PlaybookRef, reason: str
+) -> int:
+    """Open a case directly as auto_closed (benign, priority info) that cites the playbook
+    which closed it with an APPLIED edge. Same safety net as open_or_join_case."""
+    rows = await run(
+        tenant,
+        _CLOSE_AUTO,
+        {
+            "ids": list(incident_ids),
+            "closed": _CLOSED,
+            "priority": str(Priority.INFO),
+            "reason": reason,
+            "playbook_name": playbook_ref.name,
+            "playbook_version": playbook_ref.version,
+            "now": utc_now(),
+        },
+    )
+    if not rows:
+        raise ValueError(f"no alert of {list(incident_ids)} can go in a case: unknown or closed")
     return rows[0]["id"]
 
 

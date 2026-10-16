@@ -263,3 +263,42 @@ async def test_bad_values_are_rejected(call):
 async def test_missing_case_is_a_key_error():
     with pytest.raises(KeyError):
         await graph.set_case_status("acme", 999, TRIAGED)
+
+
+# --- Linking rules and the closed-case safety net (Harshit's report, Oct 16) -----------
+
+
+async def test_auto_closed_alert_is_not_pulled_into_a_new_case():
+    """inc-a412 (scanner) is auto-closed; inc-c5e0 (SQLi) on the same host must not grab it."""
+    ref = PlaybookRef(name=SCANNER_PLAYBOOK, version=1)
+    auto = await graph.close_case_auto("acme", ["inc-a412"], ref, "playbook v1")
+    assert await graph.linked_alerts("acme", "inc-c5e0") == []
+    sqli_case = await graph.open_or_join_case("acme", ["inc-c5e0", "inc-a412"], "high")
+    assert [a["incident_id"] for a in (await graph.get_case("acme", sqli_case))["alerts"]] == [
+        "inc-c5e0"
+    ]
+    assert [a["incident_id"] for a in (await graph.get_case("acme", auto))["alerts"]] == [
+        "inc-a412"
+    ]
+
+
+async def test_a_shared_host_alone_does_not_link():
+    # Both new, both on web-01, different source IPs and no users in common.
+    assert await graph.linked_alerts("acme", "inc-a412") == []
+    assert await graph.linked_alerts("acme", "inc-c5e0") == []
+
+
+async def test_closed_case_alerts_are_never_linked():
+    await graph.upsert_alert_from_report(
+        "acme", _alert("inc-again", source_ips=(SCANNER_IP,), hosts=("web-02",))
+    )
+    # inc-9b10 (case 32, closed) and inc-a412 (new) share the scanner IP; only the new one links.
+    assert await graph.linked_alerts("acme", "inc-again") == ["inc-a412"]
+
+
+async def test_cases_refuse_alerts_that_are_all_closed():
+    ref = PlaybookRef(name=SCANNER_PLAYBOOK, version=1)
+    with pytest.raises(ValueError):
+        await graph.open_or_join_case("acme", ["inc-9b10"], "low")  # case 32 is closed
+    with pytest.raises(ValueError):
+        await graph.close_case_auto("acme", ["inc-9b10"], ref, "again")

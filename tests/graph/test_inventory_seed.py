@@ -260,3 +260,18 @@ async def test_wipe_deletes_the_graph(live_db, acme):
     assert await wipe_tenant("test") is True
     assert not await graph_exists("test")
     assert await wipe_tenant("test") is False
+
+
+def test_host_names_are_unique_across_every_tenant():
+    """One shared Talos routes reports to a tenant by host name, so no name may repeat."""
+    seen: dict[str, str] = {}
+    for path in sorted(INVENTORY_DIR.glob("tenant_*_inventory.yaml")):
+        inventory = expand(load_inventory(path))
+        for host in inventory.hosts:
+            assert host.hostname not in seen, (
+                f"{host.hostname} in {seen.get(host.hostname)} and {inventory.tenant}"
+            )
+            seen[host.hostname] = inventory.tenant
+        filler = inventory.hosts[len(load_inventory(path).hosts) :]
+        assert all(h.hostname.startswith(f"{inventory.tenant}-") for h in filler)
+    assert len(seen) >= 100

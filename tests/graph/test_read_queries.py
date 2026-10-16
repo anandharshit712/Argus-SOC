@@ -158,7 +158,9 @@ async def test_explain_decision(world, s1):
 
 async def test_explain_decision_cites_the_playbook(world):
     t = world["t"]
-    cid = await wq.open_or_join_case(t, ["inc-9b10"], "low")  # scan case is closed: new case
+    again = SCAN.model_copy(update={"incident_id": "inc-a412"})  # the scanner, next day
+    await wq.upsert_alert_from_report(t, again)
+    cid = await wq.open_or_join_case(t, ["inc-a412"], "low")
     ref = PlaybookRef(name="scanner", version=2)
     cited = DecisionInput(
         rule_id="PB", actions=("auto_close",), needs_approval=False, reason="playbook", playbook=ref
@@ -188,3 +190,28 @@ async def test_get_case_feedback_is_typed(world):
     assert [f["id"] for f in case["feedback"]] == ["fb-1", "fb-2"]
     assert set(case["feedback"][0]) == {"id", "verdict", "note", "analyst", "created_at"}
     assert case["verdict"] == "benign" and case["status"] == "closed"
+
+
+async def test_shared_host_alone_does_not_link(world):
+    t = world["t"]
+    sqli = AlertInput(
+        incident_id="inc-c5e0", domain="web", category="injection", severity="high",
+        confidence=0.88, succeeded=False, talos_created_at="2026-10-15T09:20:00+00:00",
+        hosts=("web-01",), endpoints=("/api/search",), source_ips=("198.51.100.23",),
+    )  # fmt: skip
+    await wq.upsert_alert_from_report(t, sqli)  # same host as inc-9b10, nothing else shared
+    assert await rq.linked_alerts(t, "inc-c5e0") == []
+
+
+async def test_alerts_in_closed_cases_are_not_linked(world, s1):
+    """Harshit's case: the scanner alert was auto-closed; a new alert must not grab it."""
+    t = world["t"]
+    again = AlertInput(
+        incident_id="inc-a412", domain="web", category="auth_failure", severity="medium",
+        confidence=0.7, succeeded=False, talos_created_at="2026-10-15T10:00:00+00:00",
+        hosts=("web-01",), source_ips=(SCANNER,),
+    )  # fmt: skip
+    await wq.upsert_alert_from_report(t, again)  # shares the scanner IP with closed inc-9b10
+    assert await rq.linked_alerts(t, "inc-a412") == []
+    await wq.set_case_status(t, world["attack"], CLOSED)
+    assert await rq.linked_alerts(t, "inc-7f3a") == []  # inc-81c2 is closed with it now
