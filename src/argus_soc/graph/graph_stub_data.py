@@ -242,6 +242,7 @@ def _acme() -> dict[str, Any]:
         "outcome": DecisionOutcome.PENDING,
         "playbook": None,
         "agent": "responder",
+        "previous_priority": "high",
         "created_at": "2026-10-16T10:05:30+00:00",
     }
     s["feedback"]["fb-32"] = {

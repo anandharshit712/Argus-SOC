@@ -13,6 +13,7 @@ from argus_soc.graph.graph_schema import (
     INVESTIGATED,
     NEW,
     TRIAGED,
+    DecisionInput,
     Label,
     PlaybookRef,
 )
@@ -277,3 +278,40 @@ async def test_entity_facts(acme, s1):
                                           "seen_case_ids": [32]}  # fmt: skip
     assert facts["iocs"][s1.attacker]["verdict"] == "unknown"
     assert await rq.entity_facts(acme, [], [], []) == {"hosts": {}, "users": {}, "iocs": {}}
+
+
+# --- GAP-5: the priority before the decision ---------------------------------------------
+
+
+async def test_previous_priority_is_stored_and_returned(acme, s1):
+    await wq.upsert_alert_from_report(acme, s1.stuffing)
+    cid = await wq.open_or_join_case(acme, ["inc-81c2"], "high")
+    r4 = DecisionInput(rule_id="R4", actions=("open_ticket",), needs_approval=False,
+                       reason="no success, no path", previous_priority="high")  # fmt: skip
+    did = await wq.record_decision(acme, cid, r4)
+    await wq.set_case_status(acme, cid, CLOSED, "medium")  # R4 lowers one step
+    case = await rq.get_case(acme, cid)
+    assert (case["decision"]["previous_priority"], case["priority"]) == ("high", "medium")
+    assert (await rq.explain_decision(acme, did))["decision"]["previous_priority"] == "high"
+
+
+async def test_previous_priority_defaults_to_none(acme, s1):
+    await wq.upsert_alert_from_report(acme, s1.brute_force)
+    cid = await wq.open_or_join_case(acme, ["inc-7f3a"], "high")
+    await wq.record_decision(acme, cid, s1.r1)  # an older caller that does not send it
+    assert (await rq.get_case(acme, cid))["decision"]["previous_priority"] is None
+
+
+async def test_real_and_stub_decisions_have_the_same_keys(acme, s1, monkeypatch):
+    from argus_soc.core.settings import get_settings
+    from argus_soc.graph import graph_stubs
+
+    await wq.upsert_alert_from_report(acme, s1.brute_force)
+    cid = await wq.open_or_join_case(acme, ["inc-7f3a"], "high")
+    await wq.record_decision(acme, cid, s1.r1)
+    real = (await rq.get_case(acme, cid))["decision"]
+    monkeypatch.setenv("ARGUS_GRAPH_BACKEND", "stub")
+    get_settings.cache_clear()
+    graph_stubs.reset_stubs()
+    stub = (await graph_stubs.get_case("acme", 31))["decision"]
+    assert set(real) == set(stub)

@@ -63,13 +63,14 @@ async def test_scenario_3_sqli_with_no_way_in(live_db):
     assert await aq.rank_hosts(t, cid) == [("web-01", 1.0)]
     r4 = DecisionInput(rule_id="R4", actions=("block_or_rate_limit_ips", "open_ticket"),
                        needs_approval=False, reason="no success, no path",
-                       target_iocs=(SQLI_IP,))  # fmt: skip
+                       target_iocs=(SQLI_IP,), previous_priority="high")  # fmt: skip
     await wq.record_decision(t, cid, r4)
     await wq.set_case_status(t, cid, CLOSED, "medium")
 
     case = await rq.get_case(t, cid)
     assert (case["status"], case["priority"], case["needs_approval"]) == ("closed", "medium", False)
     assert case["decision"]["outcome"] == "auto" and case["decision"]["target_hosts"] == []
+    assert case["decision"]["previous_priority"] == "high"  # UI shows "high -> medium" (GAP-5)
     host = await run_read(
         t, f"MATCH (h:{Label.HOST} {{hostname: 'web-01'}}) RETURN h.isolated AS i"
     )

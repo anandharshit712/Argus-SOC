@@ -60,3 +60,7 @@ def test_values_are_plain_strings():
     # Enums go straight into Cypher text (labels) and parameters (statuses).
     assert f"(:{Label.HOST})" == "(:Host)"
     assert CaseStatus.NEW == "new"
+
+
+def test_schema_version_records_gap_5():
+    assert s.SCHEMA_VERSION == 2

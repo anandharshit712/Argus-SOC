@@ -302,3 +302,32 @@ async def test_cases_refuse_alerts_that_are_all_closed():
         await graph.open_or_join_case("acme", ["inc-9b10"], "low")  # case 32 is closed
     with pytest.raises(ValueError):
         await graph.close_case_auto("acme", ["inc-9b10"], ref, "again")
+
+
+# --- GAP-5: the priority before the decision -------------------------------------------
+
+
+async def test_sample_decision_has_previous_priority():
+    assert (await graph.get_case("acme", 31))["decision"]["previous_priority"] == "high"
+
+
+async def test_previous_priority_round_trip():
+    case_id = await graph.open_or_join_case("acme", ["inc-c5e0"], "high")
+    r4 = DecisionInput(rule_id="R4", actions=("open_ticket",), needs_approval=False,
+                       reason="no success, no path", previous_priority="high")  # fmt: skip
+    await graph.record_decision("acme", case_id, r4)
+    await graph.set_case_status("acme", case_id, "closed", "medium")
+    case = await graph.get_case("acme", case_id)
+    assert (case["decision"]["previous_priority"], case["priority"]) == ("high", "medium")
+    explained = await graph.explain_decision("acme", case["decision"]["id"])
+    assert explained["decision"]["previous_priority"] == "high"
+
+
+def test_previous_priority_is_optional_and_checked():
+    assert (
+        DecisionInput(rule_id="R1", actions=(), needs_approval=True, reason="x").previous_priority
+        is None
+    )
+    with pytest.raises(ValidationError):
+        DecisionInput(rule_id="R1", actions=(), needs_approval=True, reason="x",
+                      previous_priority="urgent")  # fmt: skip
