@@ -1,0 +1,3684 @@
+[
+  {
+    "incident_id": "2cb917887ced4793aaadd3097fc25d30",
+    "created_at": "2026-10-16T07:53:43.544043Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-03 against deploy over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "eafb9b8393994aa48872bbdf2ae6fe1f",
+        "event_ids": [
+          "28c00b6f41894873bbd324c5ed5ba64a",
+          "030d3347c3f545269ba2727b6fc458e2",
+          "9f361a4f8b814c458d25bfbc36eb797b",
+          "f722b0ed7a234a2c92db7323b395e55f",
+          "d0f787fb528f45d4b386273b464816ea",
+          "e48b32944f6a4b2489ac9a3a863e9808",
+          "96f7a86047454c44bc57cba0b1dec055",
+          "fa0b0ce935f24b1ea7024600038866ba"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "deploy"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:00:05Z",
+          "window_end": "2026-10-01T13:00:59Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-03|deploy within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "28c00b6f41894873bbd324c5ed5ba64a",
+              "030d3347c3f545269ba2727b6fc458e2",
+              "9f361a4f8b814c458d25bfbc36eb797b",
+              "f722b0ed7a234a2c92db7323b395e55f",
+              "d0f787fb528f45d4b386273b464816ea",
+              "e48b32944f6a4b2489ac9a3a863e9808",
+              "96f7a86047454c44bc57cba0b1dec055",
+              "fa0b0ce935f24b1ea7024600038866ba"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:00:05 app-03 sshd[8721]: Failed password for deploy from 198.51.100.41 port 49437 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:00:12 app-03 sshd[8749]: Failed password for deploy from 198.51.100.41 port 49455 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:00:22 app-03 sshd[8750]: Failed password for deploy from 198.51.100.41 port 49503 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted deploy on app-03 within 120 seconds, from 198.51.100.41. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.543897Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "deploy"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:00:05Z",
+      "window_end": "2026-10-01T13:00:59Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.41 at the perimeter",
+      "review authentication history for deploy on app-03"
+    ]
+  },
+  {
+    "incident_id": "57f106547e0f46008813b384e3db8dc3",
+    "created_at": "2026-10-16T07:53:43.580582Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-04 against root over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "1d801681ccda4bc49a6988d2b6fc9630",
+        "event_ids": [
+          "1cc1e25f88dd4e7da8f00822644a434b",
+          "7a1304b60b0548c8a2731323b4b5c684",
+          "daecc25bd349424cbe3dfffd50767e0d",
+          "780ab07ece634a6b95b374ad5ab96fdf",
+          "5c722393ef384806ad01f5b1f5d7398a",
+          "dff9ed414bc24e5a8db3b9b8c1aab247",
+          "ed8374a2084c414198916d101d102201",
+          "154069d78de847e3afb834696ec9b483"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "root"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-04"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:01:30Z",
+          "window_end": "2026-10-01T13:02:17Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-04|root within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "1cc1e25f88dd4e7da8f00822644a434b",
+              "7a1304b60b0548c8a2731323b4b5c684",
+              "daecc25bd349424cbe3dfffd50767e0d",
+              "780ab07ece634a6b95b374ad5ab96fdf",
+              "5c722393ef384806ad01f5b1f5d7398a",
+              "dff9ed414bc24e5a8db3b9b8c1aab247",
+              "ed8374a2084c414198916d101d102201",
+              "154069d78de847e3afb834696ec9b483"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:01:30 app-04 sshd[8826]: Failed password for root from 198.51.100.42 port 49759 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:01:40 app-04 sshd[8858]: Failed password for root from 198.51.100.42 port 49767 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:01:49 app-04 sshd[8888]: Failed password for root from 198.51.100.42 port 49817 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted root on app-04 within 120 seconds, from 198.51.100.42. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.580480Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "root"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-04"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:01:30Z",
+      "window_end": "2026-10-01T13:02:17Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.42 at the perimeter",
+      "review authentication history for root on app-04"
+    ]
+  },
+  {
+    "incident_id": "f86d53fc894740b0bfe515455238ae1b",
+    "created_at": "2026-10-16T07:53:43.607155Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-05 against ubuntu over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "2aa245d391ed49378277d0429955ade3",
+        "event_ids": [
+          "08cda1f111ce4866aaeccdbda3c8d72e",
+          "11f2aab465b64e87a8bb7f681a049ddb",
+          "8a15894d62e548f89913ebdcd3a785f2",
+          "73098694ab2d40279c42c864bac9c555",
+          "11a27b0537124113bf629aececd55e2f",
+          "c72870ae78a142f7ad929a1fe164ac44",
+          "218388ba67d1454b91b38d090d9cc9b1",
+          "caf69aef637d4aa0b5d019fbcceadcc0"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "ubuntu"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-05"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:02:10Z",
+          "window_end": "2026-10-01T13:03:02Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-05|ubuntu within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "08cda1f111ce4866aaeccdbda3c8d72e",
+              "11f2aab465b64e87a8bb7f681a049ddb",
+              "8a15894d62e548f89913ebdcd3a785f2",
+              "73098694ab2d40279c42c864bac9c555",
+              "11a27b0537124113bf629aececd55e2f",
+              "c72870ae78a142f7ad929a1fe164ac44",
+              "218388ba67d1454b91b38d090d9cc9b1",
+              "caf69aef637d4aa0b5d019fbcceadcc0"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:10 app-05 sshd[9066]: Failed password for ubuntu from 198.51.100.43 port 50008 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:15 app-05 sshd[9099]: Failed password for ubuntu from 198.51.100.43 port 50027 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:21 app-05 sshd[9134]: Failed password for ubuntu from 198.51.100.43 port 50077 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted ubuntu on app-05 within 120 seconds, from 198.51.100.43. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.607059Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "ubuntu"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-05"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:02:10Z",
+      "window_end": "2026-10-01T13:03:02Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.43 at the perimeter",
+      "review authentication history for ubuntu on app-05"
+    ]
+  },
+  {
+    "incident_id": "3be9387eeea84fae85963ae7d9111ec0",
+    "created_at": "2026-10-16T07:53:43.615101Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-05 against ubuntu over 8 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "953eebe691744437b25f1d87c9c8543a",
+        "event_ids": [
+          "08cda1f111ce4866aaeccdbda3c8d72e",
+          "11f2aab465b64e87a8bb7f681a049ddb",
+          "8a15894d62e548f89913ebdcd3a785f2",
+          "73098694ab2d40279c42c864bac9c555",
+          "11a27b0537124113bf629aececd55e2f",
+          "c72870ae78a142f7ad929a1fe164ac44",
+          "218388ba67d1454b91b38d090d9cc9b1",
+          "caf69aef637d4aa0b5d019fbcceadcc0",
+          "f99e20f63dfd4d04942ec43fe0c8e7fb"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "ubuntu"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-05"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:02:10Z",
+          "window_end": "2026-10-01T13:03:09Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-05|ubuntu within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "08cda1f111ce4866aaeccdbda3c8d72e",
+              "11f2aab465b64e87a8bb7f681a049ddb",
+              "8a15894d62e548f89913ebdcd3a785f2",
+              "73098694ab2d40279c42c864bac9c555",
+              "11a27b0537124113bf629aececd55e2f",
+              "c72870ae78a142f7ad929a1fe164ac44",
+              "218388ba67d1454b91b38d090d9cc9b1",
+              "caf69aef637d4aa0b5d019fbcceadcc0",
+              "f99e20f63dfd4d04942ec43fe0c8e7fb"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:10 app-05 sshd[9066]: Failed password for ubuntu from 198.51.100.43 port 50008 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:15 app-05 sshd[9099]: Failed password for ubuntu from 198.51.100.43 port 50027 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:21 app-05 sshd[9134]: Failed password for ubuntu from 198.51.100.43 port 50077 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for ubuntu followed the failed burst",
+            "references": [
+              "08cda1f111ce4866aaeccdbda3c8d72e",
+              "11f2aab465b64e87a8bb7f681a049ddb",
+              "8a15894d62e548f89913ebdcd3a785f2",
+              "73098694ab2d40279c42c864bac9c555",
+              "11a27b0537124113bf629aececd55e2f",
+              "c72870ae78a142f7ad929a1fe164ac44",
+              "218388ba67d1454b91b38d090d9cc9b1",
+              "caf69aef637d4aa0b5d019fbcceadcc0",
+              "f99e20f63dfd4d04942ec43fe0c8e7fb"
+            ]
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted ubuntu on app-05 within 120 seconds, from 198.51.100.43. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.614904Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "ubuntu"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-05"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:02:10Z",
+      "window_end": "2026-10-01T13:03:09Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.43 at the perimeter",
+      "review authentication history for ubuntu on app-05",
+      "rotate credentials for ubuntu -- the attempt succeeded",
+      "hunt for follow-on activity on app-05"
+    ]
+  },
+  {
+    "incident_id": "33132b3410e340adaf276357f19d89d8",
+    "created_at": "2026-10-16T07:53:43.652108Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-06 against git over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "581dfa5e8d464a219d4be824537db420",
+        "event_ids": [
+          "c39a206e615748f1a0cfbec1a59a355c",
+          "c8788db43ff14bdbbf21d966e0f8fb1a",
+          "22a302ccb34349df865e0e1792f6cf03",
+          "1db8fe1d5dc2477fadd2a651d23b0063",
+          "e4c5880f48df4dc4bb0b811b897be193",
+          "d4da69d4bbec4f648a55dc23e10d86f1",
+          "1ce456088e464b76b63cfc33edf9ab7f",
+          "f7abd369eb4b4f718d59f51e3d3d746a"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "git"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-06"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:04:45Z",
+          "window_end": "2026-10-01T13:05:28Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-06|git within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "c39a206e615748f1a0cfbec1a59a355c",
+              "c8788db43ff14bdbbf21d966e0f8fb1a",
+              "22a302ccb34349df865e0e1792f6cf03",
+              "1db8fe1d5dc2477fadd2a651d23b0063",
+              "e4c5880f48df4dc4bb0b811b897be193",
+              "d4da69d4bbec4f648a55dc23e10d86f1",
+              "1ce456088e464b76b63cfc33edf9ab7f",
+              "f7abd369eb4b4f718d59f51e3d3d746a"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:04:45 app-06 sshd[9276]: Failed password for git from 198.51.100.44 port 50370 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:04:49 app-06 sshd[9304]: Failed password for git from 198.51.100.44 port 50389 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:04:53 app-06 sshd[9341]: Failed password for git from 198.51.100.44 port 50434 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted git on app-06 within 120 seconds, from 198.51.100.44. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.652009Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "git"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-06"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:04:45Z",
+      "window_end": "2026-10-01T13:05:28Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.44 at the perimeter",
+      "review authentication history for git on app-06"
+    ]
+  },
+  {
+    "incident_id": "f341d7007d35433ea2368ed88fed8088",
+    "created_at": "2026-10-16T07:53:43.676724Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on build-01 against jenkins over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "afc6fafdc32b40d88243f531af6457e4",
+        "event_ids": [
+          "c6338500814849e6b2cfd452e1b882ec",
+          "1be94e747a284e878645f9a500ce28a3",
+          "88fb660a636d4a6ead0a7fa0ee5c70a7",
+          "bc47718de9d94ff39dff15ebdea1e074",
+          "92ae8c3249a0450cbd59f0276ed6b4c9",
+          "0738d1bb8ce64f6f946514ca5021b639",
+          "82463763094249ce98892a3023c06974",
+          "28125a2359314cb4ac16a9d12c95deae"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "jenkins"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "build-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:05:00Z",
+          "window_end": "2026-10-01T13:05:49Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for build-01|jenkins within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "c6338500814849e6b2cfd452e1b882ec",
+              "1be94e747a284e878645f9a500ce28a3",
+              "88fb660a636d4a6ead0a7fa0ee5c70a7",
+              "bc47718de9d94ff39dff15ebdea1e074",
+              "92ae8c3249a0450cbd59f0276ed6b4c9",
+              "0738d1bb8ce64f6f946514ca5021b639",
+              "82463763094249ce98892a3023c06974",
+              "28125a2359314cb4ac16a9d12c95deae"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:00 build-01 sshd[9617]: Failed password for jenkins from 198.51.100.45 port 50701 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:05 build-01 sshd[9634]: Failed password for jenkins from 198.51.100.45 port 50716 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:12 build-01 sshd[9644]: Failed password for jenkins from 198.51.100.45 port 50725 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted jenkins on build-01 within 120 seconds, from 198.51.100.45. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.676585Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "jenkins"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "build-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:05:00Z",
+      "window_end": "2026-10-01T13:05:49Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.45 at the perimeter",
+      "review authentication history for jenkins on build-01"
+    ]
+  },
+  {
+    "incident_id": "b0e981094e7a44c2909427003216747d",
+    "created_at": "2026-10-16T07:53:43.691598Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on build-01 against jenkins over 9 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "1319e890813b4c749d5d19ed12251798",
+        "event_ids": [
+          "c6338500814849e6b2cfd452e1b882ec",
+          "1be94e747a284e878645f9a500ce28a3",
+          "88fb660a636d4a6ead0a7fa0ee5c70a7",
+          "bc47718de9d94ff39dff15ebdea1e074",
+          "92ae8c3249a0450cbd59f0276ed6b4c9",
+          "0738d1bb8ce64f6f946514ca5021b639",
+          "82463763094249ce98892a3023c06974",
+          "28125a2359314cb4ac16a9d12c95deae",
+          "2400c619ac5a48b8beb779c0674fa4a8",
+          "2188eabb9ff54e47be6287e81259feaa"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "jenkins"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "build-01"
+          ],
+          "attempt_count": 9,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:05:00Z",
+          "window_end": "2026-10-01T13:05:59Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "9 failed ssh authentications for build-01|jenkins within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "c6338500814849e6b2cfd452e1b882ec",
+              "1be94e747a284e878645f9a500ce28a3",
+              "88fb660a636d4a6ead0a7fa0ee5c70a7",
+              "bc47718de9d94ff39dff15ebdea1e074",
+              "92ae8c3249a0450cbd59f0276ed6b4c9",
+              "0738d1bb8ce64f6f946514ca5021b639",
+              "82463763094249ce98892a3023c06974",
+              "28125a2359314cb4ac16a9d12c95deae",
+              "2400c619ac5a48b8beb779c0674fa4a8",
+              "2188eabb9ff54e47be6287e81259feaa"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:00 build-01 sshd[9617]: Failed password for jenkins from 198.51.100.45 port 50701 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:05 build-01 sshd[9634]: Failed password for jenkins from 198.51.100.45 port 50716 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:05:12 build-01 sshd[9644]: Failed password for jenkins from 198.51.100.45 port 50725 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for jenkins followed the failed burst",
+            "references": [
+              "c6338500814849e6b2cfd452e1b882ec",
+              "1be94e747a284e878645f9a500ce28a3",
+              "88fb660a636d4a6ead0a7fa0ee5c70a7",
+              "bc47718de9d94ff39dff15ebdea1e074",
+              "92ae8c3249a0450cbd59f0276ed6b4c9",
+              "0738d1bb8ce64f6f946514ca5021b639",
+              "82463763094249ce98892a3023c06974",
+              "28125a2359314cb4ac16a9d12c95deae",
+              "2400c619ac5a48b8beb779c0674fa4a8",
+              "2188eabb9ff54e47be6287e81259feaa"
+            ]
+          }
+        ],
+        "reasoning": "9 failed SSH authentications targeted jenkins on build-01 within 120 seconds, from 198.51.100.45. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.691477Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "jenkins"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "build-01"
+      ],
+      "attempt_count": 9,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:05:00Z",
+      "window_end": "2026-10-01T13:05:59Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.45 at the perimeter",
+      "review authentication history for jenkins on build-01",
+      "rotate credentials for jenkins -- the attempt succeeded",
+      "hunt for follow-on activity on build-01"
+    ]
+  },
+  {
+    "incident_id": "581932d4502f436791c01274e5e6f419",
+    "created_at": "2026-10-16T07:53:43.733164Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on mail-01 against postfix over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "63a2ff62f8124f5aad30d41b7de4ead2",
+        "event_ids": [
+          "2d289fcf8c424027bea81b5ceb362041",
+          "1797e6f0f772427ca6b24901ef9f9524",
+          "61f7cecb430f42d090eb111cacf0aed1",
+          "771027014c9f48d7aba81c6b4f312cfb",
+          "009a6c15e35548989b16aca560bdb167",
+          "58036f27c4e049bfb5d877c63b5bad80",
+          "7e083abe574d4699b77efc0f5239ca2b",
+          "c36cf258abe24c6ca14a8f031333251d"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "postfix"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "mail-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:08:20Z",
+          "window_end": "2026-10-01T13:09:08Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for mail-01|postfix within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "2d289fcf8c424027bea81b5ceb362041",
+              "1797e6f0f772427ca6b24901ef9f9524",
+              "61f7cecb430f42d090eb111cacf0aed1",
+              "771027014c9f48d7aba81c6b4f312cfb",
+              "009a6c15e35548989b16aca560bdb167",
+              "58036f27c4e049bfb5d877c63b5bad80",
+              "7e083abe574d4699b77efc0f5239ca2b",
+              "c36cf258abe24c6ca14a8f031333251d"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:08:20 mail-01 sshd[9821]: Failed password for postfix from 198.51.100.46 port 50952 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:08:30 mail-01 sshd[9850]: Failed password for postfix from 198.51.100.46 port 50966 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:08:34 mail-01 sshd[9882]: Failed password for postfix from 198.51.100.46 port 51006 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted postfix on mail-01 within 120 seconds, from 198.51.100.46. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.733075Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "postfix"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "mail-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:08:20Z",
+      "window_end": "2026-10-01T13:09:08Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.46 at the perimeter",
+      "review authentication history for postfix on mail-01"
+    ]
+  },
+  {
+    "incident_id": "e171d1e8232548a7b2b892653f9a80cc",
+    "created_at": "2026-10-16T07:53:43.761307Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on files-01 against backup over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "11b1fad0088c431d983c41111cb2b1b0",
+        "event_ids": [
+          "651765e3bad3477daff992ea8feb90ca",
+          "84b2ba79ba5f40b0bcf02f5815678e33",
+          "a57fff56406249c681b57dd77d60c3c6",
+          "77746a628488405580efcc6c2989f3bb",
+          "a53907f58a3948c685bf8414ca069e69",
+          "ec963ba10bad46abb27def9f27718e8b",
+          "364c89a758fb48e2840bd0c212d2f412",
+          "2fb9edd14651470aa02e8d88be2874fd"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "backup"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "files-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:10:00Z",
+          "window_end": "2026-10-01T13:10:48Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for files-01|backup within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "651765e3bad3477daff992ea8feb90ca",
+              "84b2ba79ba5f40b0bcf02f5815678e33",
+              "a57fff56406249c681b57dd77d60c3c6",
+              "77746a628488405580efcc6c2989f3bb",
+              "a53907f58a3948c685bf8414ca069e69",
+              "ec963ba10bad46abb27def9f27718e8b",
+              "364c89a758fb48e2840bd0c212d2f412",
+              "2fb9edd14651470aa02e8d88be2874fd"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:10:00 files-01 sshd[9978]: Failed password for backup from 198.51.100.47 port 51182 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:10:05 files-01 sshd[10016]: Failed password for backup from 198.51.100.47 port 51237 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:10:14 files-01 sshd[10056]: Failed password for backup from 198.51.100.47 port 51277 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted backup on files-01 within 120 seconds, from 198.51.100.47. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.761221Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "backup"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "files-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:10:00Z",
+      "window_end": "2026-10-01T13:10:48Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.47 at the perimeter",
+      "review authentication history for backup on files-01"
+    ]
+  },
+  {
+    "incident_id": "31778aef1cf14d6aa0d5fd4c2b934c1b",
+    "created_at": "2026-10-16T07:53:43.800808Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on jump-02 against admin over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "b876a8f95a664fc48f267e87b1aa056e",
+        "event_ids": [
+          "767a78fed46543f39ad19e8981e3f70a",
+          "fd0a910d81634d1bb944cfd063500c4c",
+          "da020445c1c749a4a33ebde4d528d3dd",
+          "4a41321534914ad188f4fa3ad735da83",
+          "dfce5766b0b245a3af817186f13d4e7c",
+          "e343e0855db743d0aa1f43f61af569d0",
+          "e23fb2ce94f146209a99688cccc48f85",
+          "cdd170ae4fb94749829914aada17f04b"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "admin"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "jump-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:12:40Z",
+          "window_end": "2026-10-01T13:13:36Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for jump-02|admin within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "767a78fed46543f39ad19e8981e3f70a",
+              "fd0a910d81634d1bb944cfd063500c4c",
+              "da020445c1c749a4a33ebde4d528d3dd",
+              "4a41321534914ad188f4fa3ad735da83",
+              "dfce5766b0b245a3af817186f13d4e7c",
+              "e343e0855db743d0aa1f43f61af569d0",
+              "e23fb2ce94f146209a99688cccc48f85",
+              "cdd170ae4fb94749829914aada17f04b"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:40 jump-02 sshd[10264]: Failed password for admin from 198.51.100.48 port 51601 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:47 jump-02 sshd[10281]: Failed password for admin from 198.51.100.48 port 51633 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:57 jump-02 sshd[10311]: Failed password for admin from 198.51.100.48 port 51666 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted admin on jump-02 within 120 seconds, from 198.51.100.48. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.800684Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "admin"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "jump-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:12:40Z",
+      "window_end": "2026-10-01T13:13:36Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.48 at the perimeter",
+      "review authentication history for admin on jump-02"
+    ]
+  },
+  {
+    "incident_id": "736041af12d34731a4366cceb8f575e4",
+    "created_at": "2026-10-16T07:53:43.814721Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on jump-02 against admin over 10 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "1b155c01fdc74ed3800c70316443b6a4",
+        "event_ids": [
+          "767a78fed46543f39ad19e8981e3f70a",
+          "fd0a910d81634d1bb944cfd063500c4c",
+          "da020445c1c749a4a33ebde4d528d3dd",
+          "4a41321534914ad188f4fa3ad735da83",
+          "dfce5766b0b245a3af817186f13d4e7c",
+          "e343e0855db743d0aa1f43f61af569d0",
+          "e23fb2ce94f146209a99688cccc48f85",
+          "cdd170ae4fb94749829914aada17f04b",
+          "0dc06b21d5314ca09130d7a14f4cdc7c",
+          "968cbbfddc7149ba848fef0d2d9e5d19",
+          "18c3cc6715054a95a34b8a8b3f511783"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "admin"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "jump-02"
+          ],
+          "attempt_count": 10,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:12:40Z",
+          "window_end": "2026-10-01T13:13:56Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "10 failed ssh authentications for jump-02|admin within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "767a78fed46543f39ad19e8981e3f70a",
+              "fd0a910d81634d1bb944cfd063500c4c",
+              "da020445c1c749a4a33ebde4d528d3dd",
+              "4a41321534914ad188f4fa3ad735da83",
+              "dfce5766b0b245a3af817186f13d4e7c",
+              "e343e0855db743d0aa1f43f61af569d0",
+              "e23fb2ce94f146209a99688cccc48f85",
+              "cdd170ae4fb94749829914aada17f04b",
+              "0dc06b21d5314ca09130d7a14f4cdc7c",
+              "968cbbfddc7149ba848fef0d2d9e5d19",
+              "18c3cc6715054a95a34b8a8b3f511783"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:40 jump-02 sshd[10264]: Failed password for admin from 198.51.100.48 port 51601 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:47 jump-02 sshd[10281]: Failed password for admin from 198.51.100.48 port 51633 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:12:57 jump-02 sshd[10311]: Failed password for admin from 198.51.100.48 port 51666 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for admin followed the failed burst",
+            "references": [
+              "767a78fed46543f39ad19e8981e3f70a",
+              "fd0a910d81634d1bb944cfd063500c4c",
+              "da020445c1c749a4a33ebde4d528d3dd",
+              "4a41321534914ad188f4fa3ad735da83",
+              "dfce5766b0b245a3af817186f13d4e7c",
+              "e343e0855db743d0aa1f43f61af569d0",
+              "e23fb2ce94f146209a99688cccc48f85",
+              "cdd170ae4fb94749829914aada17f04b",
+              "0dc06b21d5314ca09130d7a14f4cdc7c",
+              "968cbbfddc7149ba848fef0d2d9e5d19",
+              "18c3cc6715054a95a34b8a8b3f511783"
+            ]
+          }
+        ],
+        "reasoning": "10 failed SSH authentications targeted admin on jump-02 within 120 seconds, from 198.51.100.48. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.814526Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "admin"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "jump-02"
+      ],
+      "attempt_count": 10,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:12:40Z",
+      "window_end": "2026-10-01T13:13:56Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.48 at the perimeter",
+      "review authentication history for admin on jump-02",
+      "rotate credentials for admin -- the attempt succeeded",
+      "hunt for follow-on activity on jump-02"
+    ]
+  },
+  {
+    "incident_id": "9be7ceebffe54da39e77a590d18f20c8",
+    "created_at": "2026-10-16T07:53:43.862844Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-03 against oracle over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "d421b3fc837c4f4fa52a9fbc71fab40d",
+        "event_ids": [
+          "818085165a624dd1a837d2e29993548d",
+          "f03fb05ace194e25b1392c46b9064442",
+          "e491afe1968743da9fbfdf30b58c6a79",
+          "7f3a649932114cf78e3163f753803c94",
+          "b4278a8f93114fac87ebcb3da935bd48",
+          "040b97c5c0ee41339a17144417d7266b",
+          "3e8bc332421f469e987333997402131d",
+          "1572e5f005f94f9ba0747dced07dd786"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "oracle"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:15:00Z",
+          "window_end": "2026-10-01T13:15:50Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-03|oracle within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "818085165a624dd1a837d2e29993548d",
+              "f03fb05ace194e25b1392c46b9064442",
+              "e491afe1968743da9fbfdf30b58c6a79",
+              "7f3a649932114cf78e3163f753803c94",
+              "b4278a8f93114fac87ebcb3da935bd48",
+              "040b97c5c0ee41339a17144417d7266b",
+              "3e8bc332421f469e987333997402131d",
+              "1572e5f005f94f9ba0747dced07dd786"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:00 app-03 sshd[10446]: Failed password for oracle from 203.0.113.51 port 51878 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:07 app-03 sshd[10458]: Failed password for oracle from 203.0.113.51 port 51897 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:17 app-03 sshd[10482]: Failed password for oracle from 203.0.113.51 port 51927 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted oracle on app-03 within 120 seconds, from 203.0.113.51. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.862624Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "oracle"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:15:00Z",
+      "window_end": "2026-10-01T13:15:50Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.51 at the perimeter",
+      "review authentication history for oracle on app-03"
+    ]
+  },
+  {
+    "incident_id": "69743ce5132e4fc083e3b3968e5f03f3",
+    "created_at": "2026-10-16T07:53:43.888744Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on app-04 against test over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "cb37d9adf6f54439b22dad29fd713fe6",
+        "event_ids": [
+          "164f7af8807a40d180db026a30535a07",
+          "4c54d2a5a7de459086ef77574882743f",
+          "650bfa4b3e994ecc9be8ccac7c2cdec8",
+          "e59d33c93e2b4f30b834cdcc1e969c4a",
+          "38cb097cf3384b6eb6b2964f832ea812",
+          "71a44359a39e41868abbffb25a12c15f",
+          "0d8be1426fa5480ebb18527e19ec0b44",
+          "10071f8dbe80414b87a7039793cba250"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "test"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "app-04"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:15:30Z",
+          "window_end": "2026-10-01T13:16:19Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for app-04|test within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "164f7af8807a40d180db026a30535a07",
+              "4c54d2a5a7de459086ef77574882743f",
+              "650bfa4b3e994ecc9be8ccac7c2cdec8",
+              "e59d33c93e2b4f30b834cdcc1e969c4a",
+              "38cb097cf3384b6eb6b2964f832ea812",
+              "71a44359a39e41868abbffb25a12c15f",
+              "0d8be1426fa5480ebb18527e19ec0b44",
+              "10071f8dbe80414b87a7039793cba250"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:30 app-04 sshd[10614]: Failed password for test from 203.0.113.52 port 52169 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:36 app-04 sshd[10651]: Failed password for test from 203.0.113.52 port 52172 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:15:46 app-04 sshd[10682]: Failed password for test from 203.0.113.52 port 52217 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted test on app-04 within 120 seconds, from 203.0.113.52. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.888601Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "test"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "app-04"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:15:30Z",
+      "window_end": "2026-10-01T13:16:19Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.52 at the perimeter",
+      "review authentication history for test on app-04"
+    ]
+  },
+  {
+    "incident_id": "564b31ed0b3446308d8097aeb80e20d7",
+    "created_at": "2026-10-16T07:53:43.924286Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on build-01 against ci_runner over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "a1d7303ce3bc413abac989e2af066961",
+        "event_ids": [
+          "25e218b180cf4bcc9064f68c4cd54631",
+          "5725d1c2edd84634bc4d041ab66ad049",
+          "fe9051b3c03a4b70b95a5be352828c33",
+          "28d7716a316149369efd053bb1460730",
+          "a80c0af346b34be58b75aaa842ead3de",
+          "bcb10c2373ec4cf1b4b3d3878e576465",
+          "a704e22c7e034a10a8d1d13f6734c894",
+          "f4b401152e804076bf2df6033ea0afa6"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "ci_runner"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "build-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:20:00Z",
+          "window_end": "2026-10-01T13:20:49Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for build-01|ci_runner within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "25e218b180cf4bcc9064f68c4cd54631",
+              "5725d1c2edd84634bc4d041ab66ad049",
+              "fe9051b3c03a4b70b95a5be352828c33",
+              "28d7716a316149369efd053bb1460730",
+              "a80c0af346b34be58b75aaa842ead3de",
+              "bcb10c2373ec4cf1b4b3d3878e576465",
+              "a704e22c7e034a10a8d1d13f6734c894",
+              "f4b401152e804076bf2df6033ea0afa6"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:20:00 build-01 sshd[10844]: Failed password for ci_runner from 203.0.113.53 port 52527 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:20:10 build-01 sshd[10874]: Failed password for ci_runner from 203.0.113.53 port 52539 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:20:18 build-01 sshd[10900]: Failed password for ci_runner from 203.0.113.53 port 52555 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted ci_runner on build-01 within 120 seconds, from 203.0.113.53. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.924085Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "ci_runner"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "build-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:20:00Z",
+      "window_end": "2026-10-01T13:20:49Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.53 at the perimeter",
+      "review authentication history for ci_runner on build-01"
+    ]
+  },
+  {
+    "incident_id": "8c70bdda251c42f28f51b4b87095f630",
+    "created_at": "2026-10-16T07:53:43.978138Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on files-01 against svc_backup over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "35b8ad11f86146dcb344b0dfeca53426",
+        "event_ids": [
+          "6876a39e39124027b148a94bb872fa3c",
+          "fa760efe4a3e4f45ae929d9150c31ffd",
+          "ebc9c010a89a4fc2a6121abf0d2aa072",
+          "108da229aa9f4c4eb9ed245476ec41d6",
+          "07e52ca497394a6eb445466b1ab5a289",
+          "2766e7c87dde4e55a4f118e81be31cde",
+          "e669f50432cb4bc39829e06c8a0e1b6b",
+          "06280e4aa5fe478f8cfcdf8fd57c82bf"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "svc_backup"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "files-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:22:15Z",
+          "window_end": "2026-10-01T13:22:56Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for files-01|svc_backup within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "6876a39e39124027b148a94bb872fa3c",
+              "fa760efe4a3e4f45ae929d9150c31ffd",
+              "ebc9c010a89a4fc2a6121abf0d2aa072",
+              "108da229aa9f4c4eb9ed245476ec41d6",
+              "07e52ca497394a6eb445466b1ab5a289",
+              "2766e7c87dde4e55a4f118e81be31cde",
+              "e669f50432cb4bc39829e06c8a0e1b6b",
+              "06280e4aa5fe478f8cfcdf8fd57c82bf"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:15 files-01 sshd[11095]: Failed password for svc_backup from 203.0.113.54 port 52856 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:19 files-01 sshd[11128]: Failed password for svc_backup from 203.0.113.54 port 52894 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:26 files-01 sshd[11151]: Failed password for svc_backup from 203.0.113.54 port 52929 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted svc_backup on files-01 within 120 seconds, from 203.0.113.54. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.977794Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "svc_backup"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "files-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:22:15Z",
+      "window_end": "2026-10-01T13:22:56Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.54 at the perimeter",
+      "review authentication history for svc_backup on files-01"
+    ]
+  },
+  {
+    "incident_id": "d32ea5ac4a564f04aad1e95ef1db1b73",
+    "created_at": "2026-10-16T07:53:43.986360Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on files-01 against svc_backup over 8 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "4350db02c295425a8b9f14b200741361",
+        "event_ids": [
+          "6876a39e39124027b148a94bb872fa3c",
+          "fa760efe4a3e4f45ae929d9150c31ffd",
+          "ebc9c010a89a4fc2a6121abf0d2aa072",
+          "108da229aa9f4c4eb9ed245476ec41d6",
+          "07e52ca497394a6eb445466b1ab5a289",
+          "2766e7c87dde4e55a4f118e81be31cde",
+          "e669f50432cb4bc39829e06c8a0e1b6b",
+          "06280e4aa5fe478f8cfcdf8fd57c82bf",
+          "b602bd26b12040a5826571506bfd27b9"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "svc_backup"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "files-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:22:15Z",
+          "window_end": "2026-10-01T13:23:03Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for files-01|svc_backup within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "6876a39e39124027b148a94bb872fa3c",
+              "fa760efe4a3e4f45ae929d9150c31ffd",
+              "ebc9c010a89a4fc2a6121abf0d2aa072",
+              "108da229aa9f4c4eb9ed245476ec41d6",
+              "07e52ca497394a6eb445466b1ab5a289",
+              "2766e7c87dde4e55a4f118e81be31cde",
+              "e669f50432cb4bc39829e06c8a0e1b6b",
+              "06280e4aa5fe478f8cfcdf8fd57c82bf",
+              "b602bd26b12040a5826571506bfd27b9"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:15 files-01 sshd[11095]: Failed password for svc_backup from 203.0.113.54 port 52856 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:19 files-01 sshd[11128]: Failed password for svc_backup from 203.0.113.54 port 52894 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:22:26 files-01 sshd[11151]: Failed password for svc_backup from 203.0.113.54 port 52929 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for svc_backup followed the failed burst",
+            "references": [
+              "6876a39e39124027b148a94bb872fa3c",
+              "fa760efe4a3e4f45ae929d9150c31ffd",
+              "ebc9c010a89a4fc2a6121abf0d2aa072",
+              "108da229aa9f4c4eb9ed245476ec41d6",
+              "07e52ca497394a6eb445466b1ab5a289",
+              "2766e7c87dde4e55a4f118e81be31cde",
+              "e669f50432cb4bc39829e06c8a0e1b6b",
+              "06280e4aa5fe478f8cfcdf8fd57c82bf",
+              "b602bd26b12040a5826571506bfd27b9"
+            ]
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted svc_backup on files-01 within 120 seconds, from 203.0.113.54. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:43.986154Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "svc_backup"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "files-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:22:15Z",
+      "window_end": "2026-10-01T13:23:03Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.54 at the perimeter",
+      "review authentication history for svc_backup on files-01",
+      "rotate credentials for svc_backup -- the attempt succeeded",
+      "hunt for follow-on activity on files-01"
+    ]
+  },
+  {
+    "incident_id": "88728708089241e8a5cf2921396f5220",
+    "created_at": "2026-10-16T07:53:45.083038Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-01 against root over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "1af60c1c81954d46ae6e2f06d5ebe31d",
+        "event_ids": [
+          "33c7bb6d27914eebbcdccf775dbabfe7",
+          "d7719e07e2b9414b89f41fdcb51fad95",
+          "f72bc5d5e9584edfba1ec5b5fb22689c",
+          "d4f06ad9109b431792ce5eea49007edf",
+          "5f052c0846474db3b456263b53df9092",
+          "0b34db7a0767461c835ef15d43de5a90",
+          "841db923862d49c5b895523620dfc49f",
+          "36cc87389c58463f90a87c5b67f70a9d"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "root"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:02:40Z",
+          "window_end": "2026-10-01T13:03:40Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-01|root within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "33c7bb6d27914eebbcdccf775dbabfe7",
+              "d7719e07e2b9414b89f41fdcb51fad95",
+              "f72bc5d5e9584edfba1ec5b5fb22689c",
+              "d4f06ad9109b431792ce5eea49007edf",
+              "5f052c0846474db3b456263b53df9092",
+              "0b34db7a0767461c835ef15d43de5a90",
+              "841db923862d49c5b895523620dfc49f",
+              "36cc87389c58463f90a87c5b67f70a9d"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:40 gx-app-01 sshd[11260]: Failed password for root from 198.51.100.67 port 53150 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:48 gx-app-01 sshd[11277]: Failed password for root from 198.51.100.67 port 53152 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:02:55 gx-app-01 sshd[11316]: Failed password for root from 198.51.100.67 port 53171 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted root on gx-app-01 within 120 seconds, from 198.51.100.67. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.082935Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "root"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:02:40Z",
+      "window_end": "2026-10-01T13:03:40Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.67 at the perimeter",
+      "review authentication history for root on gx-app-01"
+    ]
+  },
+  {
+    "incident_id": "43eedb3ca8154bef83502be1e12151e7",
+    "created_at": "2026-10-16T07:53:45.118028Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-02 against deploy over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "9a2dcd7be82b4a51bf830dabae0e4f3b",
+        "event_ids": [
+          "d554b7fcda54473fbccaae4e6d09175a",
+          "a0e775690b114e068c864c98303adedd",
+          "0965178b414b477687af0acf21bf54e9",
+          "6a013ece0de54d00b5b97f60679187ef",
+          "f3a9944ccbd241ccbcdf5f95dd3d3ea3",
+          "ad1d7d4ea7c5481d8b19ab6dc140d79f",
+          "33dd8893755d4e7baf888b9fb8e42262",
+          "38a1d564b0344e8d90d1d42bfab51abf"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "deploy"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:11:10Z",
+          "window_end": "2026-10-01T13:12:05Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-02|deploy within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "d554b7fcda54473fbccaae4e6d09175a",
+              "a0e775690b114e068c864c98303adedd",
+              "0965178b414b477687af0acf21bf54e9",
+              "6a013ece0de54d00b5b97f60679187ef",
+              "f3a9944ccbd241ccbcdf5f95dd3d3ea3",
+              "ad1d7d4ea7c5481d8b19ab6dc140d79f",
+              "33dd8893755d4e7baf888b9fb8e42262",
+              "38a1d564b0344e8d90d1d42bfab51abf"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:11:10 gx-app-02 sshd[11534]: Failed password for deploy from 198.51.100.68 port 53431 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:11:14 gx-app-02 sshd[11570]: Failed password for deploy from 198.51.100.68 port 53486 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:11:18 gx-app-02 sshd[11603]: Failed password for deploy from 198.51.100.68 port 53499 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted deploy on gx-app-02 within 120 seconds, from 198.51.100.68. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.117905Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "deploy"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:11:10Z",
+      "window_end": "2026-10-01T13:12:05Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.68 at the perimeter",
+      "review authentication history for deploy on gx-app-02"
+    ]
+  },
+  {
+    "incident_id": "ddc90002488143ababe686c094eef87b",
+    "created_at": "2026-10-16T07:53:45.161489Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-03 against ubuntu over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "82d6f38fe84c45f0ae4a0b256b2e6c9a",
+        "event_ids": [
+          "65884afa9f58478489337e4628a66a0c",
+          "773e0ff283c8423b98dac6c82046bae6",
+          "2a1dad43d5924d93a5fc112415b05342",
+          "1d32a5c93ca54392b60a3ab70a332888",
+          "01cb54d948b84bb9aa96a9eedcf78d37",
+          "e5177a9d0ab941bda882ff1fd8b5a5fa",
+          "eb2751f63a3c487e8e17e6b5fb922663",
+          "4e319b5cde1e4ddba65abcb43836eb8c"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "ubuntu"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:16:45Z",
+          "window_end": "2026-10-01T13:17:37Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-03|ubuntu within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "65884afa9f58478489337e4628a66a0c",
+              "773e0ff283c8423b98dac6c82046bae6",
+              "2a1dad43d5924d93a5fc112415b05342",
+              "1d32a5c93ca54392b60a3ab70a332888",
+              "01cb54d948b84bb9aa96a9eedcf78d37",
+              "e5177a9d0ab941bda882ff1fd8b5a5fa",
+              "eb2751f63a3c487e8e17e6b5fb922663",
+              "4e319b5cde1e4ddba65abcb43836eb8c"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:45 gx-app-03 sshd[11686]: Failed password for ubuntu from 198.51.100.69 port 53714 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:54 gx-app-03 sshd[11689]: Failed password for ubuntu from 198.51.100.69 port 53739 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:59 gx-app-03 sshd[11716]: Failed password for ubuntu from 198.51.100.69 port 53771 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted ubuntu on gx-app-03 within 120 seconds, from 198.51.100.69. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.161380Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "ubuntu"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:16:45Z",
+      "window_end": "2026-10-01T13:17:37Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.69 at the perimeter",
+      "review authentication history for ubuntu on gx-app-03"
+    ]
+  },
+  {
+    "incident_id": "4bdc5ffe88dc4d958a065a9df5beb902",
+    "created_at": "2026-10-16T07:53:45.177050Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-03 against ubuntu over 8 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "ac52941d39bc4c6e9d312e8be73c54b2",
+        "event_ids": [
+          "65884afa9f58478489337e4628a66a0c",
+          "773e0ff283c8423b98dac6c82046bae6",
+          "2a1dad43d5924d93a5fc112415b05342",
+          "1d32a5c93ca54392b60a3ab70a332888",
+          "01cb54d948b84bb9aa96a9eedcf78d37",
+          "e5177a9d0ab941bda882ff1fd8b5a5fa",
+          "eb2751f63a3c487e8e17e6b5fb922663",
+          "4e319b5cde1e4ddba65abcb43836eb8c",
+          "8d43cdf51222421da2d3d723de506853"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "ubuntu"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:16:45Z",
+          "window_end": "2026-10-01T13:17:46Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-03|ubuntu within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "65884afa9f58478489337e4628a66a0c",
+              "773e0ff283c8423b98dac6c82046bae6",
+              "2a1dad43d5924d93a5fc112415b05342",
+              "1d32a5c93ca54392b60a3ab70a332888",
+              "01cb54d948b84bb9aa96a9eedcf78d37",
+              "e5177a9d0ab941bda882ff1fd8b5a5fa",
+              "eb2751f63a3c487e8e17e6b5fb922663",
+              "4e319b5cde1e4ddba65abcb43836eb8c",
+              "8d43cdf51222421da2d3d723de506853"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:45 gx-app-03 sshd[11686]: Failed password for ubuntu from 198.51.100.69 port 53714 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:54 gx-app-03 sshd[11689]: Failed password for ubuntu from 198.51.100.69 port 53739 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:16:59 gx-app-03 sshd[11716]: Failed password for ubuntu from 198.51.100.69 port 53771 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for ubuntu followed the failed burst",
+            "references": [
+              "65884afa9f58478489337e4628a66a0c",
+              "773e0ff283c8423b98dac6c82046bae6",
+              "2a1dad43d5924d93a5fc112415b05342",
+              "1d32a5c93ca54392b60a3ab70a332888",
+              "01cb54d948b84bb9aa96a9eedcf78d37",
+              "e5177a9d0ab941bda882ff1fd8b5a5fa",
+              "eb2751f63a3c487e8e17e6b5fb922663",
+              "4e319b5cde1e4ddba65abcb43836eb8c",
+              "8d43cdf51222421da2d3d723de506853"
+            ]
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted ubuntu on gx-app-03 within 120 seconds, from 198.51.100.69. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.176774Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "ubuntu"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:16:45Z",
+      "window_end": "2026-10-01T13:17:46Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.69 at the perimeter",
+      "review authentication history for ubuntu on gx-app-03",
+      "rotate credentials for ubuntu -- the attempt succeeded",
+      "hunt for follow-on activity on gx-app-03"
+    ]
+  },
+  {
+    "incident_id": "50a51dab2a4445cfb784c4117f513420",
+    "created_at": "2026-10-16T07:53:45.209022Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-01 against postgres over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "fbbc8996e5c345f2bf262a7d7a8682a9",
+        "event_ids": [
+          "21ed823d8e0c4e9b9a4d019bcbb0ec1f",
+          "878ca7c311c046c29c34010bdcd97db5",
+          "dd5ccfe1076242fc92bb0ac2238935b4",
+          "c1da4c74e24542fdaf97be6f66de6b18",
+          "18dee86f1ad440ae933cf840da19c32c",
+          "271f9699a0674968849d5c3166439407",
+          "0404ad6932e44687919e06e23c184549",
+          "2d821d489d6d41e6a64808575c9e3988"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "postgres"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:30:00Z",
+          "window_end": "2026-10-01T13:30:50Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-01|postgres within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "21ed823d8e0c4e9b9a4d019bcbb0ec1f",
+              "878ca7c311c046c29c34010bdcd97db5",
+              "dd5ccfe1076242fc92bb0ac2238935b4",
+              "c1da4c74e24542fdaf97be6f66de6b18",
+              "18dee86f1ad440ae933cf840da19c32c",
+              "271f9699a0674968849d5c3166439407",
+              "0404ad6932e44687919e06e23c184549",
+              "2d821d489d6d41e6a64808575c9e3988"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:30:00 gx-app-01 sshd[11884]: Failed password for postgres from 203.0.113.70 port 54026 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:30:05 gx-app-01 sshd[11896]: Failed password for postgres from 203.0.113.70 port 54066 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:30:09 gx-app-01 sshd[11908]: Failed password for postgres from 203.0.113.70 port 54071 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted postgres on gx-app-01 within 120 seconds, from 203.0.113.70. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.208868Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "postgres"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:30:00Z",
+      "window_end": "2026-10-01T13:30:50Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.70 at the perimeter",
+      "review authentication history for postgres on gx-app-01"
+    ]
+  },
+  {
+    "incident_id": "e280f3d8184a40259a34cf86938eed08",
+    "created_at": "2026-10-16T07:53:45.261136Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-02 against admin over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "9d3c3787efba4ca1831586ca91ebda58",
+        "event_ids": [
+          "e18490a71ce2413f8404b575cfa339d4",
+          "9eb4c8f6f31d476e803891d27a0364df",
+          "42f4d9f4abc64fa2ba8bc97eb3812756",
+          "7f05007b2c3b47cf9349148f7801c8ea",
+          "9b754c7fc4554fa8aac876778e95cddd",
+          "acdf4b0e7516467b966d2d596610dd9b",
+          "4f43c9665beb4f9892e650cb96024fce",
+          "c8435715cd3448ada102476e6996bfc3"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "admin"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:33:20Z",
+          "window_end": "2026-10-01T13:34:04Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-02|admin within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "e18490a71ce2413f8404b575cfa339d4",
+              "9eb4c8f6f31d476e803891d27a0364df",
+              "42f4d9f4abc64fa2ba8bc97eb3812756",
+              "7f05007b2c3b47cf9349148f7801c8ea",
+              "9b754c7fc4554fa8aac876778e95cddd",
+              "acdf4b0e7516467b966d2d596610dd9b",
+              "4f43c9665beb4f9892e650cb96024fce",
+              "c8435715cd3448ada102476e6996bfc3"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:33:20 gx-app-02 sshd[12063]: Failed password for admin from 203.0.113.71 port 54332 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:33:24 gx-app-02 sshd[12090]: Failed password for admin from 203.0.113.71 port 54333 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:33:33 gx-app-02 sshd[12097]: Failed password for admin from 203.0.113.71 port 54355 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted admin on gx-app-02 within 120 seconds, from 203.0.113.71. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.261016Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "admin"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:33:20Z",
+      "window_end": "2026-10-01T13:34:04Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.71 at the perimeter",
+      "review authentication history for admin on gx-app-02"
+    ]
+  },
+  {
+    "incident_id": "f508cb5a17bd40caabb61b2e53343aec",
+    "created_at": "2026-10-16T07:53:45.288870Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-app-03 against git over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "453c34d816c64e13a72004580ebfc6f8",
+        "event_ids": [
+          "6f553e9cd7b648e793d255aad51ca406",
+          "08aea89bdfcd4eb68052f4e6c0b560c4",
+          "85c1f79cc841472f8f6768451d48ed3f",
+          "4c4266fae1764b7c901149af252fb519",
+          "76614a1b914445b1a1c7f921c40456f8",
+          "ef4b3b4f63944605ad6a293e76619cd4",
+          "7f22980832fb49ba89e9c399dae9b97f",
+          "f501b17f5e0a4f009d3fa927d7d3f695"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "git"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-app-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:40:00Z",
+          "window_end": "2026-10-01T13:40:43Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for gx-app-03|git within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "6f553e9cd7b648e793d255aad51ca406",
+              "08aea89bdfcd4eb68052f4e6c0b560c4",
+              "85c1f79cc841472f8f6768451d48ed3f",
+              "4c4266fae1764b7c901149af252fb519",
+              "76614a1b914445b1a1c7f921c40456f8",
+              "ef4b3b4f63944605ad6a293e76619cd4",
+              "7f22980832fb49ba89e9c399dae9b97f",
+              "f501b17f5e0a4f009d3fa927d7d3f695"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:40:00 gx-app-03 sshd[12229]: Failed password for git from 203.0.113.72 port 54444 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:40:04 gx-app-03 sshd[12240]: Failed password for git from 203.0.113.72 port 54494 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Oct  1 13:40:12 gx-app-03 sshd[12269]: Failed password for git from 203.0.113.72 port 54548 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted git on gx-app-03 within 120 seconds, from 203.0.113.72. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:45.288773Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "git"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-app-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:40:00Z",
+      "window_end": "2026-10-01T13:40:43Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.72 at the perimeter",
+      "review authentication history for git on gx-app-03"
+    ]
+  },
+  {
+    "incident_id": "7159b699f1904c6b8c979eeceda1cbf4",
+    "created_at": "2026-10-16T07:53:46.616355Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-rdp-01 against administrator over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "b8813a52be294f12a5d2ef8b91b5b955",
+        "event_ids": [
+          "772fd90288334324876b4c2339f685c4",
+          "bdedafb270b141728c3f58fac43ec7f1",
+          "5a19ebbe89f94be69df41408e6ad257f",
+          "a987364539b84225a7c7fca585056b72",
+          "e500dc275d1e4d61b7bcc1bf49e130e7",
+          "33eec3cbfc7743f487756bfe5adf5404",
+          "1ef998da70434dfc83eb01086b48b2a5",
+          "85ef8b165df647cb80d9eb625ea4468c"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "administrator"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-rdp-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:03:00Z",
+          "window_end": "2026-10-01T13:03:39Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-rdp-01|administrator within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "772fd90288334324876b4c2339f685c4",
+              "bdedafb270b141728c3f58fac43ec7f1",
+              "5a19ebbe89f94be69df41408e6ad257f",
+              "a987364539b84225a7c7fca585056b72",
+              "e500dc275d1e4d61b7bcc1bf49e130e7",
+              "33eec3cbfc7743f487756bfe5adf5404",
+              "1ef998da70434dfc83eb01086b48b2a5",
+              "85ef8b165df647cb80d9eb625ea4468c"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:03:00Z\", \"Computer\": \"gx-rdp-01\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.61\", \"IpPort\": \"59421\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-78\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:03:04Z\", \"Computer\": \"gx-rdp-01\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.61\", \"IpPort\": \"58613\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-11\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:03:08Z\", \"Computer\": \"gx-rdp-01\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.61\", \"IpPort\": \"59463\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-15\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted administrator on gx-rdp-01 within 120 seconds, from 198.51.100.61. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.616224Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "administrator"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-rdp-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:03:00Z",
+      "window_end": "2026-10-01T13:03:39Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.61 at the perimeter",
+      "review authentication history for administrator on gx-rdp-01"
+    ]
+  },
+  {
+    "incident_id": "7b29bd550283446c8b006479f85d246b",
+    "created_at": "2026-10-16T07:53:46.643401Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-rdp-02 against administrator over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "900fa09cfc914f04903165cbce923d82",
+        "event_ids": [
+          "9f30e9610d294dcd8b01e1da25b51ce2",
+          "51558e491e0e428d86f75637c30dcbc9",
+          "bb224f8e324548708ad63dc105a1b992",
+          "41db6e48cd914aeeba3f3a186710f005",
+          "9dd3cc9d5caf4dd48a8ea32b48b9540a",
+          "ff513ece4b014a5bab7860c9a15be7c9",
+          "8c4762b869cf48daa5aa4bdaa924c961",
+          "4f664a2b0a69452da4f1d348f7ca75ba"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "administrator"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-rdp-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:06:10Z",
+          "window_end": "2026-10-01T13:07:04Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-rdp-02|administrator within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "9f30e9610d294dcd8b01e1da25b51ce2",
+              "51558e491e0e428d86f75637c30dcbc9",
+              "bb224f8e324548708ad63dc105a1b992",
+              "41db6e48cd914aeeba3f3a186710f005",
+              "9dd3cc9d5caf4dd48a8ea32b48b9540a",
+              "ff513ece4b014a5bab7860c9a15be7c9",
+              "8c4762b869cf48daa5aa4bdaa924c961",
+              "4f664a2b0a69452da4f1d348f7ca75ba"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:10Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"55364\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-61\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:19Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"51579\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-87\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:25Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"51655\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-70\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted administrator on gx-rdp-02 within 120 seconds, from 198.51.100.62. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.643311Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "administrator"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-rdp-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:06:10Z",
+      "window_end": "2026-10-01T13:07:04Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.62 at the perimeter",
+      "review authentication history for administrator on gx-rdp-02"
+    ]
+  },
+  {
+    "incident_id": "7c7e2856bb704ef5aaa25340bcb1f45a",
+    "created_at": "2026-10-16T07:53:46.657379Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-rdp-02 against administrator over 10 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "cbb10f1e42884a15aa62ccff81c683cb",
+        "event_ids": [
+          "9f30e9610d294dcd8b01e1da25b51ce2",
+          "51558e491e0e428d86f75637c30dcbc9",
+          "bb224f8e324548708ad63dc105a1b992",
+          "41db6e48cd914aeeba3f3a186710f005",
+          "9dd3cc9d5caf4dd48a8ea32b48b9540a",
+          "ff513ece4b014a5bab7860c9a15be7c9",
+          "8c4762b869cf48daa5aa4bdaa924c961",
+          "4f664a2b0a69452da4f1d348f7ca75ba",
+          "cd306052b9f74373a1c3d15892a3465d",
+          "c6bcfd46730648dbab39ae480a446db8",
+          "7b67cf40e1e54bc295fe88bcecafd3a4"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "administrator"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-rdp-02"
+          ],
+          "attempt_count": 10,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:06:10Z",
+          "window_end": "2026-10-01T13:07:23Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "10 failed RDP logons for gx-rdp-02|administrator within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "9f30e9610d294dcd8b01e1da25b51ce2",
+              "51558e491e0e428d86f75637c30dcbc9",
+              "bb224f8e324548708ad63dc105a1b992",
+              "41db6e48cd914aeeba3f3a186710f005",
+              "9dd3cc9d5caf4dd48a8ea32b48b9540a",
+              "ff513ece4b014a5bab7860c9a15be7c9",
+              "8c4762b869cf48daa5aa4bdaa924c961",
+              "4f664a2b0a69452da4f1d348f7ca75ba",
+              "cd306052b9f74373a1c3d15892a3465d",
+              "c6bcfd46730648dbab39ae480a446db8",
+              "7b67cf40e1e54bc295fe88bcecafd3a4"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:10Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"55364\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-61\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:19Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"51579\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-87\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:06:25Z\", \"Computer\": \"gx-rdp-02\", \"TargetUserName\": \"administrator\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.62\", \"IpPort\": \"51655\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-70\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for administrator followed the failed burst",
+            "references": [
+              "9f30e9610d294dcd8b01e1da25b51ce2",
+              "51558e491e0e428d86f75637c30dcbc9",
+              "bb224f8e324548708ad63dc105a1b992",
+              "41db6e48cd914aeeba3f3a186710f005",
+              "9dd3cc9d5caf4dd48a8ea32b48b9540a",
+              "ff513ece4b014a5bab7860c9a15be7c9",
+              "8c4762b869cf48daa5aa4bdaa924c961",
+              "4f664a2b0a69452da4f1d348f7ca75ba",
+              "cd306052b9f74373a1c3d15892a3465d",
+              "c6bcfd46730648dbab39ae480a446db8",
+              "7b67cf40e1e54bc295fe88bcecafd3a4"
+            ]
+          }
+        ],
+        "reasoning": "10 failed RDP logons targeted administrator on gx-rdp-02 within 120 seconds, from 198.51.100.62. A logon then succeeded, so treat this as a probable initial access -- an exposed RDP endpoint is a leading ransomware entry point.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.657286Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "administrator"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-rdp-02"
+      ],
+      "attempt_count": 10,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:06:10Z",
+      "window_end": "2026-10-01T13:07:23Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.62 at the perimeter",
+      "review authentication history for administrator on gx-rdp-02",
+      "rotate credentials for administrator -- the attempt succeeded",
+      "hunt for follow-on activity on gx-rdp-02"
+    ]
+  },
+  {
+    "incident_id": "227eee4cdf57404cb1edd8e3c11284ca",
+    "created_at": "2026-10-16T07:53:46.682785Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-rdp-03 against helpdesk over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "9328a96145db43e58135df0e21042ac9",
+        "event_ids": [
+          "b34eea7dcbf4459aaaf4c263dbc421c9",
+          "f2ad942b6e3e44c7a0608964d5e80401",
+          "69c2ba09b10c412ca0717d5b898a12d1",
+          "cb86be2ebc4b46e79587255c93c1cf96",
+          "dd2cd732549a406186e8d65cb27ec0bc",
+          "786ddf1b857245e3aa6320cdd2773a7b",
+          "e6cb7db5241a40b8986c936160441711",
+          "e3292d1420cf4cc0b4f7cb6b150ec147"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "helpdesk"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-rdp-03"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:09:00Z",
+          "window_end": "2026-10-01T13:09:50Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-rdp-03|helpdesk within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "b34eea7dcbf4459aaaf4c263dbc421c9",
+              "f2ad942b6e3e44c7a0608964d5e80401",
+              "69c2ba09b10c412ca0717d5b898a12d1",
+              "cb86be2ebc4b46e79587255c93c1cf96",
+              "dd2cd732549a406186e8d65cb27ec0bc",
+              "786ddf1b857245e3aa6320cdd2773a7b",
+              "e6cb7db5241a40b8986c936160441711",
+              "e3292d1420cf4cc0b4f7cb6b150ec147"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:09:00Z\", \"Computer\": \"gx-rdp-03\", \"TargetUserName\": \"helpdesk\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.63\", \"IpPort\": \"55078\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-81\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:09:10Z\", \"Computer\": \"gx-rdp-03\", \"TargetUserName\": \"helpdesk\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.63\", \"IpPort\": \"54915\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-39\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:09:15Z\", \"Computer\": \"gx-rdp-03\", \"TargetUserName\": \"helpdesk\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.63\", \"IpPort\": \"57439\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-54\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted helpdesk on gx-rdp-03 within 120 seconds, from 198.51.100.63. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.682690Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "helpdesk"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-rdp-03"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:09:00Z",
+      "window_end": "2026-10-01T13:09:50Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.63 at the perimeter",
+      "review authentication history for helpdesk on gx-rdp-03"
+    ]
+  },
+  {
+    "incident_id": "345eddcacfdc4daca5e4667df6618256",
+    "created_at": "2026-10-16T07:53:46.712151Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-rdp-04 against scanner over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "b636e128997f4d818c9b1aaf9b793bc0",
+        "event_ids": [
+          "90b382e275c34d42aef29b61378d2938",
+          "52fefcd6f7894fd28386fe1709b2f91f",
+          "a878247411e94867a311eca1ba6f4a7e",
+          "f2c76c3aa7674836a92a312b1d2f51fb",
+          "1d21d0c3388c410c863eddfb5a9d415e",
+          "d5c96efbf8604daf9a81fc76c79f25cc",
+          "4fad22f7f3eb43ec96a9dc14a4e44ce7",
+          "ac64cd0ffdd147d0b013967bd758b1e4"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "scanner"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-rdp-04"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:14:20Z",
+          "window_end": "2026-10-01T13:15:08Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-rdp-04|scanner within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "90b382e275c34d42aef29b61378d2938",
+              "52fefcd6f7894fd28386fe1709b2f91f",
+              "a878247411e94867a311eca1ba6f4a7e",
+              "f2c76c3aa7674836a92a312b1d2f51fb",
+              "1d21d0c3388c410c863eddfb5a9d415e",
+              "d5c96efbf8604daf9a81fc76c79f25cc",
+              "4fad22f7f3eb43ec96a9dc14a4e44ce7",
+              "ac64cd0ffdd147d0b013967bd758b1e4"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:14:20Z\", \"Computer\": \"gx-rdp-04\", \"TargetUserName\": \"scanner\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.64\", \"IpPort\": \"59863\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-86\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:14:26Z\", \"Computer\": \"gx-rdp-04\", \"TargetUserName\": \"scanner\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.64\", \"IpPort\": \"52240\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-50\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:14:32Z\", \"Computer\": \"gx-rdp-04\", \"TargetUserName\": \"scanner\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"198.51.100.64\", \"IpPort\": \"56669\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-69\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted scanner on gx-rdp-04 within 120 seconds, from 198.51.100.64. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.711970Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "scanner"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-rdp-04"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:14:20Z",
+      "window_end": "2026-10-01T13:15:08Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.64 at the perimeter",
+      "review authentication history for scanner on gx-rdp-04"
+    ]
+  },
+  {
+    "incident_id": "058ac3ad35ce44e58d175cdaf00a4b09",
+    "created_at": "2026-10-16T07:53:46.754831Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-term-01 against jsmith over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "8d51834c692c4708a93088d224680ae4",
+        "event_ids": [
+          "3bb5e0b12df3487899cef31998de46ce",
+          "aaeec442858b4c8383ebbdbd1d2b90b5",
+          "4856a9befff147af822b8f4c7f25c588",
+          "c1e92118c9514fcba2d5d7a8a8bfeacf",
+          "fe4d0532933541e4b8134192cc7219de",
+          "2af801625a4640239838d0d3e9268869",
+          "e97f81bd51314f2a8f99f2e5253f2dae",
+          "fc7d2a1c1a42463ab41b1df8927b7b3e"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "jsmith"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-term-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:18:00Z",
+          "window_end": "2026-10-01T13:18:43Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-term-01|jsmith within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "3bb5e0b12df3487899cef31998de46ce",
+              "aaeec442858b4c8383ebbdbd1d2b90b5",
+              "4856a9befff147af822b8f4c7f25c588",
+              "c1e92118c9514fcba2d5d7a8a8bfeacf",
+              "fe4d0532933541e4b8134192cc7219de",
+              "2af801625a4640239838d0d3e9268869",
+              "e97f81bd51314f2a8f99f2e5253f2dae",
+              "fc7d2a1c1a42463ab41b1df8927b7b3e"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:18:00Z\", \"Computer\": \"gx-term-01\", \"TargetUserName\": \"jsmith\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.65\", \"IpPort\": \"55544\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-71\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:18:08Z\", \"Computer\": \"gx-term-01\", \"TargetUserName\": \"jsmith\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.65\", \"IpPort\": \"55319\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-10\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:18:16Z\", \"Computer\": \"gx-term-01\", \"TargetUserName\": \"jsmith\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.65\", \"IpPort\": \"53412\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-96\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted jsmith on gx-term-01 within 120 seconds, from 203.0.113.65. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.754751Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "jsmith"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-term-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:18:00Z",
+      "window_end": "2026-10-01T13:18:43Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.65 at the perimeter",
+      "review authentication history for jsmith on gx-term-01"
+    ]
+  },
+  {
+    "incident_id": "ba8651b517a2409a8109906e76b4dee7",
+    "created_at": "2026-10-16T07:53:46.791242Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-term-02 against backup_svc over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "717dcf47c89049ff81403cda1ba55984",
+        "event_ids": [
+          "11161465209347298d8da31ee55a2f11",
+          "80e92ba8152c4ff381993d95c44b8975",
+          "3151ef6384d34994be3e9b10886bd66b",
+          "96723a248c474f6b81053cb4b96e2e1a",
+          "7b3c81a0b60a47959b39b8570fd76f8d",
+          "c614cd5ca2dc4ca989af20c25980a975",
+          "2b200d53e63b4394b87095febbdac266",
+          "7c0601b8cecf414f8ff8df2bc7d6b185"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "backup_svc"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-term-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-01T13:25:30Z",
+          "window_end": "2026-10-01T13:26:24Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-term-02|backup_svc within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "11161465209347298d8da31ee55a2f11",
+              "80e92ba8152c4ff381993d95c44b8975",
+              "3151ef6384d34994be3e9b10886bd66b",
+              "96723a248c474f6b81053cb4b96e2e1a",
+              "7b3c81a0b60a47959b39b8570fd76f8d",
+              "c614cd5ca2dc4ca989af20c25980a975",
+              "2b200d53e63b4394b87095febbdac266",
+              "7c0601b8cecf414f8ff8df2bc7d6b185"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:30Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"52054\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-86\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:39Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"53054\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-87\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:48Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"54481\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-23\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted backup_svc on gx-term-02 within 120 seconds, from 203.0.113.66. No logon succeeded, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.791133Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "backup_svc"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-term-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-01T13:25:30Z",
+      "window_end": "2026-10-01T13:26:24Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.66 at the perimeter",
+      "review authentication history for backup_svc on gx-term-02"
+    ]
+  },
+  {
+    "incident_id": "1e35730156594695800cb6b18b3c9c60",
+    "created_at": "2026-10-16T07:53:46.798906Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on gx-term-02 against backup_svc over 8 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "21205a6a1e6a438180adea7d3b1f6a63",
+        "event_ids": [
+          "11161465209347298d8da31ee55a2f11",
+          "80e92ba8152c4ff381993d95c44b8975",
+          "3151ef6384d34994be3e9b10886bd66b",
+          "96723a248c474f6b81053cb4b96e2e1a",
+          "7b3c81a0b60a47959b39b8570fd76f8d",
+          "c614cd5ca2dc4ca989af20c25980a975",
+          "2b200d53e63b4394b87095febbdac266",
+          "7c0601b8cecf414f8ff8df2bc7d6b185",
+          "dbf0af521d3349d5818779eb3dbc022a"
+        ],
+        "detector": "rdp_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "backup_svc"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "gx-term-02"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-10-01T13:25:30Z",
+          "window_end": "2026-10-01T13:26:28Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed RDP logons for gx-term-02|backup_svc within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "11161465209347298d8da31ee55a2f11",
+              "80e92ba8152c4ff381993d95c44b8975",
+              "3151ef6384d34994be3e9b10886bd66b",
+              "96723a248c474f6b81053cb4b96e2e1a",
+              "7b3c81a0b60a47959b39b8570fd76f8d",
+              "c614cd5ca2dc4ca989af20c25980a975",
+              "2b200d53e63b4394b87095febbdac266",
+              "7c0601b8cecf414f8ff8df2bc7d6b185",
+              "dbf0af521d3349d5818779eb3dbc022a"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:30Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"52054\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-86\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:39Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"53054\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-87\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"EventID\": 4625, \"TimeCreated\": \"2026-10-01T13:25:48Z\", \"Computer\": \"gx-term-02\", \"TargetUserName\": \"backup_svc\", \"TargetDomainName\": \"GLOBEX\", \"IpAddress\": \"203.0.113.66\", \"IpPort\": \"54481\", \"LogonType\": 10, \"LogonProcessName\": \"NtLmSsp \", \"AuthenticationPackageName\": \"NTLM\", \"WorkstationName\": \"RDP-23\", \"ProcessName\": \"C:\\\\Windows\\\\System32\\\\svchost.exe\", \"SubStatus\": \"0xC000006A\"}",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for backup_svc followed the failed burst",
+            "references": [
+              "11161465209347298d8da31ee55a2f11",
+              "80e92ba8152c4ff381993d95c44b8975",
+              "3151ef6384d34994be3e9b10886bd66b",
+              "96723a248c474f6b81053cb4b96e2e1a",
+              "7b3c81a0b60a47959b39b8570fd76f8d",
+              "c614cd5ca2dc4ca989af20c25980a975",
+              "2b200d53e63b4394b87095febbdac266",
+              "7c0601b8cecf414f8ff8df2bc7d6b185",
+              "dbf0af521d3349d5818779eb3dbc022a"
+            ]
+          }
+        ],
+        "reasoning": "8 failed RDP logons targeted backup_svc on gx-term-02 within 120 seconds, from 203.0.113.66. A logon then succeeded, so treat this as a probable initial access -- an exposed RDP endpoint is a leading ransomware entry point.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:46.798803Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "backup_svc"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "gx-term-02"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-10-01T13:25:30Z",
+      "window_end": "2026-10-01T13:26:28Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.66 at the perimeter",
+      "review authentication history for backup_svc on gx-term-02",
+      "rotate credentials for backup_svc -- the attempt succeeded",
+      "hunt for follow-on activity on gx-term-02"
+    ]
+  }
+]

@@ -1,0 +1,94 @@
+[
+  {
+    "incident_id": "312da77392c14406ac40a1aeb11d5800",
+    "created_at": "2026-10-16T07:53:23.680656Z",
+    "domain": "web",
+    "category": "injection",
+    "summary": "sql_injection on web-01 over 1 attempts -- did not succeed (confidence 0.95)",
+    "severity": "high",
+    "confidence": 0.95,
+    "verdicts": [
+      {
+        "verdict_id": "259ff4c0beba4055b7c75f45aa2aef92",
+        "event_ids": [
+          "a15e4b872256468f995019d0335eea8c"
+        ],
+        "detector": "sql_injection_detector",
+        "domain": "web",
+        "category": "injection",
+        "technique": "sql_injection",
+        "attack_detected": true,
+        "confidence": 0.95,
+        "mitre": {
+          "technique_id": "T1190",
+          "technique_name": "Exploit Public-Facing Application",
+          "tactic": "Initial Access"
+        },
+        "scope": {
+          "affected_accounts": [],
+          "affected_endpoints": [
+            "/api/search"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 1,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-30T11:20:25Z",
+          "window_end": "2026-09-30T11:20:25Z"
+        },
+        "evidence": [
+          {
+            "kind": "matched_pattern",
+            "detail": "tautology/quoted_boolean_equality in query.q: ' AND '1'='1",
+            "references": [
+              "a15e4b872256468f995019d0335eea8c"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"timestamp\": \"2026-09-30T11:20:25+00:00\", \"client_ip\": \"198.51.100.23\", \"host\": \"web-01\", \"method\": \"GET\", \"uri\": \"/api/search?q=1%27%20AND%20%271%27%3D%271\", \"status\": 403, \"action\": \"blocked\", \"rule_id\": \"942110\", \"anomaly_score\": 41, \"user_agent\": \"sqlmap/1.8.9#stable (https://sqlmap.org)\"}",
+            "references": [
+              "a15e4b872256468f995019d0335eea8c"
+            ]
+          }
+        ],
+        "reasoning": "SQL injection patterns matched in query.q: tautology. 1 rule(s) fired on request content.",
+        "model": {
+          "name": "none",
+          "route_reason": "deterministic pattern match, no model needed",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:23.680356Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [],
+      "affected_endpoints": [
+        "/api/search"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 1,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-30T11:20:25Z",
+      "window_end": "2026-09-30T11:20:25Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1190",
+        "technique_name": "Exploit Public-Facing Application",
+        "tactic": "Initial Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 198.51.100.23",
+      "review and patch input handling on /api/search"
+    ]
+  }
+]
