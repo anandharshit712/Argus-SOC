@@ -4,6 +4,7 @@ All read-only queries (GRAPH.RO_QUERY), every value passed as a parameter, resul
 returned as plain Python types in the same shapes as graph_stubs.
 """
 
+from datetime import datetime, timedelta
 from typing import Any
 
 from argus_soc.graph.falkor_client import run_read
@@ -221,3 +222,196 @@ async def get_case(tenant: str, case_id: int) -> dict[str, Any] | None:
         "feedback": sorted(feedback, key=lambda f: f["created_at"] or ""),
         "agent_runs": sorted(runs, key=lambda r: r["at"] or ""),
     }
+
+
+# ---------------------------------------------------------------------------
+# Q4 recall, Q5 linked alerts
+# ---------------------------------------------------------------------------
+
+_CLOSED = [str(CaseStatus.CLOSED), str(CaseStatus.AUTO_CLOSED)]
+
+# One branch per kind of entity; UNION drops the duplicates.
+_RECALL = f"""
+MATCH (c:{CASE})-[:{Rel.CONTAINS}]->(:{ALERT})-[:{Rel.INVOLVES}]->(i:{IOC})
+WHERE c.status IN $closed AND i.value IN $iocs
+RETURN c.id AS case_id, c.verdict AS verdict, c.closed_at AS closed_at
+UNION
+MATCH (c:{CASE})-[:{Rel.CONTAINS}]->(:{ALERT})-[:{Rel.ON_HOST}]->(h:{HOST})
+WHERE c.status IN $closed AND h.hostname IN $hosts
+RETURN c.id AS case_id, c.verdict AS verdict, c.closed_at AS closed_at
+UNION
+MATCH (c:{CASE})-[:{Rel.CONTAINS}]->(:{ALERT})-[:{Rel.INVOLVES}]->(u:{USER})
+WHERE c.status IN $closed AND u.username IN $users
+RETURN c.id AS case_id, c.verdict AS verdict, c.closed_at AS closed_at
+"""
+
+_LATEST_NOTES = f"""
+MATCH (f:{FEEDBACK})-[:{Rel.ON}]->(c:{CASE}) WHERE c.id IN $ids
+RETURN c.id AS case_id, f.note AS note, f.created_at AS created_at
+"""
+
+RECALL_LIMIT = 5
+
+
+def _names(value: str | list[str] | tuple[str, ...] | None) -> list[str]:
+    if value is None:
+        return []
+    return [value] if isinstance(value, str) else list(value)
+
+
+async def recall(
+    tenant: str,
+    ioc: str | list[str] | None = None,
+    host: str | list[str] | None = None,
+    user: str | list[str] | None = None,
+) -> list[dict[str, Any]]:
+    """Q4: closed cases whose alerts involved any of these IOCs, hosts or users, with the
+    verdict and the latest analyst note. Newest first, at most 5. This is episodic memory:
+    it works the same after a restart because it is all in the graph."""
+    params = {"closed": _CLOSED, "iocs": _names(ioc), "hosts": _names(host), "users": _names(user)}
+    if not (params["iocs"] or params["hosts"] or params["users"]):
+        return []
+    cases = await run_read(tenant, _RECALL, params)
+    cases = sorted(cases, key=lambda c: c["closed_at"] or "", reverse=True)[:RECALL_LIMIT]
+    if not cases:
+        return []
+    notes = await run_read(tenant, _LATEST_NOTES, {"ids": [c["case_id"] for c in cases]})
+    latest: dict[int, tuple[str, str]] = {}
+    for n in notes:
+        if n["case_id"] not in latest or (n["created_at"] or "") > latest[n["case_id"]][0]:
+            latest[n["case_id"]] = (n["created_at"] or "", n["note"])
+    return [{**c, "note": latest.get(c["case_id"], ("", None))[1]} for c in cases]
+
+
+_LINKED = f"""
+MATCH (a:{ALERT} {{incident_id: $id}})-[:{Rel.ON_HOST}|{Rel.INVOLVES}]->(shared)
+      <-[:{Rel.ON_HOST}|{Rel.INVOLVES}]-(b:{ALERT})
+WHERE b <> a
+RETURN DISTINCT b.incident_id AS id, b.talos_created_at AS at, a.talos_created_at AS origin
+"""
+
+
+async def linked_alerts(tenant: str, incident_id: str, window_hours: int = 24) -> list[str]:
+    """Q5: other alerts that share a host, user or IOC with this one and were raised within
+    `window_hours` of it (either side). Sorted by incident id."""
+    rows = await run_read(tenant, _LINKED, {"id": incident_id})
+    window = timedelta(hours=window_hours)
+    linked = set()
+    for r in rows:
+        if r["at"] and r["origin"]:
+            gap = abs(datetime.fromisoformat(r["at"]) - datetime.fromisoformat(r["origin"]))
+            if gap <= window:
+                linked.add(r["id"])
+    return sorted(linked)
+
+
+# ---------------------------------------------------------------------------
+# Playbooks (procedural memory)
+# ---------------------------------------------------------------------------
+
+_PLAYBOOKS = f"""
+MATCH (p:{PLAYBOOK}) WHERE $only_active = false OR p.active = true
+OPTIONAL MATCH (p)-[:{Rel.LEARNED_FROM}]->(f:{FEEDBACK})-[:{Rel.ON}]->(c:{CASE})
+RETURN properties(p) AS p, f.id AS learned_from, c.id AS source_case
+"""
+
+
+def _playbook(row: dict[str, Any]) -> dict[str, Any]:
+    p = dict(row["p"])
+    return {
+        "name": p["name"], "version": p["version"], "active": bool(p.get("active")),
+        "condition": from_json(p.get("condition"), {}), "action": p.get("action"),
+        "source_case": row["source_case"], "learned_from": row["learned_from"],
+        "created_at": p.get("created_at"),
+    }  # fmt: skip
+
+
+async def list_playbooks(tenant: str) -> list[dict[str, Any]]:
+    """Every playbook version with the case it was learned from, by name then version."""
+    rows = await run_read(tenant, _PLAYBOOKS, {"only_active": False})
+    return sorted((_playbook(r) for r in rows), key=lambda p: (p["name"], p["version"]))
+
+
+def playbook_matches(playbook: dict[str, Any], alert: dict[str, Any]) -> bool:
+    """Same category, and the alert shares at least one IOC with the condition's ioc_in."""
+    cond = playbook["condition"]
+    return (
+        playbook["active"]
+        and alert.get("category") == cond.get("category")
+        and bool(set(alert.get("iocs") or []) & set(cond.get("ioc_in") or []))
+    )
+
+
+async def matching_playbook(tenant: str, alert: dict[str, Any]) -> dict[str, Any] | None:
+    """The newest active playbook that matches the alert (category + IOC), or None.
+    Triage asks this first: a match closes the alert without the other agents."""
+    rows = await run_read(tenant, _PLAYBOOKS, {"only_active": True})
+    candidates = sorted((_playbook(r) for r in rows), key=lambda p: -p["version"])
+    return next((p for p in candidates if playbook_matches(p, alert)), None)
+
+
+# ---------------------------------------------------------------------------
+# Q6 explain decision, activity feed
+# ---------------------------------------------------------------------------
+
+_DECISION_CASE = f"""
+MATCH (c:{CASE})-[:{Rel.HAS_DECISION}]->(:{DECISION} {{id: $id}})
+OPTIONAL MATCH (c)-[:{Rel.APPLIED}]->(p:{PLAYBOOK})
+RETURN c.id AS case_id, c.findings AS findings, p.name AS case_pb_name,
+       p.version AS case_pb_version
+"""
+
+
+async def explain_decision(tenant: str, decision_id: str) -> dict[str, Any] | None:
+    """Q6: the decision with its case, alerts, acted-on nodes, attack path, the playbook it
+    applied and the case that playbook was learned from. None if there is no such decision."""
+    rows = await run_read(tenant, _DECISION_CASE, {"id": decision_id})
+    if not rows:
+        return None
+    head = rows[0]
+    case_id = head["case_id"]
+    decision_rows = await run_read(tenant, _CASE_DECISION, {"case_id": case_id})
+    decision = _decision(decision_rows[0], case_id)
+    alerts = await run_read(
+        tenant,
+        f"MATCH (:{CASE} {{id: $case_id}})-[:{Rel.CONTAINS}]->(a:{ALERT}) "
+        "RETURN a.incident_id AS id",
+        {"case_id": case_id},
+    )
+    ref = decision["playbook"]
+    if ref is None and head["case_pb_name"] is not None:
+        ref = {"name": head["case_pb_name"], "version": head["case_pb_version"]}
+    playbook = None
+    if ref is not None:
+        playbook = next(
+            (p for p in await list_playbooks(tenant)
+             if (p["name"], p["version"]) == (ref["name"], ref["version"])),
+            None,
+        )  # fmt: skip
+    findings = from_json(head["findings"], {})
+    return {
+        "decision": decision,
+        "case_id": case_id,
+        "alerts": sorted(a["id"] for a in alerts),
+        "acted_on": {
+            "hosts": decision["target_hosts"],
+            "users": decision["target_users"],
+            "iocs": decision["target_iocs"],
+        },
+        "path": findings.get("shortest_path") or [],
+        "playbook": playbook,
+        "source_case": playbook["source_case"] if playbook else None,
+    }
+
+
+_ACTIVITY = f"""
+MATCH (r:{RUN}) WHERE $since IS NULL OR r.at > $since
+RETURN properties(r) AS r
+"""
+
+
+async def list_activity(tenant: str, since: str | None = None) -> list[dict[str, Any]]:
+    """Agent steps after `since` (ISO timestamp), oldest first, with the worker that ran
+    each one and the Investigator's tool calls (the UI's live activity feed)."""
+    rows = await run_read(tenant, _ACTIVITY, {"since": since})
+    return sorted((activity_item(r["r"]) for r in rows), key=lambda r: (r["at"] or "", r["id"]))

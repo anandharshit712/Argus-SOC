@@ -290,6 +290,11 @@ async def list_cases(tenant: str, status: str | None = None, limit: int = 100) -
     return sorted(rows, key=lambda r: r["opened_at"], reverse=True)[:limit]
 
 
+def _feedback_item(f: dict[str, Any]) -> dict[str, Any]:
+    """Feedback as get_case returns it (CONTRACT_GAPS GAP-4)."""
+    return {k: f[k] for k in ("id", "verdict", "note", "analyst", "created_at")}
+
+
 async def get_case(tenant: str, case_id: int) -> dict[str, Any] | None:
     """Everything about one case, or None if there is no such case."""
     s = _t(tenant)
@@ -309,7 +314,7 @@ async def get_case(tenant: str, case_id: int) -> dict[str, Any] | None:
             "iocs": _case_entities(s, c, "iocs"),
             "findings": c["findings"],
             "decision": s["decisions"].get(c["decision_id"]) if c["decision_id"] else None,
-            "feedback": [s["feedback"][f] for f in c["feedback_ids"]],
+            "feedback": [_feedback_item(s["feedback"][f]) for f in c["feedback_ids"]],
             "agent_runs": [r for r in s["runs"] if r["case_id"] == c["id"]],
         }
     )
