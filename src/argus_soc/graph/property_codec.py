@@ -38,3 +38,12 @@ def from_json(text: str | None, default: Any) -> Any:
     if not text:
         return default
     return json.loads(text)
+
+
+def canonical_condition(condition: dict[str, Any]) -> dict[str, Any]:
+    """A playbook condition with list values sorted, so the same condition written in a
+    different order is recognised as the same playbook."""
+    return {
+        key: sorted(value) if isinstance(value, list | tuple | set) else value
+        for key, value in condition.items()
+    }

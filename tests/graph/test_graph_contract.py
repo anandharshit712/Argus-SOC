@@ -120,16 +120,10 @@ def test_backend_is_read_at_each_lookup(backend):
     assert graph.claim_case is write_queries.claim_case
 
 
-def test_real_backend_says_what_is_missing(backend):
+def test_every_contract_function_has_a_real_version(backend):
     backend("falkordb")
-    missing = []
     for name in graph.CONTRACT:
-        try:
-            graph.implementation(name)
-        except NotImplementedError as exc:
-            assert "ARGUS_GRAPH_BACKEND=stub" in str(exc)
-            missing.append(name)
-    assert missing  # shrinks as step 7 lands the real functions
+        assert graph.implementation(name) is REAL[name]  # no NotImplementedError left
 
 
 def test_unknown_names_are_attribute_errors():

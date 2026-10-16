@@ -16,18 +16,28 @@ from argus_soc.graph.graph_schema import (
     CaseStatus,
     DecisionInput,
     DecisionOutcome,
+    FeedbackVerdict,
     IocType,
     IocVerdict,
     Label,
+    PlaybookAction,
     PlaybookRef,
     Priority,
     Rel,
+    SemanticFactsInput,
 )
-from argus_soc.graph.property_codec import from_json, to_json, utc_ago, utc_now
+from argus_soc.graph.property_codec import (
+    canonical_condition,
+    from_json,
+    to_json,
+    utc_ago,
+    utc_now,
+)
 
 ALERT, HOST, USER, IOC = Label.ALERT, Label.HOST, Label.USER, Label.IOC
 ENDPOINT, TECHNIQUE = Label.ENDPOINT, Label.TECHNIQUE
 CASE, DECISION, RUN, PLAYBOOK = Label.CASE, Label.DECISION, Label.AGENT_RUN, Label.PLAYBOOK
+FEEDBACK = Label.FEEDBACK
 
 # Properties a node gets the first time an alert mentions it (agent memory starts empty).
 _NEW_HOST = "n.isolated = false, n.targeted_case_ids = [], n.criticality = 1"
@@ -368,3 +378,177 @@ async def record_agent_run(
          "tool_calls": to_json(tool_calls) if tool_calls is not None else None},
     )  # fmt: skip
     return rows[0]["id"]
+
+
+# ---------------------------------------------------------------------------
+# Learning: analyst feedback, playbooks, IOC facts (docs/LLD.md §4.5, §6.7)
+# ---------------------------------------------------------------------------
+
+_RECORD_FEEDBACK = f"""
+MATCH (c:{CASE} {{id: $case_id}})
+CREATE (f:{FEEDBACK} {{id: $id, verdict: $verdict, note: $note, analyst: $analyst,
+                       created_at: $now}})-[:{Rel.ON}]->(c)
+SET c.updated_at = $now,
+    c.verdict = CASE WHEN $verdict = '{FeedbackVerdict.BENIGN}' THEN 'benign' ELSE c.verdict END
+WITH c, f
+OPTIONAL MATCH (c)-[:{Rel.HAS_DECISION}]->(d:{DECISION} {{outcome: '{DecisionOutcome.PENDING}'}})
+FOREACH (_ IN {_when("d IS NOT NULL")} | SET d.outcome = $outcome)
+WITH c, f, d
+OPTIONAL MATCH (d)-[:{Rel.ACTED_ON}]->(h:{HOST})
+FOREACH (_ IN {_when("h IS NOT NULL AND $approve")} | SET h.isolated = true)
+WITH DISTINCT c, f, d
+OPTIONAL MATCH (d)-[:{Rel.ACTED_ON}]->(u:{USER})
+FOREACH (_ IN {_when("u IS NOT NULL AND $approve")} | SET u.disabled = true)
+WITH DISTINCT c, f
+OPTIONAL MATCH (c)-[:{Rel.CONTAINS}]->(:{ALERT})-[:{Rel.INVOLVES}]->(i:{IOC})
+FOREACH (_ IN {_when("i IS NOT NULL AND $ioc_verdict IS NOT NULL")} |
+    SET i.verdict = $ioc_verdict)
+RETURN DISTINCT f.id AS id
+"""
+
+
+async def record_feedback(tenant: str, case_id: int, verdict: str, note: str, analyst: str) -> str:
+    """The analyst's verdict on a case, in one query:
+
+    - a Feedback node ON the case;
+    - a pending decision becomes approved (approve) or rejected (reject, benign); on approve
+      its simulated actions run now (ACTED_ON hosts isolated, users disabled; rule 10);
+    - the case's IOCs become malicious (approve) or benign (benign); reject leaves them;
+    - benign marks the case verdict benign, which recall shows next time.
+
+    Raises KeyError for an unknown case, ValueError for an unknown verdict.
+    """
+    v = FeedbackVerdict(verdict)
+    ioc_verdict = {
+        FeedbackVerdict.APPROVE: IocVerdict.MALICIOUS,
+        FeedbackVerdict.BENIGN: IocVerdict.BENIGN,
+    }.get(v)
+    outcome = DecisionOutcome.APPROVED if v == FeedbackVerdict.APPROVE else DecisionOutcome.REJECTED
+    rows = await run(
+        tenant,
+        _RECORD_FEEDBACK,
+        {
+            "case_id": case_id,
+            "id": str(uuid.uuid4()),
+            "verdict": str(v),
+            "note": note,
+            "analyst": analyst,
+            "outcome": str(outcome),
+            "approve": v == FeedbackVerdict.APPROVE,
+            "ioc_verdict": str(ioc_verdict) if ioc_verdict else None,
+            "now": utc_now(),
+        },
+    )
+    if not rows:
+        raise KeyError(f"no case {case_id}")
+    return rows[0]["id"]
+
+
+_PLAYBOOK_FROM_FEEDBACK = f"""
+MATCH (f:{FEEDBACK} {{id: $feedback_id}})-[:{Rel.ON}]->(c:{CASE})
+OPTIONAL MATCH (done:{PLAYBOOK})-[:{Rel.LEARNED_FROM}]->(f)
+RETURN c.id AS case_id, done.name AS name, done.version AS version
+"""
+
+_CREATE_PLAYBOOK = f"""
+MATCH (f:{FEEDBACK} {{id: $feedback_id}})
+OPTIONAL MATCH (old:{PLAYBOOK} {{condition: $condition}})
+WITH f, collect(old) AS olds, max(old.version) AS top
+WITH f, olds, coalesce(top, 0) + 1 AS version,
+     CASE WHEN size(olds) > 0 THEN olds[0].name ELSE $default_name END AS name
+FOREACH (o IN olds | SET o.active = false)
+CREATE (p:{PLAYBOOK} {{name: name, version: version, condition: $condition,
+                       action: $action, active: true, created_at: $now}})
+       -[:{Rel.LEARNED_FROM}]->(f)
+RETURN p.name AS name, p.version AS version
+"""
+
+
+async def create_playbook_version(
+    tenant: str, feedback_id: str, condition: dict[str, Any], action: str
+) -> dict[str, Any]:
+    """Learn a playbook from analyst feedback (procedural memory).
+
+    The same condition (category + IOCs) always belongs to the same playbook name: a new
+    version is created and the older versions are deactivated, so only the newest one
+    auto-closes. Asking again for the same feedback returns the version it already made.
+    Raises KeyError for unknown feedback.
+    """
+    action = str(PlaybookAction(action))
+    rows = await run_read(tenant, _PLAYBOOK_FROM_FEEDBACK, {"feedback_id": feedback_id})
+    if not rows:
+        raise KeyError(f"no feedback {feedback_id}")
+    if rows[0]["name"] is not None:
+        return {"name": rows[0]["name"], "version": rows[0]["version"]}
+    condition = canonical_condition(condition)
+    default_name = f"auto-close {condition.get('category')} learned from case {rows[0]['case_id']}"
+    created = await run(
+        tenant,
+        _CREATE_PLAYBOOK,
+        {"feedback_id": feedback_id, "condition": to_json(condition), "action": action,
+         "default_name": default_name, "now": utc_now()},
+    )  # fmt: skip
+    return {"name": created[0]["name"], "version": created[0]["version"]}
+
+
+_IOC_FACT = {
+    "owner": f"""
+MERGE (n:{IOC} {{type: '{IocType.IP}', value: $ioc}}) ON CREATE SET {_NEW_IOC}
+SET n.owner = $value
+""",
+    "verdict": f"""
+MERGE (n:{IOC} {{type: '{IocType.IP}', value: $ioc}}) ON CREATE SET {_NEW_IOC}
+SET n.verdict = $value
+""",
+}
+
+
+async def set_ioc_fact(tenant: str, ioc: str, key: str, value: Any) -> None:
+    """Semantic fact on an IOC from analyst feedback: `owner` (free text, e.g. "internal
+    pentest scanner") or `verdict` (unknown / malicious / benign)."""
+    if key not in _IOC_FACT:
+        raise ValueError(f"unknown IOC fact {key!r}; use one of {sorted(_IOC_FACT)}")
+    if key == "verdict":
+        value = str(IocVerdict(value))
+    await run(tenant, _IOC_FACT[key], {"ioc": ioc, "value": value, "now": utc_now()})
+
+
+# ---------------------------------------------------------------------------
+# Semantic facts written by the Investigator (LLD §4.4.1)
+# ---------------------------------------------------------------------------
+
+_SEMANTIC_FACTS = f"""
+MATCH (c:{CASE} {{id: $case_id}})
+FOREACH (name IN $hosts |
+    MERGE (n:{HOST} {{hostname: name}}) ON CREATE SET {_NEW_HOST}
+    FOREACH (_ IN {_when("NOT $case_id IN coalesce(n.targeted_case_ids, [])")} |
+        SET n.targeted_case_ids = coalesce(n.targeted_case_ids, []) + $case_id,
+            n.last_targeted_at = $now))
+FOREACH (value IN $iocs |
+    MERGE (n:{IOC} {{type: '{IocType.IP}', value: value}}) ON CREATE SET {_NEW_IOC}
+    FOREACH (_ IN {_when("NOT $case_id IN coalesce(n.seen_case_ids, [])")} |
+        SET n.seen_case_ids = coalesce(n.seen_case_ids, []) + $case_id))
+FOREACH (name IN $users |
+    MERGE (n:{USER} {{username: name}}) ON CREATE SET {_NEW_USER}
+    FOREACH (_ IN {_when("coalesce(n.suspect_case_id, -1) <> $case_id")} |
+        SET n.suspected_compromised = true, n.suspected_at = $now,
+            n.suspect_case_id = $case_id))
+RETURN c.id AS id
+"""
+
+
+async def record_semantic_facts(tenant: str, case_id: int, facts: SemanticFactsInput) -> None:
+    """Remember what this case taught about its hosts, IOCs and users, in one query.
+
+    Counts are kept as lists of case ids, never counters, so writing the same case twice
+    changes nothing (times targeted = len(targeted_case_ids)). Raises KeyError for an
+    unknown case.
+    """
+    rows = await run(
+        tenant,
+        _SEMANTIC_FACTS,
+        {"case_id": case_id, "hosts": list(facts.hosts), "iocs": list(facts.iocs),
+         "users": list(facts.suspected_users), "now": utc_now()},
+    )  # fmt: skip
+    if not rows:
+        raise KeyError(f"no case {case_id}")

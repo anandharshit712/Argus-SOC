@@ -48,6 +48,7 @@ from argus_soc.graph.graph_stub_data import (
     make_case,
     sample_state,
 )
+from argus_soc.graph.property_codec import canonical_condition
 
 # Re-exported so tests and teammates can use the sample values.
 __all__ = ["ATTACKER_IP", "SCANNER_IP", "SCANNER_PLAYBOOK", "SQLI_IP", "reset_stubs"]
@@ -529,11 +530,18 @@ async def record_feedback(tenant: str, case_id: int, verdict: str, note: str, an
 async def create_playbook_version(
     tenant: str, feedback_id: str, condition: dict[str, Any], action: str
 ) -> dict[str, Any]:
-    """Next version of the playbook with this condition; older versions are deactivated."""
+    """Next version of the playbook with this condition; older versions are deactivated.
+    Asking again for the same feedback returns the version it already created."""
     s = _t(tenant)
+    if feedback_id not in s["feedback"]:
+        raise KeyError(f"no feedback {feedback_id}")
     fb = s["feedback"][feedback_id]
     PlaybookAction(action)
-    same = [p for p in s["playbooks"] if p["condition"] == condition]
+    done = next((p for p in s["playbooks"] if p["learned_from"] == feedback_id), None)
+    if done:
+        return {"name": done["name"], "version": done["version"]}
+    condition = canonical_condition(condition)
+    same = [p for p in s["playbooks"] if canonical_condition(p["condition"]) == condition]
     category = condition.get("category")
     name = same[0]["name"] if same else f"auto-close {category} learned from case {fb['case_id']}"
     for p in same:
@@ -568,20 +576,20 @@ async def record_semantic_facts(tenant: str, case_id: int, facts: SemanticFactsI
     _get_case(s, case_id)
     now = _now()
     for host in facts.hosts:
-        h = s["hosts"].setdefault(host, {"targeted_case_ids": []})
+        h = s["hosts"].setdefault(host, {})
         h.setdefault("targeted_case_ids", [])
         if case_id not in h["targeted_case_ids"]:
             h["targeted_case_ids"].append(case_id)
-        h["last_targeted_at"] = now
+            h["last_targeted_at"] = now
     for ioc in facts.iocs:
         i = s["iocs"].setdefault(ioc, {})
         i.setdefault("seen_case_ids", [])
         if case_id not in i["seen_case_ids"]:
             i["seen_case_ids"].append(case_id)
     for user in facts.suspected_users:
-        s["users"].setdefault(user, {}).update(
-            suspected_compromised=True, suspected_at=now, suspect_case_id=case_id
-        )
+        u = s["users"].setdefault(user, {})
+        if u.get("suspect_case_id") != case_id or not u.get("suspected_compromised"):
+            u.update(suspected_compromised=True, suspected_at=now, suspect_case_id=case_id)
 
 
 async def record_agent_run(
