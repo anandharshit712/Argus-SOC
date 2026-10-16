@@ -93,7 +93,8 @@ Argus-SOC/                              repository root
 ├── scripts/
 │   ├── seed_tenants.py                 B        load both inventories
 │   ├── reset_demo.py                   B        wipe and reseed for judges
-│   └── replay_scenario.py              A        replay a scenario log into Talos; --burst for the concurrency test
+│   ├── generate_scenarios.py           A        writes data/scenarios/ (fixed seed, byte-identical runs)
+│   └── replay_scenario.py              A        replay into Talos; --reset, --burst (concurrency), --demo
 │
 ├── tests/                              mirrors src/argus_soc/
 │   ├── graph/                          B

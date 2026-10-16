@@ -287,7 +287,7 @@ Findings · Memory · Linked alerts · Deep dive · Alerts & evidence · Agent t
 
 ### 4.8 Linked alerts (`findings.linked`)
 
-- List of incident ids joined into this case by shared host, user or IOC within the correlation
+- List of incident ids joined into this case by a shared IOC or user within the correlation
   window; each expands to the matching alert in §4.10.
 
 ### 4.9 Deep-dive panel (`findings.deep_dive`) — G9
