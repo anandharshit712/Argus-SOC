@@ -14,6 +14,9 @@ RUN apt-get update \
     && echo 'svc_deploy:correct-horse-battery-staple-ssh' | chpasswd
 # Log auth attempts verbosely so every failure is written.
 RUN sed -i 's/^#\?LogLevel.*/LogLevel VERBOSE/' /etc/ssh/sshd_config
+# Debian 12 rsyslog defaults to high-precision RFC3339 timestamps; Talos's NetworkLogParser reads
+# the traditional "Mmm d HH:MM:SS" syslog stamp, so force that format.
+RUN printf '$ActionFileDefaultTemplate RSYSLOG_TraditionalFileFormat\n' > /etc/rsyslog.d/00-traditional.conf
 COPY start.sh /start.sh
 RUN chmod +x /start.sh
 EXPOSE 22

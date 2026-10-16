@@ -40,6 +40,9 @@ services:
     # Dockerfile+context as the talos service, so this is a fully cached rebuild, not a new image.
     build: { context: ., dockerfile: deploy/talos/Dockerfile }
     restart: unless-stopped
+    # sshd's auth.log is root:adm 0640; the Talos image runs as an unprivileged user that cannot
+    # read it. The shipper only reads mounted log files, so run it as root.
+    user: "0:0"
     command: ["python", "/app/ship.py"]
     environment:
       TALOS_URL: http://talos:8000
