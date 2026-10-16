@@ -1,0 +1,188 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-image:
+    linear-gradient(rgba(74, 222, 106, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(74, 222, 106, 0.035) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/* ---------- top bar ---------- */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 64px;
+  padding: 0 20px;
+  background: rgba(7, 13, 10, 0.92);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 220px;
+  color: var(--accent);
+  font: 700 1.4rem 'Rajdhani', sans-serif;
+  letter-spacing: 0.04em;
+}
+.brand span { color: var(--text); }
+
+.tenant-select {
+  min-width: 160px;
+  padding: 8px 12px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  font: 500 1.05rem 'Rajdhani', sans-serif;
+}
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+  font: 0.95rem 'Share Tech Mono', monospace;
+  color: var(--muted);
+}
+
+.live-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: transparent;
+  border: 0;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+.live-toggle.is-live { color: var(--accent); }
+.live-toggle .dot { background: currentColor; }
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.user-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+}
+.user-button:hover { color: var(--accent); }
+
+/* ---------- body ---------- */
+.shell-body {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 20px 16px;
+  border-right: 1px solid var(--border);
+}
+
+.sidebar nav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.side-link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font: 500 1.15rem 'Rajdhani', sans-serif;
+}
+.side-link:hover { background: rgba(74, 222, 106, 0.06); }
+.side-link.active {
+  background: linear-gradient(90deg, rgba(74, 222, 106, 0.28), rgba(74, 222, 106, 0.1));
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.tenant-switcher h2 {
+  margin: 0 0 10px;
+  font: 500 1.05rem 'Rajdhani', sans-serif;
+  color: var(--text);
+}
+
+.tenant-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 11px 14px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  font: 500 1.1rem 'Rajdhani', sans-serif;
+  text-align: left;
+  cursor: pointer;
+}
+.tenant-option svg:last-child { margin-left: auto; color: var(--accent); }
+.tenant-option:hover { background: rgba(74, 222, 106, 0.06); }
+.tenant-option.is-active { background: var(--field); border-color: var(--border-strong); }
+
+.system-health {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding: 14px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  color: var(--accent);
+}
+.system-health strong { display: block; font: 600 1.1rem 'Rajdhani', sans-serif; }
+.system-health small { color: var(--muted); font: 0.78rem 'Share Tech Mono', monospace; }
+.system-health.is-bad { color: var(--danger); }
+.system-health.is-bad .dot { background: var(--danger); }
+
+.shell-main {
+  min-width: 0;
+  padding: 20px;
+}
+
+@media (max-width: 900px) {
+  .shell-body { grid-template-columns: 1fr; }
+  .brand { width: auto; }
+
+  /* keep navigation reachable: sidebar turns into a row, extras are dropped (tenant select stays in the top bar) */
+  .sidebar { padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .sidebar nav { flex-direction: row; overflow-x: auto; padding-bottom: 0; border-bottom: 0; }
+  .side-link { padding: 8px 12px; font-size: 1.05rem; white-space: nowrap; }
+  .tenant-switcher, .system-health { display: none; }
+}
+@media (max-width: 700px) {
+  .topbar { gap: 12px; padding: 0 12px; }
+  .health-text, .brand span { display: none; }
+}

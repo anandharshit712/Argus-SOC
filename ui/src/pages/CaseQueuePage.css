@@ -1,0 +1,98 @@
+.queue {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.queue-head {
+  padding: 22px 26px;
+  background: rgba(10, 18, 14, 0.85);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.queue-head h1 { margin: 0; font: 600 2.2rem 'Rajdhani', sans-serif; color: #fff; }
+.queue-head p { margin: 2px 0 18px; font-size: 1.1rem; }
+
+.queue-tabs { display: flex; gap: 12px; flex-wrap: wrap; }
+.queue-tabs button {
+  padding: 10px 26px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  font: 500 1.1rem 'Rajdhani', sans-serif;
+  cursor: pointer;
+}
+.queue-tabs button:hover { border-color: var(--accent); }
+.queue-tabs button.is-active { background: var(--accent); border-color: var(--accent); color: #04110a; font-weight: 700; }
+
+.queue-filters {
+  display: grid;
+  grid-template-columns: 1fr 220px 220px;
+  gap: 14px;
+}
+.queue-filters select,
+.queue-search {
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  font: 500 1.05rem 'Rajdhani', sans-serif;
+}
+.queue-filters select { padding: 12px 14px; }
+
+.queue-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+}
+.queue-search:focus-within { border-color: var(--accent); }
+.queue-search input {
+  flex: 1;
+  min-width: 0;
+  padding: 12px 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font: inherit;
+}
+
+.queue-table { padding: 8px 12px; }
+
+.queue-pager {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: var(--text);
+  font: 1.05rem 'Rajdhani', sans-serif;
+}
+.queue-pager nav { display: flex; gap: 8px; }
+.queue-pager button {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+.queue-pager button.is-active { background: rgba(74, 222, 106, 0.2); border-color: var(--accent); color: var(--accent); }
+.queue-pager button:disabled { opacity: 0.4; cursor: default; }
+
+.queue-error {
+  margin: 0;
+  padding: 10px 14px;
+  border: 1px solid var(--danger);
+  border-radius: 6px;
+  color: var(--danger);
+  font: 0.9rem 'Share Tech Mono', monospace;
+}
+
+@media (max-width: 760px) {
+  .queue-filters { grid-template-columns: 1fr; }
+}

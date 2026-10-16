@@ -1,0 +1,35 @@
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 16px 18px;
+  background: rgba(10, 18, 14, 0.85);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  color: var(--text);
+  text-decoration: none;
+}
+a.stat-tile:hover { border-color: var(--accent); }
+
+.tile-label { font: 500 1.1rem 'Rajdhani', sans-serif; }
+
+.tile-value {
+  color: var(--accent);
+  font: 600 2.6rem/1.1 'Rajdhani', sans-serif;
+}
+.tile-value small {
+  margin-left: 8px;
+  font-size: 1.1rem;
+  color: var(--muted);
+}
+
+.tile-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font: 0.82rem 'Share Tech Mono', monospace;
+}
+
+.stat-tile.is-warn { border-color: var(--warn); }
+.stat-tile.is-warn .tile-value { color: var(--warn); }
