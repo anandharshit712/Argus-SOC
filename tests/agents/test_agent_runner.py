@@ -55,6 +55,7 @@ async def test_brute_force_that_lands_is_isolated_pending_approval():
     assert len(case["alerts"]) == 3  # one case through the shared IP
     assert case["status"] == CaseStatus.AWAITING_APPROVAL
     assert case["priority"] == Priority.HIGH  # the successful login, not the first alert
+    assert case["decision"]["previous_priority"] == Priority.HIGH  # unchanged by R1
     assert case["findings"]["shortest_path"] == ["bastion-01", "app-02", "db-prod-01"]
     d = case["decision"]
     assert d["rule_id"] == "R1"
@@ -79,6 +80,7 @@ async def test_blocked_injection_with_no_path_is_closed_and_lowered():
     assert case["decision"]["target_iocs"] == [SQLI_IP]
     assert case["decision"]["target_hosts"] == []
     assert case["priority"] == Priority.MEDIUM  # high, lowered one step
+    assert case["decision"]["previous_priority"] == Priority.HIGH  # GAP-5: "high -> medium"
 
 
 async def test_rerun_after_done_changes_nothing():

@@ -51,6 +51,7 @@ async def test_02_blocked_injection_is_closed_and_lowered():
     case = await case_with("acme", lambda c: SQLI in c["iocs"])
     assert (case["status"], case["decision"]["rule_id"]) == (CaseStatus.CLOSED, "R4")
     assert case["priority"] == Priority.MEDIUM  # Talos said high; no way in, one step lower
+    assert case["decision"]["previous_priority"] == Priority.HIGH  # GAP-5: shown as high -> medium
     assert case["decision"]["target_hosts"] == []
 
 

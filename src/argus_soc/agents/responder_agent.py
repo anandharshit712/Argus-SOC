@@ -139,7 +139,7 @@ async def run(tenant: str, case_id: int) -> None:
             reason=rule.reason,
             explanation=await explanation(rule, case, ranking, chosen, new_priority),
             evidence={"findings": case["findings"], "ranking": ranking},
-            # TODO(GAP-5): previous_priority=priority, once DecisionInput has the field.
+            previous_priority=priority,  # GAP-5: lets the UI show "high -> medium"
             **chosen,
         ),
     )
