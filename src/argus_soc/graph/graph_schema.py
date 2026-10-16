@@ -9,6 +9,9 @@ Every tenant has its own graph with this same schema (see core/tenant_registry.p
 """
 
 from enum import StrEnum
+from typing import Annotated, Any
+
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 SCHEMA_VERSION = 1
 
@@ -189,3 +192,75 @@ class AgentName(StrEnum):
 
 class PlaybookAction(StrEnum):
     AUTO_CLOSE = "auto_close"
+
+
+# ---------------------------------------------------------------------------
+# Inputs to the write functions (docs/LLD.md §4.5, §5.2). Built by the ingestor and agents.
+# ---------------------------------------------------------------------------
+
+EVIDENCE_MAX_ITEMS = 20
+EVIDENCE_MAX_CHARS = 500
+SOURCE_IPS_MAX = 5
+
+
+EvidenceLine = Annotated[str, StringConstraints(max_length=EVIDENCE_MAX_CHARS)]
+
+
+class _Input(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+
+class TechniqueInput(_Input):
+    mitre_id: str
+    name: str | None = None
+    tactic: str | None = None
+
+
+class AlertInput(_Input):
+    """One Talos IncidentReport, mapped by the ingestor's report_mapper."""
+
+    incident_id: str = Field(min_length=1)
+    domain: str
+    category: str
+    severity: str
+    confidence: float = Field(ge=0, le=1)
+    summary: str = ""
+    talos_created_at: str  # ISO 8601 timestamp from Talos
+    succeeded: bool | None = None
+    hosts: tuple[str, ...] = ()
+    users: tuple[str, ...] = ()
+    endpoints: tuple[str, ...] = ()
+    techniques: tuple[TechniqueInput, ...] = ()
+    # Attacker-controlled text: kept as data, trimmed, never used as instructions.
+    evidence: tuple[EvidenceLine, ...] = Field(default=(), max_length=EVIDENCE_MAX_ITEMS)
+    recommended_actions: tuple[str, ...] = ()
+    source_ips: tuple[str, ...] = Field(default=(), max_length=SOURCE_IPS_MAX)
+
+
+class PlaybookRef(_Input):
+    name: str
+    version: int = Field(ge=1)
+
+
+class DecisionInput(_Input):
+    """What the Responder decided. The targets get ACTED_ON edges."""
+
+    rule_id: str
+    actions: tuple[str, ...]
+    needs_approval: bool
+    reason: str
+    explanation: str = ""
+    target_hosts: tuple[str, ...] = ()
+    target_users: tuple[str, ...] = ()
+    target_iocs: tuple[str, ...] = ()
+    evidence: dict[str, Any] = Field(default_factory=dict)  # query names + results
+    playbook: PlaybookRef | None = None
+    agent: AgentName = AgentName.RESPONDER
+
+
+class SemanticFactsInput(_Input):
+    """Facts the Investigator learned about a case (LLD §4.4.1)."""
+
+    hosts: tuple[str, ...] = ()
+    iocs: tuple[str, ...] = ()
+    suspected_users: tuple[str, ...] = ()
