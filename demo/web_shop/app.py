@@ -36,10 +36,14 @@ TRUSTED_PROXY = os.environ.get("DEMO_TRUSTED_PROXY", "")
 VALID_ACCOUNT = os.environ.get("DEMO_VALID_ACCOUNT", "demo@shop.example")
 VALID_PASSWORD = os.environ.get("DEMO_VALID_PASSWORD", "correct-horse-battery-staple")
 
-# ponytail: a stand-in WAF, not a real one. Obvious injection markers -> 403 blocked, logged as
-# WAF JSON. Enough to route Talos to the injection detector with succeeded=false.
-_SQLI = re.compile(r"('|%27)|(\b(union|select|or|and)\b.{0,20}('|=|\bselect\b))|(--)|(;)", re.I)
-_XSS = re.compile(r"<\s*script|on\w+\s*=|javascript:|<\s*svg|<\s*img", re.I)
+# ponytail: a stand-in WAF, not a real one. Obvious injection shapes -> 403 blocked, logged as
+# WAF JSON. Deliberately stricter than "any apostrophe" so benign searches (o'brien jacket,
+# order by price) are NOT blocked -- only payloads Talos would call actionable.
+_SQLI = re.compile(
+    r"('|%27)\s*(or|and|union|;|--)|\bunion\b.{0,20}\bselect\b|--\s*$|\bor\b\s+'?\d+'?\s*=\s*'?\d+",
+    re.I,
+)
+_XSS = re.compile(r"<\s*script|on\w+\s*=|javascript:|<\s*svg|<\s*img[^>]*\bon\w+", re.I)
 
 app = FastAPI(title="Argus demo shop")
 ACCESS_LOG.parent.mkdir(parents=True, exist_ok=True)
