@@ -176,6 +176,7 @@ def _decision(row: dict[str, Any], case_id: int) -> dict[str, Any]:
         "needs_approval": d.get("needs_approval"), "reason": d.get("reason"),
         "explanation": d.get("explanation"), "evidence": from_json(d.get("evidence"), {}),
         "outcome": d.get("outcome"), "playbook": playbook, "agent": d.get("agent"),
+        "previous_priority": d.get("previous_priority"),
         "created_at": d.get("created_at"),
     }  # fmt: skip
 

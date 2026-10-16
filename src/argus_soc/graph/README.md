@@ -86,7 +86,7 @@ types a label as a string.
 | `IOC` | `type` + `value` | `verdict` (unknown/malicious/benign), `owner`, `seen_case_ids`, `first_seen`, `last_seen` |
 | `Technique` | `mitre_id` | `name`, `tactic` |
 | `Case` | `id` | `status`, `priority`, `category`, `opened_at`, `updated_at`, `closed_at`, `claimed_by`, `claimed_at`, `findings` (JSON), `verdict`, `closed_reason` |
-| `Decision` | `id` | `rule_id`, `actions`, `needs_approval`, `reason`, `explanation`, `evidence` (JSON), `outcome` (pending/approved/rejected/auto), `agent`, `created_at` |
+| `Decision` | `id` | `rule_id`, `actions`, `needs_approval`, `reason`, `explanation`, `evidence` (JSON), `outcome` (pending/approved/rejected/auto), `agent`, `previous_priority` (case priority before the decision, GAP-5), `created_at` |
 | `Feedback` | `id` | `verdict` (approve/reject/benign), `note`, `analyst`, `created_at` |
 | `Playbook` | `name` + `version` | `condition` (JSON: category + `ioc_in`), `action` (auto_close), `active`, `created_at` |
 | `AgentRun` | `id` | `agent`, `worker`, `case_id`, `at`, `summary`, `handed_to`, `tool_calls` (JSON) |

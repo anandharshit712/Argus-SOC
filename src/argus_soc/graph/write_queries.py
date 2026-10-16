@@ -285,7 +285,8 @@ MERGE (c)-[:{Rel.HAS_DECISION}]->(d:{DECISION})
 ON CREATE SET d.id = $id, d.rule_id = $rule_id, d.actions = $actions,
               d.needs_approval = $needs_approval, d.reason = $reason,
               d.explanation = $explanation, d.evidence = $evidence, d.outcome = $outcome,
-              d.agent = $agent, d.created_at = $now
+              d.agent = $agent, d.previous_priority = $previous_priority,
+              d.created_at = $now
 WITH c, d, d.id = $id AS created
 FOREACH (h IN CASE WHEN created THEN $hosts ELSE [] END |
     MERGE (n:{HOST} {{hostname: h}}) ON CREATE SET {_NEW_HOST}
@@ -329,6 +330,9 @@ async def record_decision(tenant: str, case_id: int, decision: DecisionInput) ->
             "evidence": to_json(decision.evidence),
             "outcome": str(outcome),
             "agent": str(decision.agent),
+            "previous_priority": (
+                str(decision.previous_priority) if decision.previous_priority else None
+            ),
             "hosts": list(decision.target_hosts),
             "users": list(decision.target_users),
             "iocs": list(decision.target_iocs),

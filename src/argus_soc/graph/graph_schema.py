@@ -13,7 +13,8 @@ from typing import Annotated, Any
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
-SCHEMA_VERSION = 1
+# 2 (Oct 16): Decision.previous_priority (CONTRACT_GAPS GAP-5).
+SCHEMA_VERSION = 2
 
 
 class Label(StrEnum):
@@ -243,7 +244,12 @@ class PlaybookRef(_Input):
 
 
 class DecisionInput(_Input):
-    """What the Responder decided. The targets get ACTED_ON edges."""
+    """What the Responder decided. The targets get ACTED_ON edges.
+
+    `previous_priority` is the case's priority before this decision (GAP-5): the Responder
+    always sends it, so the UI can show "high -> medium" when rule R4 lowers the urgency.
+    Stored on the Decision node; optional so older callers keep working.
+    """
 
     rule_id: str
     actions: tuple[str, ...]
@@ -254,6 +260,7 @@ class DecisionInput(_Input):
     target_users: tuple[str, ...] = ()
     target_iocs: tuple[str, ...] = ()
     evidence: dict[str, Any] = Field(default_factory=dict)  # query names + results
+    previous_priority: Priority | None = None
     playbook: PlaybookRef | None = None
     agent: AgentName = AgentName.RESPONDER
 
