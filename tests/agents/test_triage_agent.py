@@ -2,6 +2,7 @@
 
 from argus_soc import graph
 from argus_soc.agents import triage_agent
+from argus_soc.agents.priority_rules import highest, lower_one, raise_one
 from argus_soc.graph.graph_schema import AlertInput, CaseStatus, Priority
 from argus_soc.graph.graph_stubs import SCANNER_PLAYBOOK, SQLI_IP
 
@@ -27,9 +28,12 @@ async def _case_of(tenant: str, incident_id: str) -> dict:
     raise AssertionError(f"{incident_id} is in no case")
 
 
-def test_raise_one_caps_at_critical():
-    assert triage_agent.raise_one("high") == Priority.CRITICAL
-    assert triage_agent.raise_one("critical") == Priority.CRITICAL
+def test_priority_steps_are_capped():
+    assert raise_one("high") == Priority.CRITICAL
+    assert raise_one("critical") == Priority.CRITICAL
+    assert lower_one("high") == Priority.MEDIUM
+    assert lower_one("info") == Priority.INFO
+    assert highest(["low", "high", "medium"]) == Priority.HIGH
 
 
 async def test_playbook_match_auto_closes_and_cites_playbook():

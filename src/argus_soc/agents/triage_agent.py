@@ -13,25 +13,13 @@ from typing import Any
 
 from argus_soc import graph
 from argus_soc.agents.handoff_service import hand_off
+from argus_soc.agents.priority_rules import highest, raise_one
 from argus_soc.core.logging_setup import get_logger
 from argus_soc.core.settings import get_settings
-from argus_soc.graph.graph_schema import (
-    PRIORITY_ORDER,
-    AgentName,
-    CaseStatus,
-    IocVerdict,
-    PlaybookRef,
-    Priority,
-)
+from argus_soc.graph.graph_schema import AgentName, CaseStatus, IocVerdict, PlaybookRef, Priority
 
 AGENT = AgentName.TRIAGE
 ALERTS_PER_STEP = 20
-
-
-def raise_one(priority: str) -> Priority:
-    """One step up the priority order, capped at critical."""
-    i = PRIORITY_ORDER.index(Priority(priority))
-    return PRIORITY_ORDER[min(i + 1, len(PRIORITY_ORDER) - 1)]
 
 
 def memory_reasons(history: list[dict[str, Any]], facts: dict[str, dict]) -> list[str]:
@@ -88,11 +76,8 @@ async def triage_alert(tenant: str, alert: dict[str, Any]) -> int:
     facts = await graph.entity_facts(tenant, hosts, users, iocs)
     linked = await graph.linked_alerts(tenant, iid, get_settings().correlation_window_hours)
 
-    severity = Priority(alert["severity"])
     reasons = memory_reasons(history, facts)
-    priority = raise_one(severity) if reasons else severity  # at most one step
-
-    case_id = await graph.open_or_join_case(tenant, [iid, *linked], priority)
+    case_id = await graph.open_or_join_case(tenant, [iid, *linked], Priority(alert["severity"]))
     case = await graph.get_case(tenant, case_id)
     if case["status"] != CaseStatus.NEW:
         # Joined a case another agent already moved on. Moving it back to triaged could give
@@ -106,6 +91,9 @@ async def triage_alert(tenant: str, alert: dict[str, Any]) -> int:
         )
         return case_id
 
+    # The most severe alert in the case (a linked success counts), then memory: one step at most.
+    severity = highest([a["severity"] for a in case["alerts"]])
+    priority = raise_one(severity) if reasons else severity
     await graph.record_findings(
         tenant,
         case_id,
