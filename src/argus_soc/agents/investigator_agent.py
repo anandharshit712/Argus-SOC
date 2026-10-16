@@ -14,6 +14,7 @@ so it never depends on the optional LLM deep dive (§6.9).
 from typing import Any
 
 from argus_soc import graph
+from argus_soc.agents.graph_tool_client import deep_dive
 from argus_soc.agents.handoff_service import hand_off
 from argus_soc.agents.priority_rules import case_priority
 from argus_soc.core.logging_setup import get_logger
@@ -42,9 +43,6 @@ async def investigate(tenant: str, case: dict[str, Any]) -> dict[str, Any]:
         "path_to_crown_jewel": bool(paths),
         "shortest_path": paths[0] if paths else None,
         "blast_radius": radius,
-        # ponytail: the LLM deep dive over MCP (§6.9) is added with llm_client once the
-        # LLM provider is chosen; until then it is always empty, as with LLM_ENABLED=false.
-        "deep_dive": [],
     }
 
 
@@ -55,6 +53,8 @@ async def run(tenant: str, case_id: int) -> None:
         log.warning("claimed case %s does not exist", case_id)
         return
     findings = await investigate(tenant, case)
+    # The fixed queries above always run first; the LLM's lookups are extra evidence only.
+    findings["deep_dive"] = await deep_dive(tenant, case, findings)
     await graph.record_findings(tenant, case_id, findings)
     # Only accounts in alerts that succeeded are suspected: in scenario 1 that is svc_deploy,
     # not the customer e-mails the credential stuffing tried.

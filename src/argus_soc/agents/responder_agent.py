@@ -5,10 +5,13 @@ from the graph, never from the LLM or from Talos's recommended actions. Every de
 stores the findings and ranking it was made from (rule 6).
 """
 
+import json
 from typing import Any
 
+from pydantic import BaseModel, Field
+
 from argus_soc import graph
-from argus_soc.agents import decision_table
+from argus_soc.agents import decision_table, llm_client
 from argus_soc.agents.decision_table import Rule
 from argus_soc.agents.handoff_service import hand_off
 from argus_soc.agents.priority_rules import case_priority, lower_one
@@ -36,6 +39,59 @@ def targets(
     if {"block_ips", "block_or_rate_limit_ips"} & set(rule.actions):
         iocs = tuple(case["iocs"])
     return {"target_hosts": hosts, "target_users": users, "target_iocs": iocs}
+
+
+class Explanation(BaseModel):
+    text: str = Field(min_length=1, max_length=1200)
+
+
+# Findings the LLM sees, one untrusted item each (they hold attacker-chosen names).
+EXPLAINED_FINDINGS = (
+    "succeeded",
+    "path_to_crown_jewel",
+    "shortest_path",
+    "blast_radius",
+    "memory_reasons",
+    "deep_dive",
+)
+
+
+async def explanation(
+    rule: Rule,
+    case: dict[str, Any],
+    ranking: list[tuple[str, float]],
+    chosen: dict[str, tuple],
+    priority: str,
+) -> str:
+    """The LLM's explanation of the decision, or the template when the LLM is off or fails.
+    Either way the decision itself is already made."""
+    findings = case["findings"]
+    answer = await llm_client.complete(
+        "responder_explain_v1",
+        {
+            "rule_id": rule.id,
+            "rule_reason": rule.reason,
+            "actions": ", ".join(rule.actions),
+            "targets": llm_client.untrusted(
+                [
+                    f"{k.removeprefix('target_')}: {', '.join(v) or 'none'}"
+                    for k, v in chosen.items()
+                ]
+            ),
+            "needs_approval": "yes" if rule.needs_approval else "no",
+            "priority": priority,
+            "findings": llm_client.untrusted(
+                [f"{k}: {json.dumps(findings.get(k), default=str)}" for k in EXPLAINED_FINDINGS]
+            ),
+            "ranking": ranking[:5],
+            "evidence": llm_client.untrusted(
+                [a["summary"] for a in case["alerts"]]
+                + [line for a in case["alerts"] for line in a["evidence"][:3]]
+            ),
+        },
+        Explanation,
+    )
+    return answer.text if answer else explain(rule, case, ranking, chosen)
 
 
 def explain(
@@ -81,7 +137,7 @@ async def run(tenant: str, case_id: int) -> None:
             actions=rule.actions,
             needs_approval=rule.needs_approval,
             reason=rule.reason,
-            explanation=explain(rule, case, ranking, chosen),
+            explanation=await explanation(rule, case, ranking, chosen, new_priority),
             evidence={"findings": case["findings"], "ranking": ranking},
             # TODO(GAP-5): previous_priority=priority, once DecisionInput has the field.
             **chosen,
