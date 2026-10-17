@@ -11,14 +11,15 @@ import { useApp } from '../state/AppContext.tsx'
 import './CaseQueuePage.css'
 
 const POLL_MS = 3000
-const PAGE_SIZE = 5
+const PAGE_SIZE = 10
 
-type TabKey = 'all' | 'open' | 'in_progress' | 'resolved'
+type TabKey = 'all' | 'open' | 'awaiting' | 'resolved'
 
+// "Open" is every case not closed yet, as in the spec and the dashboard's "Open cases" tile.
 const TABS: { key: TabKey; label: string; statuses: CaseStatus[] | null }[] = [
   { key: 'all', label: 'All', statuses: null },
-  { key: 'open', label: 'Open', statuses: ['new'] },
-  { key: 'in_progress', label: 'In Progress', statuses: ['triaged', 'investigated', 'awaiting_approval'] },
+  { key: 'open', label: 'Open', statuses: OPEN_STATUSES },
+  { key: 'awaiting', label: 'Awaiting approval', statuses: ['awaiting_approval'] },
   { key: 'resolved', label: 'Resolved', statuses: ['closed', 'auto_closed'] },
 ]
 
@@ -109,7 +110,7 @@ export default function CaseQueuePage() {
             <button
               key={t.key}
               type="button"
-              className={t.key === tab ? 'is-active' : ''}
+              className={`${t.key === tab ? 'is-active' : ''}${t.key === 'awaiting' && cases.some((c) => c.needs_approval) ? ' tab-warn' : ''}`}
               aria-pressed={t.key === tab}
               onClick={() => setParam({ tab: t.key, status: null })}
             >

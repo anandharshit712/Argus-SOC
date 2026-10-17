@@ -1,9 +1,9 @@
-import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { useState, type CSSProperties } from 'react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { SessionOut } from '../api/apiTypes.ts'
-import { fetchHealth } from '../api/argusApi.ts'
+import { fetchCases, fetchHealth } from '../api/argusApi.ts'
 import { usePoll } from '../hooks/usePoll.ts'
-import { tenantLabel } from '../lib/tenantLabel.ts'
+import { storedTenant, storeTenant, tenantColor, tenantLabel } from '../lib/tenantLabel.ts'
 import { AppContext } from '../state/AppContext.tsx'
 import ArgusLogo from './ArgusLogo.tsx'
 import Icon, { type IconName } from './Icon.tsx'
@@ -19,6 +19,7 @@ const NAV: { to: string; label: string; icon: IconName }[] = [
 ]
 
 const HEALTH_POLL_MS = 10_000
+const AWAITING_POLL_MS = 5000
 
 type HealthView = { label: string; detail: string; bad: boolean; banner: string | null }
 
@@ -36,10 +37,28 @@ function healthView(status: string | undefined, unreachable: boolean): HealthVie
 
 export default function AppShell({ session, onSignOut }: AppShellProps) {
   const tenants = session.tenants
-  const [tenant, setTenant] = useState<string>(tenants[0] ?? '')
+  // The tenant survives a refresh (sessionStorage), as long as the user may still see it.
+  const [tenant, setTenantState] = useState<string>(() => storedTenant(tenants) ?? tenants[0] ?? '')
   const [live, setLive] = useState(true)
+  const navigate = useNavigate()
+  const location = useLocation()
   const health = usePoll(fetchHealth, HEALTH_POLL_MS, live, [])
   const view = healthView(health.data?.status, health.error !== null)
+  const awaiting = usePoll(
+    () => fetchCases(tenant, 500, 'awaiting_approval'),
+    AWAITING_POLL_MS,
+    live && tenant !== '',
+    [tenant],
+  )
+  const awaitingCount = awaiting.data?.length ?? 0
+
+  function setTenant(next: string) {
+    if (next === tenant) return
+    storeTenant(next)
+    setTenantState(next)
+    // A case number belongs to one tenant: leave the case page instead of showing a 404.
+    if (/^\/cases\/[^/]+/.test(location.pathname)) navigate('/cases')
+  }
 
   const context = {
     username: session.username,
@@ -51,24 +70,30 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
     setLive,
     signOut: onSignOut,
   }
+  const accent = { '--tenant': tenantColor(tenant, tenants) } as CSSProperties
 
   return (
     <AppContext.Provider value={context}>
-      <div className="shell">
+      <div className="shell" style={accent}>
         <header className="topbar">
           <div className="brand">
             <ArgusLogo size={34} />
             <span>Argus SOC</span>
           </div>
 
+          {/* The only tenant switcher: a user with one tenant sees it fixed, with more they pick. */}
           {tenants.length > 0 && (
-            <select className="tenant-select" value={tenant} onChange={(e) => setTenant(e.target.value)} aria-label="Tenant">
-              {tenants.map((t) => (
-                <option key={t} value={t}>
-                  {tenantLabel(t)}
-                </option>
-              ))}
-            </select>
+            <label className="tenant-picker" title="Switch tenant">
+              <span className="tenant-dot" aria-hidden="true" />
+              <span className="visually-hidden">Tenant</span>
+              <select value={tenant} onChange={(e) => setTenant(e.target.value)} disabled={tenants.length === 1}>
+                {tenants.map((t) => (
+                  <option key={t} value={t}>
+                    {tenantLabel(t)}
+                  </option>
+                ))}
+              </select>
+            </label>
           )}
 
           <div className="topbar-status">
@@ -85,9 +110,9 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
             <span className="user-name" title={session.username}>
               {session.display_name}
             </span>
-            <button type="button" className="user-button" onClick={onSignOut} title={`Sign out ${session.username}`}>
-              <Icon name="user" size={18} />
-              <span className="visually-hidden">Sign out {session.display_name}</span>
+            <button type="button" className="logout-button" onClick={onSignOut} title={`Log out ${session.username}`}>
+              <Icon name="logout" size={18} />
+              <span className="logout-label">Logout</span>
             </button>
           </div>
         </header>
@@ -98,25 +123,15 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
               {NAV.map((item) => (
                 <NavLink key={item.to} to={item.to} className="side-link">
                   <Icon name={item.icon} /> {item.label}
+                  {item.to === '/cases' && awaitingCount > 0 && (
+                    <span className="nav-badge" title={`${awaitingCount} awaiting approval`}>
+                      {awaitingCount}
+                      <span className="visually-hidden"> awaiting approval</span>
+                    </span>
+                  )}
                 </NavLink>
               ))}
             </nav>
-
-            <div className="tenant-switcher">
-              <h2>Tenant Switcher</h2>
-              {tenants.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  className={`tenant-option${t === tenant ? ' is-active' : ''}`}
-                  onClick={() => setTenant(t)}
-                  aria-pressed={t === tenant}
-                >
-                  <Icon name="building" /> {tenantLabel(t)}
-                  {t === tenant && <Icon name="check" size={16} />}
-                </button>
-              ))}
-            </div>
 
             <div className={`system-health${view.bad ? ' is-bad' : ''}`}>
               <span className="dot" />

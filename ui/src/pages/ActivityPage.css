@@ -10,6 +10,42 @@
   color: var(--text);
   font: 500 1.05rem 'Rajdhani', sans-serif;
 }
+.case-filter {
+  width: 110px;
+  padding: 8px 12px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text);
+  font: 500 1.05rem 'Rajdhani', sans-serif;
+}
+.worker-counters { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 0; padding: 0; list-style: none; }
+.worker-counters button {
+  padding: 4px 12px;
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--muted);
+  font: 0.85rem 'Share Tech Mono', monospace;
+  cursor: pointer;
+}
+.worker-counters button strong { margin-left: 4px; color: var(--text); }
+.worker-counters button.is-active { border-color: var(--accent); color: var(--accent); }
+.new-pill {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  padding: 6px 16px;
+  background: var(--accent);
+  border: 0;
+  border-radius: 999px;
+  color: #04110a;
+  font: 700 1rem 'Rajdhani', sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+}
 .activity-filters button {
   padding: 8px 22px;
   background: var(--field);
@@ -39,17 +75,7 @@
 .activity-text small { color: var(--muted); font: 0.85rem 'Share Tech Mono', monospace; }
 .activity-text a { color: var(--accent); }
 
-.agent-badge {
-  justify-self: start;
-  padding: 3px 14px;
-  border: 1px solid currentColor;
-  border-radius: 5px;
-  font: 600 0.95rem 'Rajdhani', sans-serif;
-}
-.agent-triage { color: var(--accent); background: rgba(74, 222, 106, 0.12); }
-.agent-investigator { color: #4fd1c5; background: rgba(79, 209, 197, 0.12); }
-.agent-responder { color: var(--warn); background: rgba(240, 192, 64, 0.12); }
-.agent-unknown { color: var(--muted); background: rgba(125, 154, 137, 0.12); }
+/* .agent-badge colours live in components/DashboardCharts.css (shared with the dashboard). */
 
 .mcp-chip {
   align-self: flex-start;

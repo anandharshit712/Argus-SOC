@@ -44,12 +44,13 @@
   gap: 16px;
 }
 
-.dash-lower {
+.dash-row {
   display: grid;
-  grid-template-columns: 2fr 1fr;
   gap: 16px;
   align-items: start;
 }
+.dash-row-wide { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.dash-row-three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 
 
 .quick-actions { display: flex; flex-direction: column; gap: 12px; }
@@ -78,6 +79,10 @@
 }
 .dash-loading { color: var(--muted); font: 1rem 'Share Tech Mono', monospace; }
 
+@media (max-width: 1200px) {
+  .dash-row-three { grid-template-columns: 1fr 1fr; }
+  .dash-row-wide { grid-template-columns: 1fr; }
+}
 @media (max-width: 1000px) {
-  .dash-lower { grid-template-columns: 1fr; }
+  .dash-row-wide, .dash-row-three { grid-template-columns: 1fr; }
 }

@@ -9,15 +9,17 @@ type StatTileProps = {
   suffix?: string
   /** Change vs the previous window. Null hides the line. */
   delta: number | null
+  /** Unit after the delta number, e.g. " s". */
+  deltaUnit?: string
   /** Where a click goes. Omit for a tile that is not a link. */
   to?: string
   /** Amber accent, used when something needs a human. */
   warn?: boolean
 }
 
-function DeltaLine({ delta }: { delta: number }) {
+function DeltaLine({ delta, unit = '' }: { delta: number; unit?: string }) {
   const icon = delta > 0 ? 'up' : delta < 0 ? 'down' : 'flat'
-  const text = delta === 0 ? 'no change' : `${Math.abs(delta)} vs previous`
+  const text = delta === 0 ? 'no change' : `${Math.abs(delta)}${unit} vs previous window`
   return (
     <span className="tile-delta">
       <Icon name={icon} size={14} />
@@ -27,7 +29,7 @@ function DeltaLine({ delta }: { delta: number }) {
   )
 }
 
-export default function StatTile({ label, value, suffix, delta, to, warn }: StatTileProps) {
+export default function StatTile({ label, value, suffix, delta, deltaUnit, to, warn }: StatTileProps) {
   const body = (
     <>
       <span className="tile-label">{label}</span>
@@ -35,7 +37,7 @@ export default function StatTile({ label, value, suffix, delta, to, warn }: Stat
         {value}
         {suffix && <small>{suffix}</small>}
       </span>
-      {delta !== null ? <DeltaLine delta={delta} /> : <span className="tile-delta">&nbsp;</span>}
+      {delta !== null ? <DeltaLine delta={delta} unit={deltaUnit} /> : <span className="tile-delta">&nbsp;</span>}
     </>
   )
   const className = `stat-tile${warn ? ' is-warn' : ''}`

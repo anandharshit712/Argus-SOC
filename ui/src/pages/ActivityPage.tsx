@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { ActivityItem } from '../api/apiTypes.ts'
 import { fetchActivity } from '../api/argusApi.ts'
@@ -28,16 +28,29 @@ export default function ActivityPage() {
   const { tenant, live } = useApp()
   const [agent, setAgent] = useState('all')
   const [worker, setWorker] = useState('all')
+  const [caseFilter, setCaseFilter] = useState('')
   const [openCalls, setOpenCalls] = useState<string | null>(null)
+  // Steps that arrived while the user was scrolled down; the newest are at the top.
+  const [unseen, setUnseen] = useState(0)
   // The feed is keyed by tenant, so switching tenant starts a fresh feed without any reset step.
   const [feed, setFeed] = useState<{ tenant: string; items: ActivityItem[] }>({ tenant, items: [] })
   const sinceRef = useRef<{ tenant: string; at: string } | null>(null)
+
+  useEffect(() => {
+    const onScroll = () => {
+      if (window.scrollY < 60) setUnseen(0)
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   const { error, loading } = usePoll(
     async () => {
       const forTenant = tenant
       const since = sinceRef.current?.tenant === forTenant ? sinceRef.current.at : undefined
       const fresh = await fetchActivity(forTenant, since)
+      // With `since`, everything returned is new; count it if the user can't see the top.
+      if (since && fresh.length > 0 && window.scrollY >= 60) setUnseen((n) => n + fresh.length)
       const newest = [...fresh].sort(byNewest).find((i) => i.at)?.at
       if (newest) sinceRef.current = { tenant: forTenant, at: newest }
       setFeed((prev) => {
@@ -55,8 +68,16 @@ export default function ActivityPage() {
 
   const items = feed.tenant === tenant ? feed.items : []
   // G11: steps from more than one agent worker show the agents sharing the work.
-  const workers = [...new Set(items.map((i) => i.worker).filter((w): w is string => Boolean(w)))].sort()
-  const shown = items.filter((i) => (agent === 'all' || i.agent === agent) && (worker === 'all' || i.worker === worker))
+  const workerSteps = new Map<string, number>()
+  for (const i of items) if (i.worker) workerSteps.set(i.worker, (workerSteps.get(i.worker) ?? 0) + 1)
+  const workers = [...workerSteps.keys()].sort()
+  const caseId = caseFilter.trim().replace(/^#/, '')
+  const shown = items.filter(
+    (i) =>
+      (agent === 'all' || i.agent === agent) &&
+      (worker === 'all' || i.worker === worker) &&
+      (caseId === '' || String(i.case_id) === caseId),
+  )
 
   return (
     <div className="activity">
@@ -81,12 +102,51 @@ export default function ActivityPage() {
             <option value="all">All workers ({workers.length})</option>
             {workers.map((w) => (
               <option key={w} value={w}>
-                {w}
+                {w} ({workerSteps.get(w)} steps)
               </option>
             ))}
           </select>
+          <input
+            className="case-filter"
+            type="search"
+            inputMode="numeric"
+            placeholder="Case #"
+            value={caseFilter}
+            onChange={(e) => setCaseFilter(e.target.value)}
+            aria-label="Filter by case number"
+          />
         </div>
+        {/* G11: more than one worker sharing the steps is the concurrency proof. */}
+        {workers.length > 0 && (
+          <ul className="worker-counters" aria-label="Steps per worker">
+            {workers.map((w) => (
+              <li key={w}>
+                <button
+                  type="button"
+                  className={worker === w ? 'is-active' : ''}
+                  aria-pressed={worker === w}
+                  onClick={() => setWorker(worker === w ? 'all' : w)}
+                >
+                  {w} <strong>{workerSteps.get(w)}</strong>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
+
+      {unseen > 0 && (
+        <button
+          type="button"
+          className="new-pill"
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' })
+            setUnseen(0)
+          }}
+        >
+          ↑ {unseen} new
+        </button>
+      )}
 
       {error && (
         <p className="page-error" role="alert">

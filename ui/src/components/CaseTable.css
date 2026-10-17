@@ -21,6 +21,35 @@
 }
 .case-table tbody tr:last-child td { border-bottom: 0; }
 .case-table tbody tr:hover { background: rgba(74, 222, 106, 0.04); }
+.case-table td.num { text-align: right; }
+.case-table a { color: var(--text); }
+.case-table a:hover { color: var(--accent); }
+
+.row-note {
+  display: block;
+  color: var(--muted);
+  font: 0.8rem 'Share Tech Mono', monospace;
+}
+
+.needs-approval {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--warn);
+  color: #1a1400;
+  font: 700 0.8rem 'Rajdhani', sans-serif;
+}
+
+/* New or changed rows (the key includes updated_at) slide in and flash once. */
+.row-flash { animation: row-flash 1.6s ease-out; }
+@keyframes row-flash {
+  0% { background: rgba(74, 222, 106, 0.22); transform: translateY(-4px); }
+  25% { transform: none; }
+  100% { background: transparent; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .row-flash { animation: none; }
+}
 
 .case-empty {
   margin: 0;

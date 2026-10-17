@@ -25,6 +25,7 @@
 }
 .queue-tabs button:hover { border-color: var(--accent); }
 .queue-tabs button.is-active { background: var(--accent); border-color: var(--accent); color: #04110a; font-weight: 700; }
+.queue-tabs button.tab-warn:not(.is-active) { border-color: var(--warn); color: var(--warn); }
 
 .queue-filters {
   display: grid;

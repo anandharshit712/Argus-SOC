@@ -6,145 +6,220 @@ import { timeAgo } from '../lib/formatTime.ts'
 
 // Everything below that comes from Talos or the agents is rendered as text, never as HTML.
 
-// ---------- host ranking ----------
+// ---------- host ranking (UI_PAGES §4.5) ----------
 
-function riskOf(score: number): { label: string; className: string } {
-  if (score >= 0.7) return { label: 'High', className: 'badge-priority-high' }
-  if (score >= 0.4) return { label: 'Medium', className: 'badge-priority-medium' }
-  return { label: 'Low', className: 'badge-risk-low' }
-}
+type HostRankingProps = { ranking: [string, number][]; isolates: boolean }
 
-export function HostRankingList({ ranking }: { ranking: [string, number][] }) {
+export function HostRankingList({ ranking, isolates }: HostRankingProps) {
   if (ranking.length === 0) return <p className="muted">No hosts ranked yet.</p>
   return (
-    <table className="mini-table">
-      <thead>
-        <tr>
-          <th>Host</th>
-          <th>Risk</th>
-        </tr>
-      </thead>
-      <tbody>
-        {ranking.map(([host, score]) => {
-          const risk = riskOf(score)
-          return (
-            <tr key={host}>
-              <td>{host}</td>
-              <td>
-                <span className={`badge ${risk.className}`} title={`score ${score.toFixed(2)}`}>
-                  {risk.label}
-                </span>
-              </td>
-            </tr>
-          )
-        })}
-      </tbody>
-    </table>
-  )
-}
-
-// ---------- key findings (GAP-6 keys) ----------
-
-function keyFindings(f: Findings): string[] {
-  const out: string[] = []
-  if (f.succeeded === true) out.push('The attack succeeded')
-  if (f.succeeded === false) out.push('The attack did not succeed')
-  if (f.path_to_crown_jewel === true) {
-    out.push(f.shortest_path?.length ? `Path to a crown jewel: ${f.shortest_path.join(' → ')}` : 'A crown jewel is reachable')
-  }
-  if (f.path_to_crown_jewel === false) out.push('No path to a crown jewel')
-  if (f.severity) out.push(`Most severe alert: ${f.severity}`)
-  if (f.linked?.length) out.push(`${f.linked.length} linked alert${f.linked.length === 1 ? '' : 's'} correlated`)
-  for (const b of f.blast_radius ?? []) {
-    const accounts = b.accounts.length ? ` via ${b.accounts.join(', ')}` : ''
-    out.push(`Blast radius from ${b.host}${accounts}: reaches ${b.reached_hosts.length} host(s)`)
-  }
-  return out
-}
-
-export function KeyFindingsList({ findings }: { findings: Findings }) {
-  const items = keyFindings(findings)
-  if (items.length === 0) return <p className="muted">No findings recorded yet.</p>
-  return (
-    <ul className="finding-list">
-      {items.map((f) => (
-        <li key={f}>{f}</li>
+    <ul className="ranking-list" title="Centrality in the case subgraph × criticality">
+      {ranking.map(([host, score], i) => (
+        <li key={host}>
+          <span className="ranking-host">
+            {host}
+            {i === 0 && isolates && <span className="target-tag">isolation target</span>}
+          </span>
+          <span className="ranking-bar" aria-hidden="true">
+            <span style={{ width: `${Math.max(2, Math.min(1, score) * 100)}%` }} />
+          </span>
+          <span className="ranking-score">{score.toFixed(2)}</span>
+        </li>
       ))}
     </ul>
   )
 }
 
-// ---------- memory and deep dive ----------
+// ---------- findings (UI_PAGES §4.6, GAP-6 keys) ----------
 
-function factLine(name: string, facts: Record<string, unknown>): string | null {
-  // Skip what says nothing: unset values, false flags, empty lists and the graph's default
-  // IOC verdict "unknown". A name with nothing left is not listed at all.
-  const parts = Object.entries(facts)
-    .filter(([, v]) => v !== null && v !== false && v !== 'unknown' && !(Array.isArray(v) && v.length === 0))
-    .map(([k, v]) => `${humanize(k).toLowerCase()}: ${Array.isArray(v) ? v.join(', ') : String(v)}`)
-  return parts.length ? `${name} — ${parts.join('; ')}` : null
+const SHOWN_KEYS = new Set([
+  'recall', 'facts', 'linked', 'severity', 'memory_reasons', 'succeeded',
+  'path_to_crown_jewel', 'shortest_path', 'blast_radius', 'deep_dive',
+])
+
+const yesNo = (v: boolean | null | undefined) => (v === true ? 'Yes' : v === false ? 'No' : '—')
+
+export function FindingsPanel({ findings: f }: { findings: Findings }) {
+  const other = Object.entries(f).filter(([k, v]) => !SHOWN_KEYS.has(k) && v !== null && v !== undefined)
+  const nothing = f.succeeded == null && f.path_to_crown_jewel == null && !f.severity && !f.blast_radius?.length
+  if (nothing && other.length === 0) return <p className="muted">No findings recorded yet.</p>
+
+  return (
+    <div className="findings">
+      <dl className="finding-facts">
+        <div>
+          <dt>Attack succeeded</dt>
+          <dd className={f.succeeded ? 'is-bad' : undefined}>
+            <strong>{yesNo(f.succeeded)}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>Path to crown jewel</dt>
+          <dd>{yesNo(f.path_to_crown_jewel)}</dd>
+        </div>
+        {f.shortest_path?.length ? (
+          <div>
+            <dt>Shortest path</dt>
+            <dd>{f.shortest_path.join(' → ')}</dd>
+          </div>
+        ) : null}
+        {f.severity && (
+          <div>
+            <dt>Most severe alert</dt>
+            <dd>{f.severity}</dd>
+          </div>
+        )}
+      </dl>
+
+      {f.blast_radius?.length ? (
+        <>
+          <h3>Blast radius</h3>
+          {/* A list, not a table: this panel is narrow on the overview. */}
+          <ul className="blast-list">
+            {f.blast_radius.map((b) => (
+              <li key={b.host}>
+                <strong>{b.host}</strong> <span className="muted">criticality {b.criticality}</span>
+                <span>Accounts: {b.accounts.join(', ') || '—'}</span>
+                <span>Reaches: {b.reached_hosts.join(', ') || '—'}</span>
+                <span className="muted">
+                  {b.alerts} alert{b.alerts === 1 ? '' : 's'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      {other.length > 0 && (
+        <details className="raw-findings">
+          <summary>Other findings ({other.length})</summary>
+          <pre>{JSON.stringify(Object.fromEntries(other), null, 2)}</pre>
+        </details>
+      )}
+    </div>
+  )
+}
+
+// ---------- memory (UI_PAGES §4.7, G4 / G10) ----------
+
+const caseList = (ids: unknown) => (Array.isArray(ids) ? ids.map((id) => `#${id}`).join(', ') : '')
+
+/** "svc_deploy — suspected compromised (Case 31)", "10.0.5.20 — owner: internal pentest scanner". */
+function factLine(kind: string, name: string, facts: Record<string, unknown>): string | null {
+  const parts: string[] = []
+  for (const [key, value] of Object.entries(facts)) {
+    if (value === null || value === false || value === 'unknown' || (Array.isArray(value) && value.length === 0)) continue
+    if (key === 'targeted_case_ids' && Array.isArray(value)) {
+      parts.push(`targeted in ${value.length} ${value.length === 1 ? 'case' : 'cases'} (${caseList(value)})`)
+    } else if (key === 'seen_case_ids' && Array.isArray(value)) {
+      parts.push(`seen in ${value.length} ${value.length === 1 ? 'case' : 'cases'} (${caseList(value)})`)
+    } else if (key === 'suspected_compromised') {
+      parts.push(`suspected compromised${facts.suspect_case_id != null ? ` (Case ${facts.suspect_case_id})` : ''}`)
+    } else if (key === 'owner') {
+      parts.push(`owner: ${String(value)}`)
+    } else if (key === 'verdict') {
+      parts.push(`verdict: ${String(value)}`)
+    } else if (key.endsWith('_at') || key === 'suspect_case_id' || key === 'first_seen' || key === 'last_seen') {
+      continue // timestamps and ids already folded into the phrases above
+    } else {
+      parts.push(`${humanize(key).toLowerCase()}: ${Array.isArray(value) ? value.join(', ') : String(value)}`)
+    }
+  }
+  return parts.length ? `${kind === 'iocs' ? 'IOC ' : ''}${name} — ${parts.join('; ')}` : null
 }
 
 export function MemoryPanel({ findings }: { findings: Findings }) {
-  const [open, setOpen] = useState(false)
   const reasons = findings.memory_reasons ?? []
   const recall = findings.recall ?? []
-  const facts = Object.values(findings.facts ?? {}).flatMap((group) =>
-    Object.entries(group ?? {}).flatMap(([name, f]) => factLine(name, f ?? {}) ?? []),
+  const facts = Object.entries(findings.facts ?? {}).flatMap(([kind, group]) =>
+    Object.entries(group ?? {}).flatMap(([name, f]) => factLine(kind, name, f ?? {}) ?? []),
   )
-  const calls: ToolCallOut[] = findings.deep_dive ?? []
 
   return (
-    <>
+    <div className="memory">
       {reasons.length > 0 && (
-        <p className="small">
+        <p className="memory-raise">
           <strong>Priority raised one step because of:</strong> {reasons.join('; ')}
         </p>
       )}
-      {recall.length === 0 && facts.length === 0 && reasons.length === 0 ? (
-        <p className="muted">No earlier cases or facts about these hosts, accounts or IOCs.</p>
+
+      <h3>Past cases</h3>
+      {recall.length === 0 ? (
+        // In Globex this is the tenant isolation proof (G7): keep the wording exact and visible.
+        <p className="memory-empty">No earlier cases with these hosts, users or IOCs</p>
       ) : (
         <ul className="finding-list plain">
           {recall.map((r) => (
             <li key={`case-${r.case_id}`}>
               <Link to={`/cases/${r.case_id}`}>Case #{r.case_id}</Link> closed{r.verdict ? ` as ${r.verdict}` : ''}
+              {r.closed_at ? ` ${timeAgo(r.closed_at)}` : ''}
               {r.note ? `: “${r.note}”` : ''}
             </li>
           ))}
+        </ul>
+      )}
+
+      <h3>Known facts</h3>
+      {facts.length === 0 ? (
+        <p className="muted small">Nothing remembered about these hosts, users or IOCs.</p>
+      ) : (
+        <ul className="finding-list plain">
           {facts.map((line) => (
             <li key={line}>{line}</li>
           ))}
         </ul>
       )}
+    </div>
+  )
+}
 
-      <h3>Deep Dive</h3>
-      {calls.length === 0 ? (
-        <p className="muted small">No MCP tool calls (the LLM deep dive is off or was not needed).</p>
-      ) : (
-        <>
-          <button type="button" className="btn-outline" onClick={() => setOpen(!open)} aria-expanded={open}>
-            {open ? 'Hide MCP tool calls' : `Show ${calls.length} MCP tool call${calls.length === 1 ? '' : 's'}`}
-          </button>
-          {open && <ToolCallList calls={calls} />}
-        </>
-      )}
+// ---------- deep dive (UI_PAGES §4.9, G9) ----------
+
+export function DeepDivePanel({ calls }: { calls: ToolCallOut[] | null | undefined }) {
+  // The Investigator writes [] when the LLM is off or it needed no extra calls; null = not run yet.
+  if (!calls || calls.length === 0) {
+    return (
+      <p className="muted small">
+        {calls ? 'No extra tool calls (deep dive off or not needed)' : 'Not investigated yet'}
+      </p>
+    )
+  }
+  return (
+    <>
+      <p className="muted small">Evidence only — the decision table does not read this.</p>
+      <ToolCallList calls={calls} numbered />
     </>
   )
 }
 
-export function ToolCallList({ calls }: { calls: ToolCallOut[] }) {
+function ToolResult({ text }: { text: string }) {
+  const [open, setOpen] = useState(false)
+  const long = text.length > 200
   return (
-    <ul className="mcp-calls">
+    <span className="tool-result">
+      {open || !long ? text : `${text.slice(0, 200)}…`}
+      {long && (
+        <button type="button" className="link-button" onClick={() => setOpen(!open)}>
+          {open ? 'less' : 'more'}
+        </button>
+      )}
+    </span>
+  )
+}
+
+export function ToolCallList({ calls, numbered = false }: { calls: ToolCallOut[]; numbered?: boolean }) {
+  return (
+    <ol className={`mcp-calls${numbered ? ' is-numbered' : ''}`}>
       {calls.map((call, i) => (
         <li key={`${call.tool}-${i}`}>
           <code>
             {call.tool}({Object.entries(call.args).map(([k, v]) => `${k}=${JSON.stringify(v)}`).join(', ')})
           </code>
           {call.why && <span className="muted">Why: {call.why}</span>}
-          {call.result && <span>{call.result}</span>}
+          {call.result && <ToolResult text={call.result} />}
         </li>
       ))}
-    </ul>
+    </ol>
   )
 }
 
@@ -175,9 +250,7 @@ export function LinkedAlertsList({ alerts, expanded = false }: { alerts: AlertOu
                   ))}
                 </ul>
               )}
-              {a.talos_actions.length > 0 && (
-                <p className="muted small">Talos suggested: {a.talos_actions.join('; ')}</p>
-              )}
+              {a.talos_actions.length > 0 && <p className="muted small">Talos suggested: {a.talos_actions.join('; ')}</p>}
             </div>
           )}
         </li>

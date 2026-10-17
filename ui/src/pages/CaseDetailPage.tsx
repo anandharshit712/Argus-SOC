@@ -4,8 +4,16 @@ import { fetchCaseDetail } from '../api/argusApi.ts'
 import { PriorityBadge, StatusBadge } from '../components/CaseBadges.tsx'
 import CaseDecisionPanel from '../components/CaseDecisionPanel.tsx'
 import CaseFeedbackForm from '../components/CaseFeedbackForm.tsx'
-import { HostRankingList, KeyFindingsList, LinkedAlertsList, MemoryPanel, TimelineList } from '../components/CasePanels.tsx'
+import {
+  DeepDivePanel,
+  FindingsPanel,
+  HostRankingList,
+  LinkedAlertsList,
+  MemoryPanel,
+  TimelineList,
+} from '../components/CasePanels.tsx'
 import CasePathGraph from '../components/CasePathGraph.tsx'
+import CaseProgress from '../components/CaseProgress.tsx'
 import NotFoundView from '../components/NotFoundView.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { caseTitle } from '../lib/caseTitle.ts'
@@ -48,14 +56,28 @@ export default function CaseDetailPage() {
   }
 
   const decision = data.decision
-  const path = decision?.path.length ? (
-    <CasePathGraph path={decision.path} />
-  ) : (
-    <p className="muted">
-      {data.findings.path_to_crown_jewel === false ? 'No path from this case’s hosts to a crown jewel.' : 'No path yet.'}
-    </p>
+  // The decision's path, or the Investigator's shortest path before there is a decision.
+  const nodes = decision?.path.length
+    ? decision.path
+    : (data.findings.shortest_path ?? []).map((name) => ({ name, label: 'Host' }))
+  const path =
+    nodes.length > 0 ? (
+      <CasePathGraph
+        path={nodes}
+        targets={[...(decision?.target_hosts ?? []), ...(decision?.target_users ?? [])]}
+        endsOnCrownJewel={data.findings.path_to_crown_jewel !== false}
+      />
+    ) : (
+      <p className="muted">
+        {data.findings.path_to_crown_jewel === false ? 'No path to a crown jewel within 6 hops' : 'No path yet.'}
+      </p>
+    )
+  const ranking = (
+    <HostRankingList
+      ranking={decision?.ranking ?? []}
+      isolates={decision?.actions.includes('isolate_top_host') ?? false}
+    />
   )
-  const ranking = <HostRankingList ranking={decision?.ranking ?? []} />
 
   return (
     <div className="case-detail">
@@ -73,17 +95,24 @@ export default function CaseDetailPage() {
           <StatusBadge status={data.status} />
           {data.auto_closed_by && (
             <span>
-              by {data.auto_closed_by}
+              Auto-closed by <Link to="/playbooks">{data.auto_closed_by}</Link>
               {data.auto_closed_source_case !== null && (
                 <>
-                  {' '}
-                  (learned from <Link to={`/cases/${data.auto_closed_source_case}`}>#{data.auto_closed_source_case}</Link>)
+                  , learned from <Link to={`/cases/${data.auto_closed_source_case}`}>Case {data.auto_closed_source_case}</Link>
                 </>
               )}
             </span>
           )}
-          <span>Updated {timeAgo(data.updated_at)}</span>
         </div>
+        <div className="case-subline">
+          <span>
+            {data.alert_count} alert{data.alert_count === 1 ? '' : 's'}
+          </span>
+          <span>Opened {timeAgo(data.opened_at)}</span>
+          <span>Updated {timeAgo(data.updated_at)}</span>
+          {data.closed_at && <span>Closed {timeAgo(data.closed_at)}</span>}
+        </div>
+        <CaseProgress detail={data} />
       </header>
 
       {error && (
@@ -123,7 +152,7 @@ export default function CaseDetailPage() {
           </section>
           <section className="panel area-findings">
             <h2>Key Findings</h2>
-            <KeyFindingsList findings={data.findings} />
+            <FindingsPanel findings={data.findings} />
           </section>
           <section className="panel area-memory">
             <h2>Memory</h2>
@@ -132,6 +161,10 @@ export default function CaseDetailPage() {
           <section className="panel area-alerts">
             <h2>Linked Alerts</h2>
             <LinkedAlertsList alerts={data.alerts} />
+          </section>
+          <section className="panel area-deepdive">
+            <h2>Deep Dive (MCP tools)</h2>
+            <DeepDivePanel calls={data.findings.deep_dive} />
           </section>
         </div>
       )}

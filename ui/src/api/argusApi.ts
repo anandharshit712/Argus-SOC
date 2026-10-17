@@ -29,8 +29,8 @@ export const fetchMe = () => apiRequest<MeOut>('/auth/me')
 
 export const logout = () => apiRequest<void>('/auth/logout', { method: 'POST' })
 
-export const fetchCases = (tenant: string, limit = 500) =>
-  apiRequest<CaseSummary[]>(`${t(tenant)}/cases`, { query: { limit } })
+export const fetchCases = (tenant: string, limit = 500, status?: string) =>
+  apiRequest<CaseSummary[]>(`${t(tenant)}/cases`, { query: { limit, status } })
 
 /** The case, or null when it does not exist for this tenant. */
 export async function fetchCaseDetail(tenant: string, caseId: number): Promise<CaseDetail | null> {
