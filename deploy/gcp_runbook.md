@@ -17,6 +17,8 @@ cloud-VM HTTPS override and work unchanged on GCP.
 | Machine | e2-standard-4: 4 vCPU, 16 GB, x86 |
 | OS / disk | Ubuntu 24.04 LTS (x86/64), 50 GB balanced persistent disk, no snapshot schedule, no Ops Agent |
 | Public IP | `34.93.139.203`, reserved as static (`argus-soc-ip`) |
+| Project folder | `/opt/Argus-SOC` (group `argus`; `~/Argus-SOC` is a shortcut for each user) |
+| SSH users | `anandharshit560`, `harshit`, `adnan`, `edith288` (Satya) |
 | Firewall | Default VPC rules: SSH 22, HTTP 80, HTTPS 443 (tick "Allow HTTP/HTTPS traffic") |
 | Argus UI + API | `https://argus-soc.34-93-139-203.sslip.io` |
 | Demo web shop | `https://shop.34-93-139-203.sslip.io` |
@@ -55,10 +57,10 @@ GCP's Ubuntu image does not block ports 80/443 in the OS firewall, so no iptable
 ## 3. Clone and fill in `.env`
 
 ```bash
-git clone https://github.com/anandharshit712/Argus-SOC.git ~/Argus-SOC && cd ~/Argus-SOC
+sudo git clone https://github.com/anandharshit712/Argus-SOC.git /opt/Argus-SOC && cd /opt/Argus-SOC
 cp .env.example .env
 grep -E '^ARGUS_SESSION_HOURS=' backend/.env.example >> .env   # ARGUS_DEMO_USERS / ARGUS_SESSION_SECRET too
-chmod 600 .env
+chmod 660 .env   # owner + argus group (see Team access)
 ```
 
 Set: `TALOS_DB_PASSWORD` (random, before the first start), `ARGUS_DOMAIN`, `SHOP_DOMAIN`,
@@ -66,6 +68,31 @@ Set: `TALOS_DB_PASSWORD` (random, before the first start), `ARGUS_DOMAIN`, `SHOP
 and for LLM mode `LLM_ENABLED=true`, `LLM_API_KEY`, `LLM_PROVIDER=openai` (exact spelling) and
 `LLM_MODEL` (required for OpenAI; the live demo uses `gpt-5.5`), `LLM_TIMEOUT_SECONDS=30`.
 Keep `DEMO_SOAK=0` unless you want the always-on random attack loop.
+
+### Team access (shared folder)
+
+The project lives in `/opt/Argus-SOC`, not a home folder: Ubuntu home folders are mode 750, so
+teammates could not `cd` into `/home/<owner>/Argus-SOC`. Each teammate logs in as their own user
+(the name at the end of their SSH public key, added under the VM's SSH keys; those users get sudo
+through `google-sudoers`). One-time setup, run after the clone:
+
+```bash
+sudo apt-get install -y acl
+sudo groupadd -f argus
+for u in anandharshit560 harshit adnan edith288; do sudo usermod -aG argus $u; done
+sudo chgrp -R argus /opt/Argus-SOC
+sudo chmod -R g+rwX /opt/Argus-SOC
+sudo find /opt/Argus-SOC -type d -exec chmod g+s {} +
+sudo setfacl -R -m g:argus:rwX -m d:g:argus:rwX /opt/Argus-SOC   # new files stay group-writable
+sudo git config --system --add safe.directory /opt/Argus-SOC
+git -C /opt/Argus-SOC config core.sharedRepository group
+for u in harshit adnan edith288; do sudo -u $u ln -sfn /opt/Argus-SOC /home/$u/Argus-SOC; done
+```
+
+To add a teammate later: add their key in the console (check the External IPv4 address still
+says `argus-soc-ip` before saving, or the static IP is detached), then
+`sudo usermod -aG argus <user>` and `sudo -u <user> ln -sfn /opt/Argus-SOC /home/<user>/Argus-SOC`.
+Group changes apply on their next login. `.env` is group-readable by design.
 
 ## 4. Certificate (before nginx starts)
 
@@ -85,7 +112,7 @@ and add a `[[webroot_map]]` section with both names mapped to `/var/www/certbot`
 A small wrapper keeps the four compose files and both profiles in one command:
 
 ```bash
-printf '#!/bin/sh\ncd %s/Argus-SOC && exec sudo docker compose -f docker-compose.yml -f docker-compose.oci.yml -f demo/docker-compose.demo.yml -f docker-compose.public-shop.yml --profile app --profile demo "$@"\n' $HOME \
+printf '#!/bin/sh\ncd /opt/Argus-SOC && exec sudo docker compose -f docker-compose.yml -f docker-compose.oci.yml -f demo/docker-compose.demo.yml -f docker-compose.public-shop.yml --profile app --profile demo "$@"\n' \
   | sudo tee /usr/local/bin/dc >/dev/null && sudo chmod +x /usr/local/bin/dc
 dc build
 dc up -d --scale agents=2
