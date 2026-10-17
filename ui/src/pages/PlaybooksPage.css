@@ -1,0 +1,73 @@
+.playbooks { display: flex; flex-direction: column; gap: 16px; }
+
+.playbook-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 420px), 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.playbook-card {
+  padding: 18px 20px;
+  background: rgba(10, 18, 14, 0.85);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+}
+.playbook-card header { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.playbook-card h2 { margin: 0; font: 700 1.35rem 'Rajdhani', sans-serif; color: #fff; overflow-wrap: anywhere; }
+.playbook-meta { margin: 6px 0 12px; color: var(--muted); font-size: 0.95rem; }
+.playbook-card a { color: var(--accent); }
+
+.version-tag {
+  padding: 1px 8px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  font: 700 0.85rem 'Share Tech Mono', monospace;
+}
+.active-tag, .superseded-tag {
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  font: 0.8rem 'Share Tech Mono', monospace;
+}
+.active-tag.is-active { color: #04110a; background: var(--accent); border-color: var(--accent); }
+
+.condition {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 10px 12px;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.condition div { display: grid; grid-template-columns: minmax(120px, 40%) 1fr; gap: 10px; }
+.condition dt { color: var(--muted); font: 0.85rem 'Share Tech Mono', monospace; }
+.condition dd { margin: 0; overflow-wrap: anywhere; }
+
+.history-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 12px;
+  padding: 0;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  font: 500 1rem 'Rajdhani', sans-serif;
+  cursor: pointer;
+}
+.history-toggle:hover { color: var(--accent); }
+
+.version-history { list-style: none; margin: 10px 0 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.version-history li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--border-strong);
+  opacity: 0.85;
+}
+.version-history .condition { width: 100%; }

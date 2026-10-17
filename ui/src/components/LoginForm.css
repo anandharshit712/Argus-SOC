@@ -1,0 +1,92 @@
+.login-form {
+  width: 100%;
+  max-width: 440px;
+  padding: 28px 24px 20px;
+  background: rgba(8, 14, 11, 0.82);
+  border: 1px solid var(--border-strong);
+  border-radius: 10px;
+  box-shadow: 0 0 24px rgba(74, 222, 106, 0.08);
+}
+
+.field {
+  display: flex;
+  align-items: center;
+  margin-bottom: 18px;
+  background: var(--field);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--muted);
+}
+.field:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.field-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  align-self: stretch;
+  border-right: 1px solid var(--border);
+}
+
+.field input {
+  flex: 1;
+  min-width: 0;
+  padding: 16px;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--text);
+  font: 500 1.1rem 'Rajdhani', sans-serif;
+  letter-spacing: 0.03em;
+}
+.field input::placeholder {
+  color: var(--muted);
+}
+
+.field-toggle {
+  display: grid;
+  place-items: center;
+  padding: 0 14px;
+  align-self: stretch;
+  background: transparent;
+  border: 0;
+  color: var(--text);
+  cursor: pointer;
+}
+.field-toggle:hover {
+  color: var(--accent);
+}
+
+.form-error {
+  margin: 0 0 14px;
+  color: var(--danger);
+  font: 0.85rem 'Share Tech Mono', monospace;
+}
+
+.sign-in {
+  width: 100%;
+  padding: 15px;
+  background: var(--accent);
+  border: 0;
+  border-radius: 6px;
+  color: #04110a;
+  font: 700 1.15rem 'Rajdhani', sans-serif;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+}
+.sign-in:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.sign-in:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.form-note {
+  margin: 18px 0 0;
+  text-align: center;
+  color: var(--muted);
+  font: 0.8rem 'Share Tech Mono', monospace;
+}

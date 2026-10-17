@@ -1,0 +1,21 @@
+.badge {
+  display: inline-block;
+  padding: 3px 12px;
+  border: 1px solid currentColor;
+  border-radius: 5px;
+  font: 600 0.95rem 'Rajdhani', sans-serif;
+  white-space: nowrap;
+}
+
+.badge-priority-critical { color: var(--danger); background: rgba(255, 107, 107, 0.14); }
+.badge-priority-high { color: #ff8a5c; background: rgba(255, 138, 92, 0.14); }
+.badge-priority-medium { color: var(--warn); background: rgba(240, 192, 64, 0.14); }
+.badge-priority-info,
+.badge-priority-low { color: var(--muted); background: rgba(125, 154, 137, 0.12); }
+
+.badge-status-new,
+.badge-status-triaged,
+.badge-status-investigated { color: #5eb4ff; background: rgba(94, 180, 255, 0.12); }
+.badge-status-awaiting_approval { color: var(--warn); background: rgba(240, 192, 64, 0.12); }
+.badge-status-closed,
+.badge-status-auto_closed { color: var(--accent); background: rgba(74, 222, 106, 0.12); }
