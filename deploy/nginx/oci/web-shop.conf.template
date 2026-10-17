@@ -1,0 +1,29 @@
+# Public demo web shop at ${SHOP_DOMAIN} (same certificate as ${ARGUS_DOMAIN}).
+# Rendered only when docker-compose.public-shop.yml sets SHOP_DOMAIN. The attack-bot, SSH target,
+# Talos and the databases stay private; only the shop is fronted here.
+server {
+    listen 80;
+    server_name ${SHOP_DOMAIN};
+    location /.well-known/acme-challenge/ { root /var/www/certbot; }
+    location / { return 301 https://$host$request_uri; }
+}
+
+server {
+    listen 443 ssl;
+    http2 on;
+    server_name ${SHOP_DOMAIN};
+    client_max_body_size 1m;
+
+    ssl_certificate /etc/letsencrypt/live/${ARGUS_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${ARGUS_DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    location / {
+        set $shop_upstream http://web_shop:8000;
+        proxy_pass $shop_upstream;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 30s;
+    }
+}

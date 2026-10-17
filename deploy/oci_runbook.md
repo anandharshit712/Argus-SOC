@@ -1,5 +1,9 @@
 # Deploying Argus SOC on the OCI instance
 
+> **Superseded on Oct 17, 2026.** The live deployment runs on GCP: see `deploy/gcp_runbook.md`
+> (HLD D14). Kept for reference. `docker-compose.oci.yml` and `deploy/nginx/oci/` are still the
+> cloud-VM HTTPS override, used unchanged on GCP.
+
 Owner: Workstream B (Md Adnan Afzal). One Ubuntu VM on OCI, one Docker Compose project.
 Only nginx is reachable from the internet (ports 80 and 443); FalkorDB, Talos, its
 PostgreSQL, the API and the agents stay on the private `soc-net` network.

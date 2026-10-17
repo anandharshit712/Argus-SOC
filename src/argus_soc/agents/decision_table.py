@@ -4,7 +4,7 @@ Rules are data, read top to bottom; the first whose `when` matches the findings 
 deep dive's results are evidence only and are never read here.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 
@@ -55,9 +55,19 @@ RULES = (
 
 
 def decide(findings: dict[str, Any]) -> Rule:
-    """First matching rule. A missing finding counts as False (nothing proven)."""
+    """First matching rule. A missing finding counts as False (nothing proven). R3 needs
+    approval when Triage found a known-malicious IOC (`known_malicious_iocs`)."""
     facts = {
         "succeeded": bool(findings.get("succeeded")),
         "path": bool(findings.get("path_to_crown_jewel")),
     }
-    return next(r for r in RULES if all(facts[k] == v for k, v in r.when.items()))
+    rule = next(r for r in RULES if all(facts[k] == v for k, v in r.when.items()))
+    if rule.id == "R3" and findings.get("known_malicious_iocs"):
+        # An attacker already marked malicious (an approved decision) on a crown-jewel path
+        # goes to the analyst instead of closing on its own (live test Oct 17, case 20).
+        return replace(
+            rule,
+            needs_approval=True,
+            reason=f"{rule.reason}, and the attacker is already known malicious",
+        )
+    return rule

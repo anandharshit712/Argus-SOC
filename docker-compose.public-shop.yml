@@ -1,0 +1,8 @@
+# Cloud VM only: serve the demo web shop publicly at https://SHOP_DOMAIN through the same nginx.
+# Owner: Workstream B. Adds SHOP_DOMAIN to nginx so deploy/nginx/oci/web-shop.conf.template renders.
+#   Use with docker-compose.yml + docker-compose.oci.yml + demo/docker-compose.demo.yml
+#   (steps: deploy/gcp_runbook.md). The certificate for ARGUS_DOMAIN must also cover SHOP_DOMAIN.
+services:
+  nginx:
+    environment:
+      SHOP_DOMAIN: ${SHOP_DOMAIN:-}

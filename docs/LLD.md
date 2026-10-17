@@ -383,7 +383,8 @@ step(tenant):
         severity = highest(alert.severity for alert in case.alerts)
         priority = raise_one(severity) if reasons else severity   # at most one step
         graph.record_findings(tenant, case_id, {"recall": history, "facts": facts,
-            "linked": other alert ids, "severity": severity, "memory_reasons": reasons})
+            "linked": other alert ids, "severity": severity, "memory_reasons": reasons,
+            "known_malicious_iocs": IOCs whose fact verdict is malicious})   # read by §6.4
         handoff: set_case_status(TRIAGED, priority) + record_agent_run(handed_to="investigator")
 ```
 
@@ -405,6 +406,7 @@ run(tenant, case_id):
         "path_to_crown_jewel": any(paths.values()),
         "shortest_path": min(paths, key=len) or None,
         "blast_radius": radius,
+        "investigated_alerts": sorted alert ids of the case,   # read by §6.5
     }
     deep = deep_dive(tenant, case, findings) if DEEP_DIVE_ENABLED and LLM_ENABLED else []   # §6.9
     findings["deep_dive"] = deep                     # evidence only; decide() never reads it
@@ -441,15 +443,21 @@ RULES = [
 def decide(findings: dict) -> Rule
 ```
 
+R3 needs approval when `findings.known_malicious_iocs` is not empty: an attacker already marked
+malicious by an approved decision, on a crown-jewel path, goes to the analyst instead of closing
+on its own (live test Oct 17, case 20). The rule id stays R3; the reason says why.
+
 ### 6.5 `responder_agent.py`
 
 ```
 run(tenant, case_id):
     case = graph.get_case(tenant, case_id)
+    if case.alert ids != case.findings.investigated_alerts: send back (below); return
     rule = decision_table.decide(case.findings)
     ranking = graph.rank_hosts(tenant, case_id)
     targets = resolve(rule.actions, ranking, case)     # e.g. isolate_top_host → ranking[0]
     explanation = llm.explain(case, rule, ranking) if LLM_ENABLED else template(case, rule, ranking)
+    if graph.get_case(tenant, case_id) alert ids changed: send back; return   # the LLM takes seconds
     graph.record_decision(tenant, case_id, DecisionInput(rule_id=rule.id, actions=targets,
         needs_approval=rule.needs_approval, reason=..., explanation=explanation,
         previous_priority=case.priority,          # GAP-5 (done): lets the UI show high → medium
@@ -460,6 +468,14 @@ run(tenant, case_id):
 ```
 
 Talos's `recommended_actions` are shown next to ours in the UI but never decide.
+
+**Send back (live test Oct 17, case 8).** Talos can report "8 attempts, not succeeded" and,
+seconds later, "9 attempts, succeeded" for the same attack. When an alert joined the case after
+the Investigator ran, the findings are stale, so the Responder hands the case back to the
+Investigator (`set_case_status(TRIAGED)` + agent run handed to `investigator`) instead of
+deciding; the next pass decides from all alerts (R1, not R3). A case already decided keeps its
+one decision (`record_decision` is one per case); an alert joining in the milliseconds between
+the Responder's last read and its write is still missed.
 
 Targets (as built): `isolate_top_host` → the first host of the ranking; `disable_accounts` → the
 accounts in alerts that succeeded; `block_ips` / `block_or_rate_limit_ips` → the case's IOCs;

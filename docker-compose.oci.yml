@@ -1,6 +1,7 @@
-# OCI override: HTTPS on ports 80/443 for ARGUS_DOMAIN. Owner: Workstream B.
+# Cloud-VM override (named for OCI, used on GCP since Oct 17): HTTPS on ports 80/443 for
+# ARGUS_DOMAIN. Owner: Workstream B.
 #   docker compose -f docker-compose.yml -f docker-compose.oci.yml --profile app up -d --build
-# Steps (certificate first): deploy/oci_runbook.md
+# Steps (certificate first): deploy/gcp_runbook.md
 services:
   nginx:
     environment:

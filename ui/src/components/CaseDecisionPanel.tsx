@@ -41,10 +41,16 @@ export default function CaseDecisionPanel({ case: detail, onGiveFeedback }: Case
   )
 
   if (!decision) {
+    // A playbook closes a case on arrival, before any agent decides (UI_PAGES §4.3).
+    const source = detail.auto_closed_source_case
+    const status =
+      detail.status === 'auto_closed'
+        ? `Closed automatically by playbook ${detail.auto_closed_by ?? ''}${source ? `, learned from case ${source}` : ''}. No agent decision was needed.`
+        : 'The agents are still working on this case.'
     return (
       <>
         <h2>Decision Panel</h2>
-        <p className="muted">The agents are still working on this case.</p>
+        <p className="muted">{status}</p>
         <CaseProgress detail={detail} />
         {talosBox}
       </>

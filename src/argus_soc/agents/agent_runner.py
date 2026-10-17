@@ -10,7 +10,7 @@ memory between steps: a restarted runner carries on from the graph.
 import asyncio
 
 from argus_soc import graph
-from argus_soc.agents import investigator_agent, responder_agent, triage_agent
+from argus_soc.agents import investigator_agent, llm_client, responder_agent, triage_agent
 from argus_soc.core.logging_setup import get_logger, setup_logging
 from argus_soc.core.settings import get_settings
 from argus_soc.graph.graph_schema import AgentName, CaseStatus
@@ -40,6 +40,8 @@ async def run_once(tenant: str) -> bool:
 async def run() -> None:
     settings = get_settings()
     log.info("worker %s on tenants %s", settings.agent_worker_id, settings.tenant_ids)
+    if problem := llm_client.config_problem():
+        log.error("LLM_ENABLED is true but the LLM cannot be used (%s); using templates", problem)
     while True:
         did = False
         for tenant in settings.tenant_ids:

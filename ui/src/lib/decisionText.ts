@@ -1,4 +1,4 @@
-import type { CaseDetail, DecisionOut } from '../api/apiTypes.ts'
+import type { AlertOut, CaseDetail, DecisionOut } from '../api/apiTypes.ts'
 import { humanize } from './caseTitle.ts'
 
 const list = (values: string[]) => values.join(', ')
@@ -30,7 +30,12 @@ export function actionLine(action: string, d: DecisionOut, path: string[]): stri
   }
 }
 
-/** Talos's own recommendations, deduplicated across the case's alerts. */
+const SEVERITY_ORDER = ['info', 'low', 'medium', 'high', 'critical']
+
+/** Talos's own recommendations from the case's most severe alert (the later one on a tie).
+ * Each merged alert names its own accounts, so the union piled up on long-lived cases. */
 export function talosSuggestions(detail: CaseDetail): string[] {
-  return [...new Set(detail.alerts.flatMap((a) => a.talos_actions))]
+  const rank = (a: AlertOut) => SEVERITY_ORDER.indexOf(a.severity ?? '')
+  const top = detail.alerts.reduce<AlertOut | null>((best, a) => (best && rank(best) > rank(a) ? best : a), null)
+  return [...new Set(top?.talos_actions ?? [])]
 }

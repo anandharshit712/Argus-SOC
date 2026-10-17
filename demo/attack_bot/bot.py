@@ -74,6 +74,19 @@ def _poll_for_incident(client: httpx.Client, before: set[str], category: str) ->
     return None
 
 
+def _latency(report: dict, started: datetime) -> float | None:
+    """Campaign start -> Talos stored the incident (its `created_at`). Timing the poll instead
+    read 0.0 s every run: Talos detects mid-campaign (e.g. at the 8th failure), so the incident
+    is already there when the campaign's traffic ends and the poll starts."""
+    try:
+        created = datetime.fromisoformat(report["created_at"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    if created.tzinfo is None:
+        created = created.replace(tzinfo=UTC)
+    return round((created - started).total_seconds(), 1)
+
+
 def run_campaign(name: str) -> dict:
     """Fire one campaign and score it against Talos. Serialized by _lock."""
     if name not in CAMPAIGNS:
@@ -81,10 +94,8 @@ def run_campaign(name: str) -> dict:
     with _lock, httpx.Client(timeout=10.0) as client:
         before = _known_incident_ids(client)
         log.info("launching %s", name)
+        started = datetime.now(UTC)
         expect = CAMPAIGNS[name](client, SHOP_URL)
-        # Clock starts after the traffic is sent, so latency is Talos's detection+shipping time,
-        # not how long the campaign took to send its requests.
-        started = time.monotonic()
         hit = _poll_for_incident(client, before, expect.category)
         result = {
             "time": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -92,7 +103,7 @@ def run_campaign(name: str) -> dict:
             "expected": f"{expect.category}/{expect.severity}",
             "detected": bool(hit),
             "incident_id": hit.get("incident_id") if hit else None,
-            "latency_s": round(time.monotonic() - started, 1) if hit else None,
+            "latency_s": _latency(hit, started) if hit else None,
         }
     _scoreboard.appendleft(result)
     log.info("%s -> %s", name, f"DETECTED {result['incident_id']}" if hit else "MISSED")

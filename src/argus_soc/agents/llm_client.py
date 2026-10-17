@@ -137,6 +137,22 @@ async def _ask_openai(key: str, model: str, system: str, prompt: str) -> str | N
 ASK = {"anthropic": _ask_anthropic, "openai": _ask_openai}
 
 
+def config_problem() -> str | None:
+    """Why LLM_ENABLED=true cannot work, or None when it can (or the LLM is off). Logged at
+    agent startup: a misspelt LLM_PROVIDER (e.g. "open-ai") otherwise only shows up as
+    template explanations (live test Oct 17)."""
+    if not get_settings().llm_enabled:
+        return None
+    name = provider()
+    if name is None:
+        return "LLM_API_KEY is empty"
+    if name not in ASK:
+        return f"LLM_PROVIDER {name!r} is not one of {sorted(ASK)}"
+    if model_name() is None:
+        return "LLM_MODEL is required for OpenAI"
+    return None
+
+
 async def complete(prompt_name: str, variables: dict[str, Any], schema: type[M]) -> M | None:
     """One LLM call, validated against `schema`; None on anything but a valid answer."""
     name, model = provider(), model_name()

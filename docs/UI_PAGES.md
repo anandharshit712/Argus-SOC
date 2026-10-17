@@ -14,15 +14,20 @@ Owner: **C — Satya**. Changes to anything marked **contract** need a message t
 
 | # | Page | Route | Purpose | Main API calls | Refresh |
 |---|---|---|---|---|---|
-| 1 | Sign in | `/login` | Pick a hard-coded demo user, get a session | `POST /api/auth/login` | — |
-| 2 | Case queue | `/t/:tenant/cases` | All cases for the tenant, newest first | `GET /api/{tenant}/cases` | 3 s |
-| 3 | Case detail | `/t/:tenant/cases/:caseId` | Why the agents decided what they did; analyst verdict | `GET /api/{tenant}/cases/{id}`, `POST …/feedback` | 3 s while the case is still moving |
-| 4 | Playbooks | `/t/:tenant/playbooks` | What the system has learned, version by version | `GET /api/{tenant}/playbooks` | 10 s |
-| 5 | Agent activity | `/t/:tenant/activity` | Live feed of agent steps, handoffs and workers | `GET /api/{tenant}/activity?since=` | 2 s |
+| 1 | Sign in | any URL while signed out | Pick a hard-coded demo user, get a session | `POST /api/auth/login` | — |
+| 2 | Case queue | `/cases` | All cases for the tenant, newest first | `GET /api/{tenant}/cases` | 3 s |
+| 3 | Case detail | `/cases/:caseId` | Why the agents decided what they did; analyst verdict | `GET /api/{tenant}/cases/{id}`, `POST …/feedback` | 3 s while the case is still moving |
+| 4 | Playbooks | `/playbooks` | What the system has learned, version by version | `GET /api/{tenant}/playbooks` | 10 s |
+| 5 | Agent activity | `/activity` | Live feed of agent steps, handoffs and workers | `GET /api/{tenant}/activity?since=` | 2 s |
 | — | App shell | wraps 2–5 | Header, tenant switcher, nav, user menu, health banner | `GET /api/health`, `GET /api/auth/me` | health 10 s |
 | — | Not found | `*` | Unknown route, unknown tenant, unknown case | — | — |
 
-Default route after sign in: `/t/<first allowed tenant>/cases`.
+Default route after sign in: `/` → `/dashboard` (the dashboard page is built on top of this spec).
+
+**Routes as built (live test Oct 17):** the tenant is not in the URL. It is the tenant switcher's
+choice, kept in `sessionStorage` (first allowed tenant by default), so `/t/acme/cases/11` is a
+404 and the case link is `/cases/11`. The sign-in page has no route of its own: it shows at
+whatever URL was opened while signed out, and that page loads after sign in.
 
 **Which page proves which goal** (so the demo video can be planned around the screens):
 
@@ -57,7 +62,7 @@ hashed passwords, roles) is a **post-hackathon feature**.
   are never in code or git; `.env.example` lists the variable with placeholder values.
 - The tenant list itself stays in `core/tenant_registry.py` (`acme`, `globex`).
 
-### 1.2 Page 1 — Sign in (`/login`)
+### 1.2 Page 1 — Sign in (shown at any URL while signed out)
 
 **Layout:** centred card, product name "Argus SOC" and one-line tagline, the form, and a small
 note "Demo environment — synthetic data only".
@@ -72,9 +77,8 @@ note "Demo environment — synthetic data only".
 **Behaviour**
 
 1. `POST /api/auth/login` with `{username, password}`.
-2. On 200: store the session (1.3), go to `/t/<tenants[0]>/cases`, or to the page the user was
-   sent away from (`?next=`).
-3. Visiting `/login` with a valid session goes straight to the case queue.
+2. On 200: store the session (1.3) and load the URL that was opened (`/` goes to `/dashboard`).
+3. With a valid session the sign-in page is never shown.
 4. Never log or display the password; clear the field after a failed attempt.
 
 ### 1.3 Session in the browser
@@ -85,7 +89,7 @@ note "Demo environment — synthetic data only".
   storage is unavailable keep it in memory for the tab.
 - Send `Authorization: Bearer <token>` on every `/api/...` call except `/api/health` and
   `/api/auth/login`.
-- On any **401**: clear the session and go to `/login?next=<current path>`.
+- On any **401**: clear the session and show the sign-in page at the current path.
 - On **403** for a tenant: show "You don't have access to this tenant" and switch to the user's
   first allowed tenant.
 - On load, `GET /api/auth/me` confirms the stored token is still valid (the API may have restarted
@@ -126,12 +130,12 @@ UI. The only analyst trace in the graph is the `analyst` username on each `Feedb
 | Element | Shows | Source | Behaviour |
 |---|---|---|---|
 | Product mark | "Argus SOC" | static | Links to the case queue |
-| Tenant switcher | Current tenant name (Acme / Globex) | session `tenants` (intersected with `GET /api/tenants`) | Hidden when the user has one tenant. Switching keeps the same page type (`/t/globex/cases`) but never carries a case id across tenants |
+| Tenant switcher | Current tenant name (Acme / Globex) | session `tenants` (intersected with `GET /api/tenants`) | Hidden when the user has one tenant. Switching keeps the same page; on a case page it goes to `/cases`, never carrying a case id across tenants |
 | Tenant colour chip | A distinct accent per tenant | static map | Makes it obvious on video which tenant is on screen (G7) |
 | Nav: Cases | Link + badge with count of `awaiting_approval` cases | from the queue poll | Badge hidden at 0 |
 | Nav: Playbooks, Activity | Links | — | Active link underlined |
 | Live indicator | "● Live" / "○ Paused" | polling state | Click to pause/resume all polling (useful when recording) |
-| User menu | Initials → display name, username, "Sign out" | session | Sign out → `POST /api/auth/logout`, clear storage, go to `/login` |
+| User menu | Initials → display name, username, "Sign out" | session | Sign out → `POST /api/auth/logout`, clear storage, show the sign-in page |
 | Health banner | Red bar under the header | `GET /api/health` every 10 s, and any 503 | Shown when `falkordb: false` or a call returns 503. Pages keep their last data, greyed, and keep polling |
 | Toasts | Short confirmations and errors | — | Bottom-right, auto-hide after 5 s |
 
@@ -140,7 +144,7 @@ UI. The only analyst trace in the graph is the `analyst` username on each `Feedb
 
 ---
 
-## 3. Page 2 — Case queue (`/t/:tenant/cases`)
+## 3. Page 2 — Case queue (`/cases`)
 
 **Purpose:** see every case for the tenant at a glance; spot the ones waiting for a human.
 
@@ -197,7 +201,7 @@ Cases — Acme                                         [Search id/category]
 
 ---
 
-## 4. Page 3 — Case detail (`/t/:tenant/cases/:caseId`)
+## 4. Page 3 — Case detail (`/cases/:caseId`)
 
 **Purpose:** the demo's main screen. One page answers "what happened, what did the agents find,
 what did they decide, and why", then takes the analyst's verdict (HLD §8 Usability).
@@ -243,8 +247,8 @@ Findings · Memory · Linked alerts · Deep dive · Alerts & evidence · Agent t
 | Reason | `reason` | One sentence |
 | Explanation | `explanation` | Paragraph(s), plain text |
 | Outcome | `outcome` | `pending` / `approved` / `rejected` / `auto` pill |
-| Talos suggested | `alerts[].talos_actions` (deduplicated) | Separate grey box labelled **"Talos suggested"** — never mixed with the agent's actions |
-| No decision yet | — | "The agents are still working on this case" with the progress strip |
+| Talos suggested | `talos_actions` of the most severe alert (the later one on a tie), deduplicated | Separate grey box labelled **"Talos suggested"** — never mixed with the agent's actions |
+| No decision yet | — | "The agents are still working on this case" with the progress strip; an auto-closed case instead says "Closed automatically by playbook … learned from case N. No agent decision was needed." |
 
 ### 4.4 Path view (`decision.path`, or `findings.shortest_path` before a decision)
 
@@ -346,7 +350,7 @@ only — no `dangerouslySetInnerHTML`, no Markdown, no auto-linking.
 
 ---
 
-## 5. Page 4 — Playbooks (`/t/:tenant/playbooks`) — G5
+## 5. Page 4 — Playbooks (`/playbooks`) — G5
 
 **Data:** `GET /api/{tenant}/playbooks` → `list[PlaybookOut]`, every 10 s.
 
@@ -371,7 +375,7 @@ Grouped by `name`; inside a group, versions newest first. The active version is 
 
 ---
 
-## 6. Page 5 — Agent activity (`/t/:tenant/activity`) — G6, G11
+## 6. Page 5 — Agent activity (`/activity`) — G6, G11
 
 **Data:** `GET /api/{tenant}/activity?since=<ISO>` → `list[ActivityItem]`, every 2 s. First load
 uses `since` = 30 minutes ago; afterwards `since` = the newest `at` already shown. Append new

@@ -29,7 +29,15 @@ SCRIPTED_UA = "argus-demo-bot/1.0"
 # These must all be served and logged by the shop (web_shop/app.py). One cycle per technique:
 # a shared cycle let xss land on the endpoint its own previous run used (xss, sqli, sqli, xss),
 # which Talos suppressed as a duplicate.
-_ENDPOINTS = ["/api/search", "/api/products", "/api/items"]
+# Six endpoints = six runs of each per hour (live test Oct 17: three ran out in a long soak).
+_ENDPOINTS = [
+    "/api/search",
+    "/api/products",
+    "/api/items",
+    "/api/catalog",
+    "/api/reviews",
+    "/api/deals",
+]
 SQLI_ENDPOINTS = itertools.cycle(_ENDPOINTS)
 XSS_ENDPOINTS = itertools.cycle(_ENDPOINTS)
 

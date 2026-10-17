@@ -1,7 +1,7 @@
 """The three agents end to end on the stub graph, driven by the runner as in production."""
 
 from argus_soc import graph
-from argus_soc.agents import agent_runner
+from argus_soc.agents import agent_runner, investigator_agent, triage_agent
 from argus_soc.graph.graph_schema import AlertInput, CaseStatus, Priority
 from argus_soc.graph.graph_stubs import SQLI_IP
 
@@ -88,3 +88,23 @@ async def test_rerun_after_done_changes_nothing():
     before = await graph.list_cases("acme")
     assert await agent_runner.run_once("acme") is False
     assert await graph.list_cases("acme") == before
+
+
+async def test_success_alert_joining_after_investigation_is_decided_r1():
+    # Live test Oct 17, case 8: "not succeeded", then 9 s later "succeeded" for the same SSH
+    # attack, after the Investigator ran. The case must not close as R3.
+    await _add("inc-bf", hosts=("bastion-01",), users=("deploy2",))
+    await triage_agent.step("acme")
+    case_id = (await _case_with("inc-bf"))["id"]
+    await investigator_agent.run("acme", case_id)
+
+    await _add("inc-ok", hosts=("bastion-01",), users=("deploy2",), severity="high", succeeded=True)
+    await _run_until_idle()
+
+    case = await _case_with("inc-ok")
+    assert case["id"] == case_id
+    assert case["findings"]["succeeded"] is True
+    assert case["decision"]["rule_id"] == "R1"
+    assert case["status"] == CaseStatus.AWAITING_APPROVAL
+    agents = [r["agent"] for r in case["agent_runs"]]
+    assert agents[-4:] == ["triage", "responder", "investigator", "responder"]

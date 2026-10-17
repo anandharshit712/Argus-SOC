@@ -4,7 +4,8 @@ Decided details for the **live** demo: a small, deliberately attackable environm
 Talos continuously, so a case moves through Argus (Triage → Investigator → Responder → analyst)
 without anyone pressing `talos replay`. Replay stays as the backup path for the video.
 
-Status: **design agreed (Oct 17, 2026), not yet built.** Build only after scenario 1 runs end to
+Status: **built (PR #4) and live on the GCP VM since Oct 17, 2026** (`deploy/gcp_runbook.md`).
+Original note: Build only after scenario 1 runs end to
 end, and time-box it (see §9).
 
 Owner: **A — Harshit** (agents + Talos integration). The demo site may reuse C's UI styling, and
@@ -52,7 +53,8 @@ on replay.
 
 ## 3. Architecture — extra containers in the same Compose project
 
-The harness is added to the existing `argus-soc` Docker Compose project on the OCI instance, on
+The harness is added to the existing `argus-soc` Docker Compose project on the cloud VM (GCP since
+Oct 17; nginx serves the shop at `https://SHOP_DOMAIN`), on
 the internal `soc-net` network. **Only the demo web shop is public.** The SSH target is internal
 only — a real login service is never exposed to password guessing.
 

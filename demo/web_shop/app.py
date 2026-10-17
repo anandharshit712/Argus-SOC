@@ -123,6 +123,9 @@ async def home(request: Request) -> HTMLResponse:
 @app.get("/api/search")
 @app.get("/api/products")
 @app.get("/api/items")
+@app.get("/api/catalog")
+@app.get("/api/reviews")
+@app.get("/api/deals")
 async def search(request: Request, q: str = "") -> Response:
     source_ip = _client_ip(request)
     if _SQLI.search(q) or _XSS.search(q):

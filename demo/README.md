@@ -62,11 +62,12 @@ the next run of the same campaign is a new signature rather than a suppressed du
 
 - `web_brute`, `ssh_brute` — a fresh **account** (brute-force signature is host + account).
 - `cred_stuffing` — a fresh **set of accounts**.
-- `sqli`, `xss` — a fresh **endpoint** (`/api/search` → `/api/products` → `/api/items`). Rotating
+- `sqli`, `xss` — a fresh **endpoint** (`/api/search` → `/api/products` → `/api/items` →
+  `/api/catalog` → `/api/reviews` → `/api/deals`). Rotating
   the source IP would not help: the signature is (category, techniques, accounts, hosts,
   endpoints) and does **not** include source IP, and these payloads carry no account. `sqli` and
-  `xss` never collide with each other (different technique). With three endpoints you get three
-  sqli + three xss runs per hour before any repeat is suppressed.
+  `xss` never collide with each other (different technique). With six endpoints you get six
+  sqli + six xss runs per hour before any repeat is suppressed.
 
 ## Known limits
 
@@ -75,3 +76,10 @@ the next run of the same campaign is a new signature rather than a suppressed du
 - **IDOR / broken access control** needs a 50-observation baseline per account before it fires, so
   it is not a one-shot demo campaign; `/api/orders/{id}` exists for a soak-mode warm-up only.
 - **RDP** stays on replay (needs synthesized Windows Security events).
+- **A second break-in on the same account within 1 h is not reported.** Talos reports a repeat
+  signature again only when the attack succeeds or the attempts double; a success after an
+  earlier *successful* report on that account is neither, so no incident and no case (live test
+  Oct 17: 192.0.2.51 logged in after case 6, nothing raised). Talos is not changed in this
+  project: use a different account for each hand-run break-in in a demo.
+- **Self-check latency** is campaign start → Talos's `created_at` for the incident, so it
+  includes the time the campaign takes to reach the detector's threshold.
