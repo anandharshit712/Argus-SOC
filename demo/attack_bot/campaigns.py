@@ -23,6 +23,12 @@ SOURCE_IPS = [f"203.0.113.{n}" for n in range(10, 60)] + [f"198.51.100.{n}" for 
 _ACCT = itertools.count(1)
 SCRIPTED_UA = "argus-demo-bot/1.0"
 
+# Injection campaigns rotate the endpoint, not the source IP: Talos's suppression signature
+# includes affected_endpoints but NOT the source IP, so for an account-less injection a fresh
+# endpoint is the only way the next run is a new signature instead of a suppressed duplicate.
+# These must all be served and logged by the shop (web_shop/app.py).
+INJECTION_ENDPOINTS = itertools.cycle(["/api/search", "/api/products", "/api/items"])
+
 SQLI_PROBES = [
     "1'",
     "1' AND '1'='1",
@@ -80,19 +86,25 @@ def credential_stuffing(client: httpx.Client, base: str) -> Expect:
 
 
 def sqli_probe(client: httpx.Client, base: str) -> Expect:
-    """An actionable SQLi payload on /api/search -> injection / high (WAF 403, did not succeed)."""
+    """An actionable SQLi payload -> injection / high (WAF 403, did not succeed).
+
+    Rotates the endpoint each run so a second sqli run within Talos's 1 h window is a new
+    signature, not a suppressed duplicate.
+    """
     ip = _ip()
+    endpoint = next(INJECTION_ENDPOINTS)
     for q in SQLI_PROBES:
-        client.get(f"{base}/api/search", params={"q": q}, headers=_hdrs(ip))
+        client.get(f"{base}{endpoint}", params={"q": q}, headers=_hdrs(ip))
         time.sleep(random.uniform(0.4, 1.0))
     return Expect("injection", "high")
 
 
 def xss_probe(client: httpx.Client, base: str) -> Expect:
-    """An actionable XSS payload on /api/search -> injection / high."""
+    """An actionable XSS payload -> injection / high. Rotates the endpoint (see sqli_probe)."""
     ip = _ip()
+    endpoint = next(INJECTION_ENDPOINTS)
     for q in XSS_PROBES:
-        client.get(f"{base}/api/search", params={"q": q}, headers=_hdrs(ip))
+        client.get(f"{base}{endpoint}", params={"q": q}, headers=_hdrs(ip))
         time.sleep(random.uniform(0.4, 1.0))
     return Expect("injection", "high")
 

@@ -1,0 +1,5 @@
+# Shell scripts and Dockerfiles MUST keep LF, or the container's shebang/exec breaks on Windows
+# checkouts (a CRLF "#!/bin/sh\r" makes exec fail with "no such file or directory").
+*.sh text eol=lf
+Dockerfile text eol=lf
+start.sh text eol=lf

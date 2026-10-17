@@ -91,7 +91,7 @@ def _log(request: Request, source_ip: str, status: int, size: int, body: str | N
         handle.write(json.dumps(line) + "\n")
 
 
-def _waf_block(request: Request, source_ip: str, payload: str) -> Response:
+def _waf_block(request: Request, source_ip: str) -> Response:
     """Log a WAF-JSON block line and return 403, like the WAF in front of the real shop."""
     line = {
         "timestamp": datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -116,11 +116,17 @@ async def home(request: Request) -> HTMLResponse:
     return HTMLResponse("<h1>Argus Demo Shop</h1><p>Synthetic target for the live demo.</p>")
 
 
+# Several search-like endpoints behind ONE handler. The attack-bot rotates among them per
+# injection run: Talos's repeat-suppression signature includes affected_endpoints (but not source
+# IP), so a fresh endpoint is what makes the next sqli/xss run a new signature instead of a
+# suppressed duplicate. All of them must exist and be logged, or a 404 would never reach Talos.
 @app.get("/api/search")
+@app.get("/api/products")
+@app.get("/api/items")
 async def search(request: Request, q: str = "") -> Response:
     source_ip = _client_ip(request)
     if _SQLI.search(q) or _XSS.search(q):
-        return _waf_block(request, source_ip, q)
+        return _waf_block(request, source_ip)
     _log(request, source_ip, 200, 1024, None)
     return JSONResponse({"query": q, "results": []})
 

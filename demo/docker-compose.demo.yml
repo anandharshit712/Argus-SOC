@@ -19,6 +19,8 @@ services:
       DEMO_WEB_HOST: web-01            # must match a host in B's inventory seed (data/inventory)
       DEMO_ACCESS_LOG: /var/log/web_shop/access.jsonl
       DEMO_TRUSTED_PROXY: attack_bot   # X-Forwarded-For trusted only from the bot (resolved by DNS)
+      DEMO_VALID_ACCOUNT: "${DEMO_VALID_ACCOUNT:-demo@shop.example}"
+      DEMO_VALID_PASSWORD: "${DEMO_VALID_PASSWORD:-correct-horse-battery-staple}"
     volumes:
       - web-logs:/var/log/web_shop
     ports:
@@ -27,7 +29,10 @@ services:
 
   ssh_target:
     profiles: [demo]
-    build: { context: ./demo/ssh_target }
+    build:
+      context: ./demo/ssh_target
+      args:
+        SSH_TARGET_PASSWORD: "${SSH_TARGET_PASSWORD:-correct-horse-battery-staple-ssh}"
     restart: unless-stopped
     hostname: bastion-01               # the host name that appears in each sshd log line
     volumes:
