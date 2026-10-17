@@ -77,8 +77,10 @@ export function KeyFindingsList({ findings }: { findings: Findings }) {
 // ---------- memory and deep dive ----------
 
 function factLine(name: string, facts: Record<string, unknown>): string | null {
+  // Skip what says nothing: unset values, false flags, empty lists and the graph's default
+  // IOC verdict "unknown". A name with nothing left is not listed at all.
   const parts = Object.entries(facts)
-    .filter(([, v]) => v !== null && v !== false && !(Array.isArray(v) && v.length === 0))
+    .filter(([, v]) => v !== null && v !== false && v !== 'unknown' && !(Array.isArray(v) && v.length === 0))
     .map(([k, v]) => `${humanize(k).toLowerCase()}: ${Array.isArray(v) ? v.join(', ') : String(v)}`)
   return parts.length ? `${name} — ${parts.join('; ')}` : null
 }
