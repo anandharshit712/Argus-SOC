@@ -57,8 +57,16 @@ DEMO_SOAK=1 docker compose -f docker-compose.yml -f demo/docker-compose.demo.yml
 | `xss` | XSS | one actionable payload | injection / high |
 | `ssh_brute` | SSH brute force | ≥8 fails / host+account / 120 s | network_brute_force / medium |
 
-Each run rotates its account / source IP so Talos's 1 h repeat suppression does not hide the next
-run of the same campaign.
+Each run rotates the component that is actually in Talos's 1 h repeat-suppression signature, so
+the next run of the same campaign is a new signature rather than a suppressed duplicate:
+
+- `web_brute`, `ssh_brute` — a fresh **account** (brute-force signature is host + account).
+- `cred_stuffing` — a fresh **set of accounts**.
+- `sqli`, `xss` — a fresh **endpoint** (`/api/search` → `/api/products` → `/api/items`). Rotating
+  the source IP would not help: the signature is (category, techniques, accounts, hosts,
+  endpoints) and does **not** include source IP, and these payloads carry no account. `sqli` and
+  `xss` never collide with each other (different technique). With three endpoints you get three
+  sqli + three xss runs per hour before any repeat is suppressed.
 
 ## Known limits
 

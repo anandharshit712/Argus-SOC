@@ -18,6 +18,7 @@ import random
 import threading
 import time
 from collections import deque
+from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 
 import httpx
@@ -37,7 +38,17 @@ CAMPAIGNS = {**WEB_CAMPAIGNS, "ssh_brute": ssh_brute_force}
 _scoreboard: deque[dict] = deque(maxlen=100)
 _lock = threading.Lock()  # one campaign at a time, so the demo story stays legible
 
-app = FastAPI(title="Argus attack-bot")
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    threading.Thread(target=_benign_traffic, daemon=True).start()
+    if SOAK:
+        threading.Thread(target=_soak_loop, daemon=True).start()
+        log.info("soak mode on")
+    yield
+
+
+app = FastAPI(title="Argus attack-bot", lifespan=lifespan)
 
 
 def _known_incident_ids(client: httpx.Client) -> set[str]:
@@ -69,9 +80,11 @@ def run_campaign(name: str) -> dict:
         return {"error": f"unknown campaign {name}", "known": sorted(CAMPAIGNS)}
     with _lock, httpx.Client(timeout=10.0) as client:
         before = _known_incident_ids(client)
-        started = time.monotonic()
         log.info("launching %s", name)
         expect = CAMPAIGNS[name](client, SHOP_URL)
+        # Clock starts after the traffic is sent, so latency is Talos's detection+shipping time,
+        # not how long the campaign took to send its requests.
+        started = time.monotonic()
         hit = _poll_for_incident(client, before, expect.category)
         result = {
             "time": datetime.now(UTC).isoformat(timespec="seconds"),
@@ -117,9 +130,11 @@ async def health() -> dict[str, str]:
     return {"status": "ok", "mode": "soak" if SOAK else "demo"}
 
 
+# Sync def on purpose: FastAPI runs it in a threadpool, so a campaign's blocking sleeps do not
+# freeze the event loop (and /selfcheck stays responsive while an attack runs).
 @app.get("/launch")
 @app.post("/launch")
-async def launch(attack: str) -> dict:
+def launch(attack: str) -> dict:
     return run_campaign(attack)
 
 
@@ -128,11 +143,3 @@ async def selfcheck() -> dict:
     board = list(_scoreboard)
     hits = sum(1 for r in board if r["detected"])
     return {"runs": len(board), "detected": hits, "results": board}
-
-
-@app.on_event("startup")
-def _startup() -> None:
-    threading.Thread(target=_benign_traffic, daemon=True).start()
-    if SOAK:
-        threading.Thread(target=_soak_loop, daemon=True).start()
-        log.info("soak mode on")

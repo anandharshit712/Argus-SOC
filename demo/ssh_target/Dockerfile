@@ -6,12 +6,15 @@
 # "Mmm d HH:MM:SS <host> sshd[pid]: ..." syslog shape Talos's NetworkLogParser reads. The host
 # name in each line is the container hostname, set to bastion-01 in the compose file.
 FROM debian:12-slim
+# Dummy password for the throwaway account (rule 12: no secret baked in; override at build).
+# Irrelevant to detection anyway -- the attack-bot always guesses wrong.
+ARG SSH_TARGET_PASSWORD=correct-horse-battery-staple-ssh
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssh-server rsyslog \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd /var/log \
     && useradd -m -s /bin/bash svc_deploy \
-    && echo 'svc_deploy:correct-horse-battery-staple-ssh' | chpasswd
+    && echo "svc_deploy:${SSH_TARGET_PASSWORD}" | chpasswd
 # Log auth attempts verbosely so every failure is written.
 RUN sed -i 's/^#\?LogLevel.*/LogLevel VERBOSE/' /etc/ssh/sshd_config
 # Debian 12 rsyslog defaults to high-precision RFC3339 timestamps; Talos's NetworkLogParser reads

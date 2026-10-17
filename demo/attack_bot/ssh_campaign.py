@@ -21,8 +21,12 @@ _ACCT = itertools.count(1)
 
 
 def ssh_brute_force(_client: object, _base: str) -> Expect:
-    """>=8 failed SSH logins against one host+account within 120 s -> network_brute_force."""
-    account = random.choice(["svc_deploy", f"deploy{next(_ACCT)}", f"admin{next(_ACCT)}"])
+    """>=8 failed SSH logins against one host+account within 120 s -> network_brute_force.
+
+    A unique account each run (host+account is the Talos signature), so two runs within the 1 h
+    suppression window never collide.
+    """
+    account = f"{random.choice(['deploy', 'admin', 'root', 'ubuntu', 'git'])}{next(_ACCT)}"
     for _ in range(10):
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
