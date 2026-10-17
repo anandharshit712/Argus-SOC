@@ -26,8 +26,12 @@ SCRIPTED_UA = "argus-demo-bot/1.0"
 # Injection campaigns rotate the endpoint, not the source IP: Talos's suppression signature
 # includes affected_endpoints but NOT the source IP, so for an account-less injection a fresh
 # endpoint is the only way the next run is a new signature instead of a suppressed duplicate.
-# These must all be served and logged by the shop (web_shop/app.py).
-INJECTION_ENDPOINTS = itertools.cycle(["/api/search", "/api/products", "/api/items"])
+# These must all be served and logged by the shop (web_shop/app.py). One cycle per technique:
+# a shared cycle let xss land on the endpoint its own previous run used (xss, sqli, sqli, xss),
+# which Talos suppressed as a duplicate.
+_ENDPOINTS = ["/api/search", "/api/products", "/api/items"]
+SQLI_ENDPOINTS = itertools.cycle(_ENDPOINTS)
+XSS_ENDPOINTS = itertools.cycle(_ENDPOINTS)
 
 SQLI_PROBES = [
     "1'",
@@ -92,7 +96,7 @@ def sqli_probe(client: httpx.Client, base: str) -> Expect:
     signature, not a suppressed duplicate.
     """
     ip = _ip()
-    endpoint = next(INJECTION_ENDPOINTS)
+    endpoint = next(SQLI_ENDPOINTS)
     for q in SQLI_PROBES:
         client.get(f"{base}{endpoint}", params={"q": q}, headers=_hdrs(ip))
         time.sleep(random.uniform(0.4, 1.0))
@@ -102,7 +106,7 @@ def sqli_probe(client: httpx.Client, base: str) -> Expect:
 def xss_probe(client: httpx.Client, base: str) -> Expect:
     """An actionable XSS payload -> injection / high. Rotates the endpoint (see sqli_probe)."""
     ip = _ip()
-    endpoint = next(INJECTION_ENDPOINTS)
+    endpoint = next(XSS_ENDPOINTS)
     for q in XSS_PROBES:
         client.get(f"{base}{endpoint}", params={"q": q}, headers=_hdrs(ip))
         time.sleep(random.uniform(0.4, 1.0))
