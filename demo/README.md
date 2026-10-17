@@ -36,16 +36,41 @@ On Windows, build first then start without `--build` (see root CLAUDE.md "Window
 ## Drive it
 
 ```bash
-# fire one campaign on demand (demo mode)
-curl -X POST "http://127.0.0.1:8090/launch?attack=sqli"
+# fire one campaign on demand. outcome: fail (default) | pass | random
+curl -X POST "http://127.0.0.1:8090/launch?attack=sqli&outcome=pass"
 #   attacks: web_brute | cred_stuffing | sqli | xss | ssh_brute
 
-# the self-check scoreboard: what Talos caught, and how fast
+# the self-check scoreboard: what Talos caught, how fast, and the pass/fail totals
 curl http://127.0.0.1:8090/selfcheck
 
-# always-running chaos loop instead of on-demand
-DEMO_SOAK=1 docker compose -f docker-compose.yml -f demo/docker-compose.demo.yml --profile demo up -d attack_bot
+# soak (always-running weighted-random loop), toggled at runtime -- no restart needed
+curl -X POST "http://127.0.0.1:8090/soak/start"   # optional ?interval_min=45&interval_max=180&ratio=0.3
+curl http://127.0.0.1:8090/soak/status            # running, passes/fails, tokens left, paused?, next run
+curl -X POST "http://127.0.0.1:8090/soak/stop"    # stops after the current campaign finishes
+# or start the loop at boot: DEMO_SOAK=1 in .env
 ```
+
+### Pass or fail (ATTACK_BOT_PASS_FAIL_DESIGN.md)
+
+Every campaign can **fail** (wrong creds / WAF 403, never succeeds) or **pass** (a real success Talos
+marks `succeeded`, which reaches Argus as an **Awaiting-approval** case). In soak mode the outcome is
+drawn from a shuffled bag so **exactly 3 in every 10** runs pass (`DEMO_PASS_RATIO`, `DEMO_BAG_SIZE`).
+Passes need the pool passwords set (`DEMO_POOL_PASSWORD`, `DEMO_SSH_POOL_PASSWORD`); without them the
+bot still runs but skips passes, with a reason in `/selfcheck`.
+
+| Campaign | Pass sequence | Talos on a pass | Severity |
+|---|---|---|---|
+| `web_brute` | 10-14 fails on a pool account, then its right password | auth_failure medium, then high succeeded | High |
+| `cred_stuffing` | 17 made-up accounts + 1 pool account logged in, one IP | auth_failure medium, then high succeeded | High |
+| `sqli` / `xss` | first probes 403, last probe let through (200) | injection high, then critical succeeded | Critical |
+| `ssh_brute` | 8-11 fails on a pool account, then its right password | network_brute_force medium, then high succeeded | High |
+
+The WAF bypass for an injection pass is honoured **only** for a request from the trusted bot carrying
+`X-Demo-Outcome: pass`; the public shop can never be told to let a payload through (§7).
+
+**Backlog pause (§9a):** soak pauses while more than `DEMO_MAX_PENDING` (default 20) cases are
+Awaiting approval, and resumes within ~30 s once an analyst works one off. It counts straight off
+FalkorDB (no Argus login). Manual `/launch` is never paused. `DEMO_MAX_PENDING=0` turns it off.
 
 ## Campaigns and what Talos raises
 
@@ -72,7 +97,9 @@ the next run of the same campaign is a new signature rather than a suppressed du
 ## Known limits
 
 - **SSH source IP** is the bot's internal container IP (no `X-Forwarded-For` for SSH) — web
-  campaigns carry documentation-range IPs, SSH does not. See DEMO_DESIGN §6.
+  campaigns carry documentation-range IPs, SSH does not. See DEMO_DESIGN §6. Because every SSH run
+  shares that one IP, SSH passes pile into one open case until phase 2
+  (ATTACK_BOT_PASS_FAIL_DESIGN.md §10, deferred).
 - **IDOR / broken access control** needs a 50-observation baseline per account before it fires, so
   it is not a one-shot demo campaign; `/api/orders/{id}` exists for a soak-mode warm-up only.
 - **RDP** stays on replay (needs synthesized Windows Security events).

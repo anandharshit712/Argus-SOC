@@ -9,12 +9,20 @@ FROM debian:12-slim
 # Dummy password for the throwaway account (rule 12: no secret baked in; override at build).
 # Irrelevant to detection anyway -- the attack-bot always guesses wrong.
 ARG SSH_TARGET_PASSWORD=correct-horse-battery-staple-ssh
+# Pool accounts ops001..opsNNN the bot really logs into on an SSH "pass" run (ATTACK_BOT_PASS_FAIL
+# §6). All share DEMO_SSH_POOL_PASSWORD; a fresh one per pass keeps each success a new signature.
+ARG DEMO_SSH_POOL_PASSWORD=change-me-ssh-pool
+ARG DEMO_SSH_POOL_SIZE=300
 RUN apt-get update \
     && apt-get install -y --no-install-recommends openssh-server rsyslog \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir -p /run/sshd /var/log \
     && useradd -m -s /bin/bash svc_deploy \
-    && echo "svc_deploy:${SSH_TARGET_PASSWORD}" | chpasswd
+    && echo "svc_deploy:${SSH_TARGET_PASSWORD}" | chpasswd \
+    && for i in $(seq 1 ${DEMO_SSH_POOL_SIZE}); do \
+         u=$(printf 'ops%03d' "$i"); \
+         useradd -m -s /bin/bash "$u" && echo "$u:${DEMO_SSH_POOL_PASSWORD}" | chpasswd; \
+       done
 # Log auth attempts verbosely so every failure is written.
 RUN sed -i 's/^#\?LogLevel.*/LogLevel VERBOSE/' /etc/ssh/sshd_config
 # Debian 12 rsyslog defaults to high-precision RFC3339 timestamps; Talos's NetworkLogParser reads

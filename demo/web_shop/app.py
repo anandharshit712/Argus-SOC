@@ -36,6 +36,12 @@ TRUSTED_PROXY = os.environ.get("DEMO_TRUSTED_PROXY", "")
 VALID_ACCOUNT = os.environ.get("DEMO_VALID_ACCOUNT", "demo@shop.example")
 VALID_PASSWORD = os.environ.get("DEMO_VALID_PASSWORD", "correct-horse-battery-staple")
 
+# Pool accounts the attack-bot uses for a "pass" run: pool####@shop.example all share one password.
+# A fresh pool account per pass keeps each success a new Talos signature (ATTACK_BOT_PASS_FAIL §6).
+# Empty password -> no pool login works, so a pass cannot happen; the bot handles that fallback.
+POOL_PASSWORD = os.environ.get("DEMO_POOL_PASSWORD", "")
+_POOL_ACCOUNT = re.compile(r"^pool\d{4}@shop\.example$")
+
 # ponytail: a stand-in WAF, not a real one. Obvious injection shapes -> 403 blocked, logged as
 # WAF JSON. Deliberately stricter than "any apostrophe" so benign searches (o'brien jacket,
 # order by price) are NOT blocked -- only payloads Talos would call actionable.
@@ -59,10 +65,17 @@ def _trusted_proxy_ip() -> str | None:
         return None
 
 
+def _is_trusted_peer(request: Request) -> bool:
+    """True when the request's direct peer is the attack-bot container (the only source we trust
+    for X-Forwarded-For and the X-Demo-Outcome bypass). The public internet never is."""
+    peer = request.client.host if request.client else None
+    return peer is not None and peer == _trusted_proxy_ip()
+
+
 def _client_ip(request: Request) -> str:
     """Real source IP: trust X-Forwarded-For only from the attack-bot container."""
     peer = request.client.host if request.client else "unknown"
-    if peer == _trusted_proxy_ip():
+    if _is_trusted_peer(request):
         xff = request.headers.get("x-forwarded-for")
         if xff:
             return xff.split(",")[0].strip()
@@ -129,6 +142,12 @@ async def home(request: Request) -> HTMLResponse:
 async def search(request: Request, q: str = "") -> Response:
     source_ip = _client_ip(request)
     if _SQLI.search(q) or _XSS.search(q):
+        # Bypass the WAF only for a request the trusted bot marks as a "pass" (ATTACK_BOT_PASS_FAIL
+        # §7). From anyone else -- including the public internet -- the header is ignored and the
+        # payload still gets a 403. No real data is returned either way; results stay empty.
+        if request.headers.get("x-demo-outcome") == "pass" and _is_trusted_peer(request):
+            _log(request, source_ip, 200, 1024, None)
+            return JSONResponse({"query": q, "results": []})
         return _waf_block(request, source_ip)
     _log(request, source_ip, 200, 1024, None)
     return JSONResponse({"query": q, "results": []})
@@ -140,7 +159,9 @@ async def login(request: Request) -> Response:
     form = await request.form()
     username = str(form.get("username", ""))
     password = str(form.get("password", ""))
-    ok = username == VALID_ACCOUNT and password == VALID_PASSWORD
+    ok = (username == VALID_ACCOUNT and password == VALID_PASSWORD) or (
+        bool(POOL_PASSWORD) and bool(_POOL_ACCOUNT.match(username)) and password == POOL_PASSWORD
+    )
     status = 302 if ok else 401
     # Never log the real password (rule 9 / spec §3.3).
     _log(request, source_ip, status, 180, f"username={username}&password=********")

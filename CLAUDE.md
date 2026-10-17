@@ -118,6 +118,13 @@ Update this section whenever a checkpoint is reached. It is the only status line
   side. B merged into A; B's real graph functions all done. Backend checkpoint met: scenarios
   1–6 and the 31-alert concurrency burst pass end to end on the live stack
   (`ARGUS_E2E=1 pytest tests/e2e`, see `tests/e2e/conftest.py`). Next: C's API and UI on top.
+- **Oct 17 (A, `a/attack-bot-v2`):** attack-bot v2 built + tested e2e (pass/fail campaigns, shuffled
+  outcome bag = exactly 3/10 passes, runtime `/soak/start|stop|status`, FalkorDB backlog pause, WAF
+  bypass only from the trusted bot, account pools). All passes produce Talos `succeeded` reports with
+  the §5 severities; sqli pass reaches Argus R2 Awaiting approval. Known gap (Argus, not the bot):
+  web/ssh passes decide on the not-succeeded threshold report (R4/R3) — the late-success re-decide
+  tracked on `a/fix-live-e2e-bugs`. Also added `deploy/deploy_gcp.sh`: one-command full provision +
+  startup of the whole stack on a GCP VM (automates `deploy/gcp_runbook.md`; **tell B — deploy/ is B's folder**).
 - **Next checkpoint:** scenario 1 end to end including the UI (approve in the UI).
 - **Decided Oct 16:** agents are plain Python (no framework); LLM is Anthropic or OpenAI, chosen
   in `.env` (LLD §6.8); one shared Talos, reports routed to tenants by host (LLD §5.4).
