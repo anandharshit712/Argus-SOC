@@ -88,7 +88,9 @@ services:
       dockerfile: deploy/talos/Dockerfile   # Workstream A: Talos at a pinned commit
     restart: unless-stopped
     environment:
-      TALOS_DB_DSN: postgresql://talos:${TALOS_DB_PASSWORD:-}@talos-postgres:5432/talos
+      # Password kept out of the DSN: asyncpg reads PGPASSWORD when the URL has none.
+      TALOS_DB_DSN: postgresql://talos@talos-postgres:5432/talos
+      PGPASSWORD: ${TALOS_DB_PASSWORD:-}
     depends_on:
       talos-postgres:
         condition: service_healthy
