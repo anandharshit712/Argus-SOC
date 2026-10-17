@@ -24,8 +24,8 @@ How to read the owner columns: **A** = Harshit (agents + Talos), **B** = Md Adna
 | GAP-2 | `ActivityItem` has no `worker` | G11 concurrency proof | — | return it from `list_activity`, `get_case` | add to model, show in UI | PROPOSED |
 | GAP-3 | `ActivityItem` has no `tool_calls` | G9 MCP tool selection proof | — | return it from `list_activity`, `get_case` | add to model, show in UI | PROPOSED |
 | GAP-4 | `CaseDetail.feedback` is an untyped `list[dict]` | Feedback history | — | return fixed fields from `get_case` | typed model | PROPOSED |
-| GAP-5 | The priority before the Responder lowered it is not stored | G3 "high → medium" on screen | pass it in `DecisionInput` | property on `Decision`, `record_decision` | `DecisionOut.previous_priority` | AGREED (Oct 16) · B DONE · A, C to do |
-| GAP-6 | `findings` keys are not typed in the API | Findings, Memory, Deep-dive panels | keep the key names from LLD §6.2–6.3 | — | typed optional model | PROPOSED |
+| GAP-5 | The priority before the Responder lowered it is not stored | G3 "high → medium" on screen | pass it in `DecisionInput` | property on `Decision`, `record_decision` | `DecisionOut.previous_priority` | AGREED (Oct 16) · A, B DONE · C to do |
+| GAP-6 | `findings` keys are not typed in the API | Findings, Memory, Deep-dive panels | keep the key names from LLD §6.2–6.3 | — | typed optional model | AGREED (Oct 16) · A DONE · C to do |
 | GAP-7 | `APPLIED` relationship (Case/Decision → Playbook) is in code but not in the docs | Q6 and auto-close citation | — | already in `graph_schema.py` on `b/graph-foundation` | — | DOCS ONLY |
 
 Nothing here changes the agents' decision logic, the decision table or any Cypher query result
@@ -167,8 +167,10 @@ the UI can only show "medium".
 `DecisionInput.previous_priority: Priority | None = None` (optional, invalid values rejected);
 `record_decision` stores it on the `Decision` node; `get_case` and `explain_decision` return it
 in the decision (stub and FalkorDB alike; the stub's sample case 31 has `"high"`);
-`SCHEMA_VERSION` = 2; tests cover R4 high → medium on both backends. Still to do: A passes
-`previous_priority=case["priority"]` in the Responder; C adds `DecisionOut.previous_priority`.
+`SCHEMA_VERSION` = 2; tests cover R4 high → medium on both backends.
+**A part DONE** on `a/agents-talos`: the Responder sends `previous_priority` on every decision
+(the case's priority going into it); checked live in scenario 3 (high → medium).
+Still to do: C adds `DecisionOut.previous_priority`.
 
 ---
 
@@ -183,16 +185,19 @@ LLD §6.2 and §6.3.
 |---|---|---|
 | `recall` | Triage | `[{case_id, verdict, closed_at, note}]` |
 | `facts` | Triage | `{hosts: {name: facts}, users: {...}, iocs: {...}}` (from `entity_facts`) |
-| `linked` | Triage | `[incident_id]` |
+| `linked` | Triage | `[incident_id]`: the case's other alerts (correlated with its oldest by a shared IOC or user) |
+| `severity` | Triage | the case's most severe alert severity, before any memory raise |
+| `memory_reasons` | Triage | `[str]`, why memory raised the priority one step, e.g. `"user svc_deploy is suspected compromised (case 1)"`; `[]` when not raised |
 | `succeeded` | Investigator | `bool` |
 | `path_to_crown_jewel` | Investigator | `bool` |
 | `shortest_path` | Investigator | `[node name]` or `null` |
 | `blast_radius` | Investigator | `[{host, criticality, accounts, reached_hosts, alerts}]` per IOC |
-| `deep_dive` | Investigator | `[{tool, args, result, why}]` |
+| `deep_dive` | Investigator | `[{tool, args, result, why}]`; `[]` when the LLM is off |
 
 **Change**
 
-- A: no new work; don't rename keys. If a key must change, update this table first.
+- A: DONE (Oct 16). Keys exactly as above; `severity` and `memory_reasons` added by Triage
+  (show `memory_reasons` as "Priority raised one step because of: …", UI_PAGES §4.7).
 - C: `FindingsOut` Pydantic model with every key optional (cases fill in step by step);
   `CaseDetail.findings: FindingsOut`. Unknown keys allowed (`extra="allow"`), so the UI can show
   them raw.
@@ -212,6 +217,6 @@ LLD §4.1 "Relationships" when `b/graph-foundation` merges. No code change.
 
 | Person | Action |
 |---|---|
-| **Harshit (A)** | Ack GAP-5 and GAP-6 in the team chat. Build the Responder with `previous_priority` from day one; keep the findings key names. |
+| **Harshit (A)** | DONE (Oct 16): GAP-5 and GAP-6 acked and built on `a/agents-talos` (`previous_priority` on every decision; findings keys as in GAP-6). |
 | **Adnan (B)** | Ack GAP-1 (settings), GAP-2, GAP-3, GAP-4, GAP-5. Add the auth settings to `core/settings.py` and `.env.example`; return `worker`, `tool_calls` and typed feedback from the read functions; add `previous_priority` to `Decision`; draw `APPLIED` (GAP-7). |
 | **Satya (C)** | Ack all. Build GAP-1 endpoints and guard; extend `api_models.py` (GAP-2…6) once acked; build the UI from `docs/UI_PAGES.md`. Until then, ship with the new fields hidden. |

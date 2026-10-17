@@ -1,0 +1,116 @@
+[
+  {
+    "incident_id": "e7885866b42f481a96c56ea34247b7e8",
+    "created_at": "2026-10-16T07:53:34.797021Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on vpn-gw against admin over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "561f2ea6df1e49aea0482a1c6e0ef3a9",
+        "event_ids": [
+          "4ae9cf4c01b6496ebebfb31613a538cd",
+          "dc30104ad9504f52973385ac8197ee3a",
+          "2610f90a13a04771991960bb61f1ccfb",
+          "da1d4ddc70e4483f9d6c4685bad71b36",
+          "5babb2b350d84884948c4bbc530b4d9b",
+          "7f8304a465ee4cdf942fac7dcb8ce9f4",
+          "2b79e43a43c54e6ea0b195fbba53591a",
+          "1aaed708625b47a294cbde54161df3c2"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "admin"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "vpn-gw"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T16:30:00Z",
+          "window_end": "2026-09-29T16:30:43Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for vpn-gw|admin within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "4ae9cf4c01b6496ebebfb31613a538cd",
+              "dc30104ad9504f52973385ac8197ee3a",
+              "2610f90a13a04771991960bb61f1ccfb",
+              "da1d4ddc70e4483f9d6c4685bad71b36",
+              "5babb2b350d84884948c4bbc530b4d9b",
+              "7f8304a465ee4cdf942fac7dcb8ce9f4",
+              "2b79e43a43c54e6ea0b195fbba53591a",
+              "1aaed708625b47a294cbde54161df3c2"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 16:30:00 vpn-gw sshd[3400]: Failed password for admin from 203.0.113.7 port 49478 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 16:30:08 vpn-gw sshd[3403]: Failed password for admin from 203.0.113.7 port 49489 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 16:30:15 vpn-gw sshd[3418]: Failed password for admin from 203.0.113.7 port 49522 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted admin on vpn-gw within 120 seconds, from 203.0.113.7. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:34.796840Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "admin"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "vpn-gw"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T16:30:00Z",
+      "window_end": "2026-09-29T16:30:43Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.7 at the perimeter",
+      "review authentication history for admin on vpn-gw"
+    ]
+  }
+]

@@ -36,6 +36,8 @@ class Settings(BaseSettings):
     talos_url: str = "http://talos:8000"
     ingest_poll_seconds: float = Field(default=3, gt=0)
     ingest_page_limit: int = Field(default=50, ge=1)
+    # Tenant inventories (data/inventory/): which hosts and IPs belong to which tenant.
+    argus_inventory_dir: str = "data/inventory"
 
     # --- Agents and learning (Workstream A) -----------------------------------
     agent_poll_seconds: float = Field(default=2, gt=0)

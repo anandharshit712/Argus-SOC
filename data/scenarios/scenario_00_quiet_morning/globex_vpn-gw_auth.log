@@ -1,0 +1,38 @@
+Sep 28 09:03:44 vpn-gw sshd[4964]: Accepted publickey for netops from 10.20.9.22 port 50303 ssh2
+Sep 28 09:03:45 vpn-gw sshd[4964]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 28 09:06:11 vpn-gw sshd[4984]: Received disconnect from 10.20.9.22 port 50355:11: disconnected by user
+Sep 28 09:07:29 vpn-gw sshd[4904]: Accepted publickey for l.ferreira from 10.20.9.18 port 50225 ssh2
+Sep 28 09:07:30 vpn-gw sshd[4904]: pam_unix(sshd:session): session opened for user l.ferreira by (uid=0)
+Sep 28 09:11:54 vpn-gw sshd[4925]: Connection closed by 10.20.9.18 port 50263 [preauth]
+Sep 28 09:21:43 vpn-gw sshd[4779]: Accepted publickey for l.ferreira from 10.20.9.24 port 50077 ssh2
+Sep 28 09:21:44 vpn-gw sshd[4779]: pam_unix(sshd:session): session opened for user l.ferreira by (uid=0)
+Sep 28 09:22:39 vpn-gw sshd[4809]: Connection closed by 10.20.9.24 port 50108 [preauth]
+Sep 28 09:23:49 vpn-gw sshd[5001]: Failed password for netops from 10.20.9.51 port 50357 ssh2
+Sep 28 09:23:59 vpn-gw sshd[5002]: Accepted password for netops from 10.20.9.51 port 50389 ssh2
+Sep 28 09:24:00 vpn-gw sshd[5002]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 28 09:31:02 vpn-gw sshd[4847]: Accepted publickey for netops from 10.20.9.58 port 50140 ssh2
+Sep 28 09:31:03 vpn-gw sshd[4847]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 28 09:31:38 vpn-gw sshd[5180]: Invalid user tomcat from 198.51.100.204 port 50663
+Sep 28 09:31:38 vpn-gw sshd[5180]: Failed password for invalid user tomcat from 198.51.100.204 port 50663 ssh2
+Sep 28 09:31:49 vpn-gw sshd[5215]: Invalid user tomcat from 198.51.100.204 port 50668
+Sep 28 09:31:49 vpn-gw sshd[5215]: Failed password for invalid user tomcat from 198.51.100.204 port 50668 ssh2
+Sep 28 09:35:23 vpn-gw sshd[5245]: Invalid user hadoop from 203.0.113.166 port 50690
+Sep 28 09:35:23 vpn-gw sshd[5245]: Failed password for invalid user hadoop from 203.0.113.166 port 50690 ssh2
+Sep 28 09:35:36 vpn-gw sshd[5256]: Invalid user hadoop from 203.0.113.166 port 50696
+Sep 28 09:35:36 vpn-gw sshd[5256]: Failed password for invalid user hadoop from 203.0.113.166 port 50696 ssh2
+Sep 28 09:35:53 vpn-gw sshd[5283]: Invalid user hadoop from 203.0.113.166 port 50705
+Sep 28 09:35:53 vpn-gw sshd[5283]: Failed password for invalid user hadoop from 203.0.113.166 port 50705 ssh2
+Sep 28 09:36:01 vpn-gw sshd[4870]: Disconnected from user netops 10.20.9.58 port 50192
+Sep 28 09:49:10 vpn-gw sshd[5103]: Invalid user zabbix from 203.0.113.232 port 50565
+Sep 28 09:49:10 vpn-gw sshd[5103]: Failed password for invalid user zabbix from 203.0.113.232 port 50565 ssh2
+Sep 28 09:49:25 vpn-gw sshd[5143]: Invalid user zabbix from 203.0.113.232 port 50617
+Sep 28 09:49:25 vpn-gw sshd[5143]: Failed password for invalid user zabbix from 203.0.113.232 port 50617 ssh2
+Sep 28 09:50:49 vpn-gw sshd[5023]: Invalid user nagios from 203.0.113.123 port 50442
+Sep 28 09:50:49 vpn-gw sshd[5023]: Failed password for invalid user nagios from 203.0.113.123 port 50442 ssh2
+Sep 28 09:51:02 vpn-gw sshd[5027]: Invalid user nagios from 203.0.113.123 port 50478
+Sep 28 09:51:02 vpn-gw sshd[5027]: Failed password for invalid user nagios from 203.0.113.123 port 50478 ssh2
+Sep 28 09:51:16 vpn-gw sshd[5065]: Invalid user nagios from 203.0.113.123 port 50515
+Sep 28 09:51:16 vpn-gw sshd[5065]: Failed password for invalid user nagios from 203.0.113.123 port 50515 ssh2
+Sep 28 09:52:26 vpn-gw sshd[4733]: Accepted publickey for netops from 10.20.9.33 port 50047 ssh2
+Sep 28 09:52:27 vpn-gw sshd[4733]: pam_unix(sshd:session): session opened for user netops by (uid=0)
+Sep 28 09:56:31 vpn-gw sshd[4746]: Disconnected from user netops 10.20.9.33 port 50076

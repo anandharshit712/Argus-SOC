@@ -1,0 +1,670 @@
+[
+  {
+    "incident_id": "38855914765541bb9bcb05560d4d1a85",
+    "created_at": "2026-10-16T07:53:12.940666Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example over 15 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "dc30cf965f214a70b0242cd8aa891901",
+        "event_ids": [
+          "0b89553782d5443aa7862684441313c2",
+          "d2e7982fcd734757b57780196a085adb",
+          "f5c7f9509b4c46338e70408ea0ba07f0",
+          "c65bc6b02fdc4d12b8e49c19b6a5903c",
+          "fce9204599cb40679f30dd2dee2b2f8b",
+          "a12c8a5c658949c49d7a58751381c0f2",
+          "ea430d5f765b45d9839558603e0d4ef3",
+          "007acc50b7cd462cba0d25e1a62cfc46",
+          "8f106fae70b345d781e645b8ab0ec265",
+          "6717cf9a3a4842e1becbbf2def4808d9",
+          "764fd01ce41f4a618b04def2a2335f22",
+          "7d279d6f6b594b49af8c3b463566e082",
+          "baaade3d9071465fa9a8303aba7a41d2",
+          "318240cfd15545269b9e218f75955202",
+          "07c300451a11451ab196e84de1fb90a0"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.bianchi@acme.example",
+            "e.sorensen@acme.example",
+            "f.costa@acme.example",
+            "g.pavlou@acme.example",
+            "h.nakamura@acme.example",
+            "i.volkov@acme.example",
+            "j.park@acme.example",
+            "k.mehta@acme.example",
+            "l.romano@acme.example",
+            "m.okafor@acme.example",
+            "n.abebe@acme.example",
+            "ops_admin@acme.example",
+            "r.oyelaran@acme.example",
+            "s.delacroix@acme.example",
+            "t.ibrahim@acme.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 15,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T14:00:00Z",
+          "window_end": "2026-09-29T14:01:45Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "15 rejected HTTP logins across 15 distinct accounts from 10.0.5.20 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "0b89553782d5443aa7862684441313c2",
+              "d2e7982fcd734757b57780196a085adb",
+              "f5c7f9509b4c46338e70408ea0ba07f0",
+              "c65bc6b02fdc4d12b8e49c19b6a5903c",
+              "fce9204599cb40679f30dd2dee2b2f8b",
+              "a12c8a5c658949c49d7a58751381c0f2",
+              "ea430d5f765b45d9839558603e0d4ef3",
+              "007acc50b7cd462cba0d25e1a62cfc46",
+              "8f106fae70b345d781e645b8ab0ec265",
+              "6717cf9a3a4842e1becbbf2def4808d9",
+              "764fd01ce41f4a618b04def2a2335f22",
+              "7d279d6f6b594b49af8c3b463566e082",
+              "baaade3d9071465fa9a8303aba7a41d2",
+              "318240cfd15545269b9e218f75955202",
+              "07c300451a11451ab196e84de1fb90a0"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:00+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 3079, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=ops_admin@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:08+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2340, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=k.mehta@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:15+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 1488, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=r.oyelaran@acme.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "10.0.5.20 attempted logins for 15 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:12.940525Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.bianchi@acme.example",
+        "e.sorensen@acme.example",
+        "f.costa@acme.example",
+        "g.pavlou@acme.example",
+        "h.nakamura@acme.example",
+        "i.volkov@acme.example",
+        "j.park@acme.example",
+        "k.mehta@acme.example",
+        "l.romano@acme.example",
+        "m.okafor@acme.example",
+        "n.abebe@acme.example",
+        "ops_admin@acme.example",
+        "r.oyelaran@acme.example",
+        "s.delacroix@acme.example",
+        "t.ibrahim@acme.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 15,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T14:00:00Z",
+      "window_end": "2026-09-29T14:01:45Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 10.0.5.20",
+      "force a password reset for a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example"
+    ]
+  },
+  {
+    "incident_id": "781f60a3dcdd48078b70b2397245815a",
+    "created_at": "2026-10-16T07:53:12.950358Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, p.lindgren@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example over 16 attempts -- did not succeed (confidence 0.72)",
+    "severity": "medium",
+    "confidence": 0.72,
+    "verdicts": [
+      {
+        "verdict_id": "4cf4310e72944a8a87866769c4a8bfc8",
+        "event_ids": [
+          "0b89553782d5443aa7862684441313c2",
+          "d2e7982fcd734757b57780196a085adb",
+          "f5c7f9509b4c46338e70408ea0ba07f0",
+          "c65bc6b02fdc4d12b8e49c19b6a5903c",
+          "fce9204599cb40679f30dd2dee2b2f8b",
+          "a12c8a5c658949c49d7a58751381c0f2",
+          "ea430d5f765b45d9839558603e0d4ef3",
+          "007acc50b7cd462cba0d25e1a62cfc46",
+          "8f106fae70b345d781e645b8ab0ec265",
+          "6717cf9a3a4842e1becbbf2def4808d9",
+          "764fd01ce41f4a618b04def2a2335f22",
+          "7d279d6f6b594b49af8c3b463566e082",
+          "baaade3d9071465fa9a8303aba7a41d2",
+          "318240cfd15545269b9e218f75955202",
+          "07c300451a11451ab196e84de1fb90a0",
+          "03b7aed406bc49e0a908e3c3b51e6f3e"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.72,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.bianchi@acme.example",
+            "e.sorensen@acme.example",
+            "f.costa@acme.example",
+            "g.pavlou@acme.example",
+            "h.nakamura@acme.example",
+            "i.volkov@acme.example",
+            "j.park@acme.example",
+            "k.mehta@acme.example",
+            "l.romano@acme.example",
+            "m.okafor@acme.example",
+            "n.abebe@acme.example",
+            "ops_admin@acme.example",
+            "p.lindgren@acme.example",
+            "r.oyelaran@acme.example",
+            "s.delacroix@acme.example",
+            "t.ibrahim@acme.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 16,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T14:00:00Z",
+          "window_end": "2026-09-29T14:01:51Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "16 rejected HTTP logins across 16 distinct accounts from 10.0.5.20 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "0b89553782d5443aa7862684441313c2",
+              "d2e7982fcd734757b57780196a085adb",
+              "f5c7f9509b4c46338e70408ea0ba07f0",
+              "c65bc6b02fdc4d12b8e49c19b6a5903c",
+              "fce9204599cb40679f30dd2dee2b2f8b",
+              "a12c8a5c658949c49d7a58751381c0f2",
+              "ea430d5f765b45d9839558603e0d4ef3",
+              "007acc50b7cd462cba0d25e1a62cfc46",
+              "8f106fae70b345d781e645b8ab0ec265",
+              "6717cf9a3a4842e1becbbf2def4808d9",
+              "764fd01ce41f4a618b04def2a2335f22",
+              "7d279d6f6b594b49af8c3b463566e082",
+              "baaade3d9071465fa9a8303aba7a41d2",
+              "318240cfd15545269b9e218f75955202",
+              "07c300451a11451ab196e84de1fb90a0",
+              "03b7aed406bc49e0a908e3c3b51e6f3e"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:00+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 3079, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=ops_admin@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:08+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2340, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=k.mehta@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T14:00:15+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 1488, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=r.oyelaran@acme.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "10.0.5.20 attempted logins for 16 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:12.950223Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.bianchi@acme.example",
+        "e.sorensen@acme.example",
+        "f.costa@acme.example",
+        "g.pavlou@acme.example",
+        "h.nakamura@acme.example",
+        "i.volkov@acme.example",
+        "j.park@acme.example",
+        "k.mehta@acme.example",
+        "l.romano@acme.example",
+        "m.okafor@acme.example",
+        "n.abebe@acme.example",
+        "ops_admin@acme.example",
+        "p.lindgren@acme.example",
+        "r.oyelaran@acme.example",
+        "s.delacroix@acme.example",
+        "t.ibrahim@acme.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 16,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T14:00:00Z",
+      "window_end": "2026-09-29T14:01:51Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 10.0.5.20",
+      "force a password reset for a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, p.lindgren@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example"
+    ]
+  },
+  {
+    "incident_id": "e0934fc49aac4290ae4ece51a1973397",
+    "created_at": "2026-10-16T07:53:14.463629Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example over 15 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "723356749385487baa16a060463591dd",
+        "event_ids": [
+          "0c2c088556484e6f9c6f7d8c99431fe7",
+          "d391247ededb463e94b762d6b660d029",
+          "44204a48771145aab587820c14438ba4",
+          "f34972889d4f44b081ec76d798ba9c09",
+          "42c2c3a36e3d49ef8b581e17acbd61e1",
+          "1fd4c2fa1c4f441180004ea316565c7a",
+          "216385dea96f43c48ac77f1ddcfe5b59",
+          "dc53f4849eae4a2d984dc898ef9073d3",
+          "d489735901d54175897b2d8c79e04093",
+          "e85b297d7dac4a7db8fa746eb8e3056f",
+          "dd3b47f9791d4e1f83d4aa5ecafc6c85",
+          "b32edfa359954888a17b9af6977513a5",
+          "6aecae5cb37448209c69258a102334e8",
+          "cd8dfe9f791a4ca29eb8f4654ea989f3",
+          "1c2578deea284a93aea24ac13d6986e4"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.bianchi@acme.example",
+            "e.sorensen@acme.example",
+            "f.costa@acme.example",
+            "g.pavlou@acme.example",
+            "h.nakamura@acme.example",
+            "i.volkov@acme.example",
+            "j.park@acme.example",
+            "k.mehta@acme.example",
+            "l.romano@acme.example",
+            "m.okafor@acme.example",
+            "n.abebe@acme.example",
+            "ops_admin@acme.example",
+            "r.oyelaran@acme.example",
+            "s.delacroix@acme.example",
+            "t.ibrahim@acme.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 15,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-06T14:00:00Z",
+          "window_end": "2026-10-06T14:01:47Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "15 rejected HTTP logins across 15 distinct accounts from 10.0.5.20 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "0c2c088556484e6f9c6f7d8c99431fe7",
+              "d391247ededb463e94b762d6b660d029",
+              "44204a48771145aab587820c14438ba4",
+              "f34972889d4f44b081ec76d798ba9c09",
+              "42c2c3a36e3d49ef8b581e17acbd61e1",
+              "1fd4c2fa1c4f441180004ea316565c7a",
+              "216385dea96f43c48ac77f1ddcfe5b59",
+              "dc53f4849eae4a2d984dc898ef9073d3",
+              "d489735901d54175897b2d8c79e04093",
+              "e85b297d7dac4a7db8fa746eb8e3056f",
+              "dd3b47f9791d4e1f83d4aa5ecafc6c85",
+              "b32edfa359954888a17b9af6977513a5",
+              "6aecae5cb37448209c69258a102334e8",
+              "cd8dfe9f791a4ca29eb8f4654ea989f3",
+              "1c2578deea284a93aea24ac13d6986e4"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:00+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2473, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=ops_admin@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:06+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 3633, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=k.mehta@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:15+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5140, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=r.oyelaran@acme.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "10.0.5.20 attempted logins for 15 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:14.463511Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.bianchi@acme.example",
+        "e.sorensen@acme.example",
+        "f.costa@acme.example",
+        "g.pavlou@acme.example",
+        "h.nakamura@acme.example",
+        "i.volkov@acme.example",
+        "j.park@acme.example",
+        "k.mehta@acme.example",
+        "l.romano@acme.example",
+        "m.okafor@acme.example",
+        "n.abebe@acme.example",
+        "ops_admin@acme.example",
+        "r.oyelaran@acme.example",
+        "s.delacroix@acme.example",
+        "t.ibrahim@acme.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 15,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-06T14:00:00Z",
+      "window_end": "2026-10-06T14:01:47Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 10.0.5.20",
+      "force a password reset for a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example"
+    ]
+  },
+  {
+    "incident_id": "2e9e256633574bd9bb59112669904a4a",
+    "created_at": "2026-10-16T07:53:14.472698Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, p.lindgren@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example over 16 attempts -- did not succeed (confidence 0.72)",
+    "severity": "medium",
+    "confidence": 0.72,
+    "verdicts": [
+      {
+        "verdict_id": "41960b8a3ca34e43a5145b7041d85ea0",
+        "event_ids": [
+          "0c2c088556484e6f9c6f7d8c99431fe7",
+          "d391247ededb463e94b762d6b660d029",
+          "44204a48771145aab587820c14438ba4",
+          "f34972889d4f44b081ec76d798ba9c09",
+          "42c2c3a36e3d49ef8b581e17acbd61e1",
+          "1fd4c2fa1c4f441180004ea316565c7a",
+          "216385dea96f43c48ac77f1ddcfe5b59",
+          "dc53f4849eae4a2d984dc898ef9073d3",
+          "d489735901d54175897b2d8c79e04093",
+          "e85b297d7dac4a7db8fa746eb8e3056f",
+          "dd3b47f9791d4e1f83d4aa5ecafc6c85",
+          "b32edfa359954888a17b9af6977513a5",
+          "6aecae5cb37448209c69258a102334e8",
+          "cd8dfe9f791a4ca29eb8f4654ea989f3",
+          "1c2578deea284a93aea24ac13d6986e4",
+          "aac183148bcf46509dd86acf862cb7de"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.72,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.bianchi@acme.example",
+            "e.sorensen@acme.example",
+            "f.costa@acme.example",
+            "g.pavlou@acme.example",
+            "h.nakamura@acme.example",
+            "i.volkov@acme.example",
+            "j.park@acme.example",
+            "k.mehta@acme.example",
+            "l.romano@acme.example",
+            "m.okafor@acme.example",
+            "n.abebe@acme.example",
+            "ops_admin@acme.example",
+            "p.lindgren@acme.example",
+            "r.oyelaran@acme.example",
+            "s.delacroix@acme.example",
+            "t.ibrahim@acme.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 16,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-10-06T14:00:00Z",
+          "window_end": "2026-10-06T14:01:56Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "16 rejected HTTP logins across 16 distinct accounts from 10.0.5.20 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "0c2c088556484e6f9c6f7d8c99431fe7",
+              "d391247ededb463e94b762d6b660d029",
+              "44204a48771145aab587820c14438ba4",
+              "f34972889d4f44b081ec76d798ba9c09",
+              "42c2c3a36e3d49ef8b581e17acbd61e1",
+              "1fd4c2fa1c4f441180004ea316565c7a",
+              "216385dea96f43c48ac77f1ddcfe5b59",
+              "dc53f4849eae4a2d984dc898ef9073d3",
+              "d489735901d54175897b2d8c79e04093",
+              "e85b297d7dac4a7db8fa746eb8e3056f",
+              "dd3b47f9791d4e1f83d4aa5ecafc6c85",
+              "b32edfa359954888a17b9af6977513a5",
+              "6aecae5cb37448209c69258a102334e8",
+              "cd8dfe9f791a4ca29eb8f4654ea989f3",
+              "1c2578deea284a93aea24ac13d6986e4",
+              "aac183148bcf46509dd86acf862cb7de"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:00+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2473, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=ops_admin@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:06+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 3633, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=k.mehta@acme.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-10-06T14:00:15+00:00\", \"remote_addr\": \"10.0.5.20\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5140, \"http_user_agent\": \"acme-pentest-scanner/3.2\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=r.oyelaran@acme.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "10.0.5.20 attempted logins for 16 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:14.472597Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.bianchi@acme.example",
+        "e.sorensen@acme.example",
+        "f.costa@acme.example",
+        "g.pavlou@acme.example",
+        "h.nakamura@acme.example",
+        "i.volkov@acme.example",
+        "j.park@acme.example",
+        "k.mehta@acme.example",
+        "l.romano@acme.example",
+        "m.okafor@acme.example",
+        "n.abebe@acme.example",
+        "ops_admin@acme.example",
+        "p.lindgren@acme.example",
+        "r.oyelaran@acme.example",
+        "s.delacroix@acme.example",
+        "t.ibrahim@acme.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 16,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-10-06T14:00:00Z",
+      "window_end": "2026-10-06T14:01:56Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 10.0.5.20",
+      "force a password reset for a.bianchi@acme.example, e.sorensen@acme.example, f.costa@acme.example, g.pavlou@acme.example, h.nakamura@acme.example, i.volkov@acme.example, j.park@acme.example, k.mehta@acme.example, l.romano@acme.example, m.okafor@acme.example, n.abebe@acme.example, ops_admin@acme.example, p.lindgren@acme.example, r.oyelaran@acme.example, s.delacroix@acme.example, t.ibrahim@acme.example"
+    ]
+  }
+]

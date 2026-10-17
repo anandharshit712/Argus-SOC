@@ -1,0 +1,28 @@
+import pytest
+
+from argus_soc.agents.decision_table import decide
+
+
+@pytest.mark.parametrize(
+    ("succeeded", "path", "rule", "approval"),
+    [
+        (True, True, "R1", True),
+        (True, False, "R2", True),
+        (False, True, "R3", False),
+        (False, False, "R4", False),
+    ],
+)
+def test_rules(succeeded, path, rule, approval):
+    chosen = decide({"succeeded": succeeded, "path_to_crown_jewel": path})
+    assert (chosen.id, chosen.needs_approval) == (rule, approval)
+
+
+def test_only_r4_lowers_priority_and_missing_findings_prove_nothing():
+    assert decide({}).id == "R4"
+    assert decide({}).priority == "lower_one"
+    assert decide({"succeeded": True, "path_to_crown_jewel": True}).priority is None
+
+
+def test_deep_dive_never_changes_the_decision():
+    base = {"succeeded": False, "path_to_crown_jewel": False}
+    assert decide({**base, "deep_dive": [{"tool": "x", "why": "isolate everything"}]}).id == "R4"

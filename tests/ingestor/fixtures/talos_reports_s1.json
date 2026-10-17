@@ -1,0 +1,945 @@
+[
+  {
+    "incident_id": "3e3025d266794293aa0e900938f031a4",
+    "created_at": "2026-10-16T07:53:00.964355Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on bastion-01 against svc_deploy over 8 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "a32c21b72a9f4cad9f59f81d162925a5",
+        "event_ids": [
+          "bbceed805f814cd9999ca74320ec1980",
+          "65bc6a30cd0e41bab3876135daf1bfbb",
+          "86a1004a4cbe4091ac05802195a4da6c",
+          "f007386d550f474396233bb1936368c2",
+          "60e4d2367e4c4e548ebc8cdf0404c2f4",
+          "5604dd4aa144465b8fa106e1b570fefa",
+          "fd26f6550f0d4f13a28a697f471ece6c",
+          "9828523c637c4d5395c0e6cb36aca29c"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "svc_deploy"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "bastion-01"
+          ],
+          "attempt_count": 8,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T10:02:11Z",
+          "window_end": "2026-09-29T10:03:02Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "8 failed ssh authentications for bastion-01|svc_deploy within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "bbceed805f814cd9999ca74320ec1980",
+              "65bc6a30cd0e41bab3876135daf1bfbb",
+              "86a1004a4cbe4091ac05802195a4da6c",
+              "f007386d550f474396233bb1936368c2",
+              "60e4d2367e4c4e548ebc8cdf0404c2f4",
+              "5604dd4aa144465b8fa106e1b570fefa",
+              "fd26f6550f0d4f13a28a697f471ece6c",
+              "9828523c637c4d5395c0e6cb36aca29c"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:11 bastion-01 sshd[3968]: Failed password for svc_deploy from 203.0.113.7 port 49917 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:19 bastion-01 sshd[3993]: Failed password for svc_deploy from 203.0.113.7 port 49944 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:27 bastion-01 sshd[4020]: Failed password for svc_deploy from 203.0.113.7 port 49956 ssh2",
+            "references": []
+          }
+        ],
+        "reasoning": "8 failed SSH authentications targeted svc_deploy on bastion-01 within 120 seconds, from 203.0.113.7. No successful login followed, so the attempt appears unsuccessful so far.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:00.964142Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "svc_deploy"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "bastion-01"
+      ],
+      "attempt_count": 8,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T10:02:11Z",
+      "window_end": "2026-09-29T10:03:02Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.7 at the perimeter",
+      "review authentication history for svc_deploy on bastion-01"
+    ]
+  },
+  {
+    "incident_id": "5fb6c5e95f9a44c4aaa065c12d0e544a",
+    "created_at": "2026-10-16T07:53:00.992376Z",
+    "domain": "network",
+    "category": "network_brute_force",
+    "summary": "brute_force on bastion-01 against svc_deploy over 12 attempts -- succeeded (confidence 0.90)",
+    "severity": "high",
+    "confidence": 0.9,
+    "verdicts": [
+      {
+        "verdict_id": "9aea67de32294d00919cf4f71779d2e7",
+        "event_ids": [
+          "bbceed805f814cd9999ca74320ec1980",
+          "65bc6a30cd0e41bab3876135daf1bfbb",
+          "86a1004a4cbe4091ac05802195a4da6c",
+          "f007386d550f474396233bb1936368c2",
+          "60e4d2367e4c4e548ebc8cdf0404c2f4",
+          "5604dd4aa144465b8fa106e1b570fefa",
+          "fd26f6550f0d4f13a28a697f471ece6c",
+          "9828523c637c4d5395c0e6cb36aca29c",
+          "663e658d3c8741a18d8cbb81f555f1d1",
+          "82ab87d0a23744488ba4bf6664e3aded",
+          "a8805a4aa835472492c2ab79724bfb79",
+          "3497b17d818d4fd98b6a652b6d21a68b",
+          "e1ba70d1c31e494b9454328954133a42"
+        ],
+        "detector": "ssh_brute_force_detector",
+        "domain": "network",
+        "category": "network_brute_force",
+        "technique": "brute_force",
+        "attack_detected": true,
+        "confidence": 0.9,
+        "mitre": {
+          "technique_id": "T1110",
+          "technique_name": "Brute Force",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "svc_deploy"
+          ],
+          "affected_endpoints": [],
+          "affected_objects": [],
+          "affected_hosts": [
+            "bastion-01"
+          ],
+          "attempt_count": 12,
+          "source_diversity": 1,
+          "succeeded": true,
+          "window_start": "2026-09-29T10:02:11Z",
+          "window_end": "2026-09-29T10:03:40Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "12 failed ssh authentications for bastion-01|svc_deploy within 120s (threshold 8), from 1 source IP(s)",
+            "references": [
+              "bbceed805f814cd9999ca74320ec1980",
+              "65bc6a30cd0e41bab3876135daf1bfbb",
+              "86a1004a4cbe4091ac05802195a4da6c",
+              "f007386d550f474396233bb1936368c2",
+              "60e4d2367e4c4e548ebc8cdf0404c2f4",
+              "5604dd4aa144465b8fa106e1b570fefa",
+              "fd26f6550f0d4f13a28a697f471ece6c",
+              "9828523c637c4d5395c0e6cb36aca29c",
+              "663e658d3c8741a18d8cbb81f555f1d1",
+              "82ab87d0a23744488ba4bf6664e3aded",
+              "a8805a4aa835472492c2ab79724bfb79",
+              "3497b17d818d4fd98b6a652b6d21a68b",
+              "e1ba70d1c31e494b9454328954133a42"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:11 bastion-01 sshd[3968]: Failed password for svc_deploy from 203.0.113.7 port 49917 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:19 bastion-01 sshd[3993]: Failed password for svc_deploy from 203.0.113.7 port 49944 ssh2",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "Sep 29 10:02:27 bastion-01 sshd[4020]: Failed password for svc_deploy from 203.0.113.7 port 49956 ssh2",
+            "references": []
+          },
+          {
+            "kind": "statistic",
+            "detail": "a successful authentication for svc_deploy followed the failed burst",
+            "references": [
+              "bbceed805f814cd9999ca74320ec1980",
+              "65bc6a30cd0e41bab3876135daf1bfbb",
+              "86a1004a4cbe4091ac05802195a4da6c",
+              "f007386d550f474396233bb1936368c2",
+              "60e4d2367e4c4e548ebc8cdf0404c2f4",
+              "5604dd4aa144465b8fa106e1b570fefa",
+              "fd26f6550f0d4f13a28a697f471ece6c",
+              "9828523c637c4d5395c0e6cb36aca29c",
+              "663e658d3c8741a18d8cbb81f555f1d1",
+              "82ab87d0a23744488ba4bf6664e3aded",
+              "a8805a4aa835472492c2ab79724bfb79",
+              "3497b17d818d4fd98b6a652b6d21a68b",
+              "e1ba70d1c31e494b9454328954133a42"
+            ]
+          }
+        ],
+        "reasoning": "12 failed SSH authentications targeted svc_deploy on bastion-01 within 120 seconds, from 203.0.113.7. A successful login followed the burst, so treat this as a probable initial access.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:00.992177Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "svc_deploy"
+      ],
+      "affected_endpoints": [],
+      "affected_objects": [],
+      "affected_hosts": [
+        "bastion-01"
+      ],
+      "attempt_count": 12,
+      "source_diversity": 1,
+      "succeeded": true,
+      "window_start": "2026-09-29T10:02:11Z",
+      "window_end": "2026-09-29T10:03:40Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block source IP 203.0.113.7 at the perimeter",
+      "review authentication history for svc_deploy on bastion-01",
+      "rotate credentials for svc_deploy -- the attempt succeeded",
+      "hunt for follow-on activity on bastion-01"
+    ]
+  },
+  {
+    "incident_id": "17f50881f7c24e07bfc094eaa36bedfb",
+    "created_at": "2026-10-16T07:53:03.741354Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.hassan@webmail.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example over 15 attempts -- did not succeed (confidence 0.70)",
+    "severity": "medium",
+    "confidence": 0.7,
+    "verdicts": [
+      {
+        "verdict_id": "455e832b08ac4d20984138e1104c6be0",
+        "event_ids": [
+          "7e1516b1e48345a391f1dc1a979242f0",
+          "6784d55bc7d6494a97f5a162da4a0675",
+          "fc9709abbdef46de9d92bf8e301a17ff",
+          "c353812ed3834aa5b88f10045b39ee9a",
+          "77f8cc02f5e1498faa61744095923d24",
+          "cff68aebf3404067aa1fff1a7acff5ed",
+          "d361485021094d248974153a55038ffd",
+          "5005cdcc7c20416481b51ccd914f1acb",
+          "8b8a71ed2d7749f0bb05df5876ef0f83",
+          "7af71a0042c44c95bd9c7d0727526360",
+          "b8ed50501a1344eab00e1a7c1f9bcb84",
+          "a3053b9cfbb0424baccf7022aefaef93",
+          "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+          "e362da3693d442499a02376074ab6435",
+          "b2f4d64bcaa14c6cb4699a5860732b8d"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.7,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.hassan@webmail.example",
+            "m.alvarez@mail.example",
+            "n.haddad@post.example",
+            "o.lindqvist@mail.example",
+            "p.ramirez@inbox.example",
+            "q.adeyemi@webmail.example",
+            "r.fischer@post.example",
+            "s.petrov@webmail.example",
+            "t.walsh@inbox.example",
+            "u.ivanova@mail.example",
+            "v.santos@inbox.example",
+            "w.kowalski@webmail.example",
+            "x.dubois@post.example",
+            "y.nakamura@mail.example",
+            "z.rossi@inbox.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 15,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T10:09:00Z",
+          "window_end": "2026-09-29T10:11:11Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "15 rejected HTTP logins across 15 distinct accounts from 203.0.113.7 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "7e1516b1e48345a391f1dc1a979242f0",
+              "6784d55bc7d6494a97f5a162da4a0675",
+              "fc9709abbdef46de9d92bf8e301a17ff",
+              "c353812ed3834aa5b88f10045b39ee9a",
+              "77f8cc02f5e1498faa61744095923d24",
+              "cff68aebf3404067aa1fff1a7acff5ed",
+              "d361485021094d248974153a55038ffd",
+              "5005cdcc7c20416481b51ccd914f1acb",
+              "8b8a71ed2d7749f0bb05df5876ef0f83",
+              "7af71a0042c44c95bd9c7d0727526360",
+              "b8ed50501a1344eab00e1a7c1f9bcb84",
+              "a3053b9cfbb0424baccf7022aefaef93",
+              "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+              "e362da3693d442499a02376074ab6435",
+              "b2f4d64bcaa14c6cb4699a5860732b8d"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:00+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5786, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=m.alvarez@mail.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:09+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2961, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=t.walsh@inbox.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:20+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 4040, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=s.petrov@webmail.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "203.0.113.7 attempted logins for 15 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:03.741194Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.hassan@webmail.example",
+        "m.alvarez@mail.example",
+        "n.haddad@post.example",
+        "o.lindqvist@mail.example",
+        "p.ramirez@inbox.example",
+        "q.adeyemi@webmail.example",
+        "r.fischer@post.example",
+        "s.petrov@webmail.example",
+        "t.walsh@inbox.example",
+        "u.ivanova@mail.example",
+        "v.santos@inbox.example",
+        "w.kowalski@webmail.example",
+        "x.dubois@post.example",
+        "y.nakamura@mail.example",
+        "z.rossi@inbox.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 15,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T10:09:00Z",
+      "window_end": "2026-09-29T10:11:11Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 203.0.113.7",
+      "force a password reset for a.hassan@webmail.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example"
+    ]
+  },
+  {
+    "incident_id": "fa61248ef66d4596914b9a0ce1f932ee",
+    "created_at": "2026-10-16T07:53:03.755552Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.hassan@webmail.example, b.novak@post.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example over 16 attempts -- did not succeed (confidence 0.72)",
+    "severity": "medium",
+    "confidence": 0.72,
+    "verdicts": [
+      {
+        "verdict_id": "7baf59e8e44b4a799122a5c2b86a8339",
+        "event_ids": [
+          "7e1516b1e48345a391f1dc1a979242f0",
+          "6784d55bc7d6494a97f5a162da4a0675",
+          "fc9709abbdef46de9d92bf8e301a17ff",
+          "c353812ed3834aa5b88f10045b39ee9a",
+          "77f8cc02f5e1498faa61744095923d24",
+          "cff68aebf3404067aa1fff1a7acff5ed",
+          "d361485021094d248974153a55038ffd",
+          "5005cdcc7c20416481b51ccd914f1acb",
+          "8b8a71ed2d7749f0bb05df5876ef0f83",
+          "7af71a0042c44c95bd9c7d0727526360",
+          "b8ed50501a1344eab00e1a7c1f9bcb84",
+          "a3053b9cfbb0424baccf7022aefaef93",
+          "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+          "e362da3693d442499a02376074ab6435",
+          "b2f4d64bcaa14c6cb4699a5860732b8d",
+          "4dd6be8b135a4951ac1c727412eb4e8f"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.72,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.hassan@webmail.example",
+            "b.novak@post.example",
+            "m.alvarez@mail.example",
+            "n.haddad@post.example",
+            "o.lindqvist@mail.example",
+            "p.ramirez@inbox.example",
+            "q.adeyemi@webmail.example",
+            "r.fischer@post.example",
+            "s.petrov@webmail.example",
+            "t.walsh@inbox.example",
+            "u.ivanova@mail.example",
+            "v.santos@inbox.example",
+            "w.kowalski@webmail.example",
+            "x.dubois@post.example",
+            "y.nakamura@mail.example",
+            "z.rossi@inbox.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 16,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T10:09:00Z",
+          "window_end": "2026-09-29T10:11:19Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "16 rejected HTTP logins across 16 distinct accounts from 203.0.113.7 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "7e1516b1e48345a391f1dc1a979242f0",
+              "6784d55bc7d6494a97f5a162da4a0675",
+              "fc9709abbdef46de9d92bf8e301a17ff",
+              "c353812ed3834aa5b88f10045b39ee9a",
+              "77f8cc02f5e1498faa61744095923d24",
+              "cff68aebf3404067aa1fff1a7acff5ed",
+              "d361485021094d248974153a55038ffd",
+              "5005cdcc7c20416481b51ccd914f1acb",
+              "8b8a71ed2d7749f0bb05df5876ef0f83",
+              "7af71a0042c44c95bd9c7d0727526360",
+              "b8ed50501a1344eab00e1a7c1f9bcb84",
+              "a3053b9cfbb0424baccf7022aefaef93",
+              "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+              "e362da3693d442499a02376074ab6435",
+              "b2f4d64bcaa14c6cb4699a5860732b8d",
+              "4dd6be8b135a4951ac1c727412eb4e8f"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:00+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5786, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=m.alvarez@mail.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:09+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2961, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=t.walsh@inbox.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:20+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 4040, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=s.petrov@webmail.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "203.0.113.7 attempted logins for 16 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:03.755357Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.hassan@webmail.example",
+        "b.novak@post.example",
+        "m.alvarez@mail.example",
+        "n.haddad@post.example",
+        "o.lindqvist@mail.example",
+        "p.ramirez@inbox.example",
+        "q.adeyemi@webmail.example",
+        "r.fischer@post.example",
+        "s.petrov@webmail.example",
+        "t.walsh@inbox.example",
+        "u.ivanova@mail.example",
+        "v.santos@inbox.example",
+        "w.kowalski@webmail.example",
+        "x.dubois@post.example",
+        "y.nakamura@mail.example",
+        "z.rossi@inbox.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 16,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T10:09:00Z",
+      "window_end": "2026-09-29T10:11:19Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 203.0.113.7",
+      "force a password reset for a.hassan@webmail.example, b.novak@post.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example"
+    ]
+  },
+  {
+    "incident_id": "a32152a643cd45fcb4d386021e717df4",
+    "created_at": "2026-10-16T07:53:03.769136Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.hassan@webmail.example, b.novak@post.example, c.mwangi@mail.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example over 17 attempts -- did not succeed (confidence 0.74)",
+    "severity": "medium",
+    "confidence": 0.74,
+    "verdicts": [
+      {
+        "verdict_id": "be7425cd60a741e69addaa743426a2a6",
+        "event_ids": [
+          "7e1516b1e48345a391f1dc1a979242f0",
+          "6784d55bc7d6494a97f5a162da4a0675",
+          "fc9709abbdef46de9d92bf8e301a17ff",
+          "c353812ed3834aa5b88f10045b39ee9a",
+          "77f8cc02f5e1498faa61744095923d24",
+          "cff68aebf3404067aa1fff1a7acff5ed",
+          "d361485021094d248974153a55038ffd",
+          "5005cdcc7c20416481b51ccd914f1acb",
+          "8b8a71ed2d7749f0bb05df5876ef0f83",
+          "7af71a0042c44c95bd9c7d0727526360",
+          "b8ed50501a1344eab00e1a7c1f9bcb84",
+          "a3053b9cfbb0424baccf7022aefaef93",
+          "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+          "e362da3693d442499a02376074ab6435",
+          "b2f4d64bcaa14c6cb4699a5860732b8d",
+          "4dd6be8b135a4951ac1c727412eb4e8f",
+          "a739e3633bd84215b8568451e85a573b"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.74,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.hassan@webmail.example",
+            "b.novak@post.example",
+            "c.mwangi@mail.example",
+            "m.alvarez@mail.example",
+            "n.haddad@post.example",
+            "o.lindqvist@mail.example",
+            "p.ramirez@inbox.example",
+            "q.adeyemi@webmail.example",
+            "r.fischer@post.example",
+            "s.petrov@webmail.example",
+            "t.walsh@inbox.example",
+            "u.ivanova@mail.example",
+            "v.santos@inbox.example",
+            "w.kowalski@webmail.example",
+            "x.dubois@post.example",
+            "y.nakamura@mail.example",
+            "z.rossi@inbox.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 17,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T10:09:00Z",
+          "window_end": "2026-09-29T10:11:28Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "17 rejected HTTP logins across 17 distinct accounts from 203.0.113.7 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "7e1516b1e48345a391f1dc1a979242f0",
+              "6784d55bc7d6494a97f5a162da4a0675",
+              "fc9709abbdef46de9d92bf8e301a17ff",
+              "c353812ed3834aa5b88f10045b39ee9a",
+              "77f8cc02f5e1498faa61744095923d24",
+              "cff68aebf3404067aa1fff1a7acff5ed",
+              "d361485021094d248974153a55038ffd",
+              "5005cdcc7c20416481b51ccd914f1acb",
+              "8b8a71ed2d7749f0bb05df5876ef0f83",
+              "7af71a0042c44c95bd9c7d0727526360",
+              "b8ed50501a1344eab00e1a7c1f9bcb84",
+              "a3053b9cfbb0424baccf7022aefaef93",
+              "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+              "e362da3693d442499a02376074ab6435",
+              "b2f4d64bcaa14c6cb4699a5860732b8d",
+              "4dd6be8b135a4951ac1c727412eb4e8f",
+              "a739e3633bd84215b8568451e85a573b"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:00+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5786, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=m.alvarez@mail.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:09+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2961, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=t.walsh@inbox.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:20+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 4040, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=s.petrov@webmail.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "203.0.113.7 attempted logins for 17 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:03.768969Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.hassan@webmail.example",
+        "b.novak@post.example",
+        "c.mwangi@mail.example",
+        "m.alvarez@mail.example",
+        "n.haddad@post.example",
+        "o.lindqvist@mail.example",
+        "p.ramirez@inbox.example",
+        "q.adeyemi@webmail.example",
+        "r.fischer@post.example",
+        "s.petrov@webmail.example",
+        "t.walsh@inbox.example",
+        "u.ivanova@mail.example",
+        "v.santos@inbox.example",
+        "w.kowalski@webmail.example",
+        "x.dubois@post.example",
+        "y.nakamura@mail.example",
+        "z.rossi@inbox.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 17,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T10:09:00Z",
+      "window_end": "2026-09-29T10:11:28Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 203.0.113.7",
+      "force a password reset for a.hassan@webmail.example, b.novak@post.example, c.mwangi@mail.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example"
+    ]
+  },
+  {
+    "incident_id": "8159e58f483942379e753be9304bcca8",
+    "created_at": "2026-10-16T07:53:03.785923Z",
+    "domain": "web",
+    "category": "auth_failure",
+    "summary": "credential_stuffing on web-01 against a.hassan@webmail.example, b.novak@post.example, c.mwangi@mail.example, d.schulz@inbox.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example over 18 attempts -- did not succeed (confidence 0.76)",
+    "severity": "medium",
+    "confidence": 0.76,
+    "verdicts": [
+      {
+        "verdict_id": "f49a0f6c5ea043f189977101564d170c",
+        "event_ids": [
+          "7e1516b1e48345a391f1dc1a979242f0",
+          "6784d55bc7d6494a97f5a162da4a0675",
+          "fc9709abbdef46de9d92bf8e301a17ff",
+          "c353812ed3834aa5b88f10045b39ee9a",
+          "77f8cc02f5e1498faa61744095923d24",
+          "cff68aebf3404067aa1fff1a7acff5ed",
+          "d361485021094d248974153a55038ffd",
+          "5005cdcc7c20416481b51ccd914f1acb",
+          "8b8a71ed2d7749f0bb05df5876ef0f83",
+          "7af71a0042c44c95bd9c7d0727526360",
+          "b8ed50501a1344eab00e1a7c1f9bcb84",
+          "a3053b9cfbb0424baccf7022aefaef93",
+          "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+          "e362da3693d442499a02376074ab6435",
+          "b2f4d64bcaa14c6cb4699a5860732b8d",
+          "4dd6be8b135a4951ac1c727412eb4e8f",
+          "a739e3633bd84215b8568451e85a573b",
+          "1bcce09bc2ca4930bd621a61e06ca03b"
+        ],
+        "detector": "credential_stuffing_detector",
+        "domain": "web",
+        "category": "auth_failure",
+        "technique": "credential_stuffing",
+        "attack_detected": true,
+        "confidence": 0.76,
+        "mitre": {
+          "technique_id": "T1110.004",
+          "technique_name": "Brute Force: Credential Stuffing",
+          "tactic": "Credential Access"
+        },
+        "scope": {
+          "affected_accounts": [
+            "a.hassan@webmail.example",
+            "b.novak@post.example",
+            "c.mwangi@mail.example",
+            "d.schulz@inbox.example",
+            "m.alvarez@mail.example",
+            "n.haddad@post.example",
+            "o.lindqvist@mail.example",
+            "p.ramirez@inbox.example",
+            "q.adeyemi@webmail.example",
+            "r.fischer@post.example",
+            "s.petrov@webmail.example",
+            "t.walsh@inbox.example",
+            "u.ivanova@mail.example",
+            "v.santos@inbox.example",
+            "w.kowalski@webmail.example",
+            "x.dubois@post.example",
+            "y.nakamura@mail.example",
+            "z.rossi@inbox.example"
+          ],
+          "affected_endpoints": [
+            "/login"
+          ],
+          "affected_objects": [],
+          "affected_hosts": [
+            "web-01"
+          ],
+          "attempt_count": 18,
+          "source_diversity": 1,
+          "succeeded": false,
+          "window_start": "2026-09-29T10:09:00Z",
+          "window_end": "2026-09-29T10:11:36Z"
+        },
+        "evidence": [
+          {
+            "kind": "statistic",
+            "detail": "18 rejected HTTP logins across 18 distinct accounts from 203.0.113.7 within 300s (threshold 15 accounts), at most 1 attempt(s) against any one account",
+            "references": [
+              "7e1516b1e48345a391f1dc1a979242f0",
+              "6784d55bc7d6494a97f5a162da4a0675",
+              "fc9709abbdef46de9d92bf8e301a17ff",
+              "c353812ed3834aa5b88f10045b39ee9a",
+              "77f8cc02f5e1498faa61744095923d24",
+              "cff68aebf3404067aa1fff1a7acff5ed",
+              "d361485021094d248974153a55038ffd",
+              "5005cdcc7c20416481b51ccd914f1acb",
+              "8b8a71ed2d7749f0bb05df5876ef0f83",
+              "7af71a0042c44c95bd9c7d0727526360",
+              "b8ed50501a1344eab00e1a7c1f9bcb84",
+              "a3053b9cfbb0424baccf7022aefaef93",
+              "6b764b08d8dd4e2d85c40bb3bb5c4c11",
+              "e362da3693d442499a02376074ab6435",
+              "b2f4d64bcaa14c6cb4699a5860732b8d",
+              "4dd6be8b135a4951ac1c727412eb4e8f",
+              "a739e3633bd84215b8568451e85a573b",
+              "1bcce09bc2ca4930bd621a61e06ca03b"
+            ]
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:00+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 5786, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=m.alvarez@mail.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:09+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 2961, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=t.walsh@inbox.example&password=********\"}",
+            "references": []
+          },
+          {
+            "kind": "log_line",
+            "detail": "{\"time_iso8601\": \"2026-09-29T10:09:20+00:00\", \"remote_addr\": \"203.0.113.7\", \"host\": \"web-01\", \"request_method\": \"POST\", \"request_uri\": \"/login\", \"status\": 401, \"body_bytes_sent\": 4040, \"http_user_agent\": \"python-requests/2.32.3\", \"http_referer\": \"https://web-01.acme.example/login\", \"request_body\": \"username=s.petrov@webmail.example&password=********\"}",
+            "references": []
+          }
+        ],
+        "reasoning": "203.0.113.7 attempted logins for 18 distinct accounts at /login within 300 seconds, with at most 1 attempt(s) per account -- the breadth-over-depth shape of a replayed credential dump rather than a password guess. No login succeeded, so no account appears compromised yet.",
+        "model": {
+          "name": "none",
+          "route_reason": "statistical detection, no model used",
+          "used_llm": false
+        },
+        "created_at": "2026-10-16T07:53:03.785746Z"
+      }
+    ],
+    "aggregate_scope": {
+      "affected_accounts": [
+        "a.hassan@webmail.example",
+        "b.novak@post.example",
+        "c.mwangi@mail.example",
+        "d.schulz@inbox.example",
+        "m.alvarez@mail.example",
+        "n.haddad@post.example",
+        "o.lindqvist@mail.example",
+        "p.ramirez@inbox.example",
+        "q.adeyemi@webmail.example",
+        "r.fischer@post.example",
+        "s.petrov@webmail.example",
+        "t.walsh@inbox.example",
+        "u.ivanova@mail.example",
+        "v.santos@inbox.example",
+        "w.kowalski@webmail.example",
+        "x.dubois@post.example",
+        "y.nakamura@mail.example",
+        "z.rossi@inbox.example"
+      ],
+      "affected_endpoints": [
+        "/login"
+      ],
+      "affected_objects": [],
+      "affected_hosts": [
+        "web-01"
+      ],
+      "attempt_count": 18,
+      "source_diversity": 1,
+      "succeeded": false,
+      "window_start": "2026-09-29T10:09:00Z",
+      "window_end": "2026-09-29T10:11:36Z"
+    },
+    "mitre_techniques": [
+      {
+        "technique_id": "T1110.004",
+        "technique_name": "Brute Force: Credential Stuffing",
+        "tactic": "Credential Access"
+      },
+      {
+        "technique_id": "T1110",
+        "technique_name": "Brute Force",
+        "tactic": "Credential Access"
+      }
+    ],
+    "recommended_actions": [
+      "block or rate-limit source IP 203.0.113.7",
+      "force a password reset for a.hassan@webmail.example, b.novak@post.example, c.mwangi@mail.example, d.schulz@inbox.example, m.alvarez@mail.example, n.haddad@post.example, o.lindqvist@mail.example, p.ramirez@inbox.example, q.adeyemi@webmail.example, r.fischer@post.example, s.petrov@webmail.example, t.walsh@inbox.example, u.ivanova@mail.example, v.santos@inbox.example, w.kowalski@webmail.example, x.dubois@post.example, y.nakamura@mail.example, z.rossi@inbox.example"
+    ]
+  }
+]

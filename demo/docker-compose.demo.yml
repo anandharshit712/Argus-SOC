@@ -1,0 +1,77 @@
+# Live demo harness (Workstream A). Overlay on the main compose; adds the attackable targets,
+# the log shipper and the attack-bot to the same project and soc-net network.
+#
+#   # start the core stack first (FalkorDB, Talos, ingestor, agents, API, UI):
+#   docker compose --profile app up -d
+#   # then the demo harness:
+#   docker compose -f docker-compose.yml -f demo/docker-compose.demo.yml --profile demo up -d
+#
+# Only web_shop is published (127.0.0.1:8080 locally; on OCI add a security-list rule for its
+# port and front it however you expose demo traffic). ssh_target and the bot stay internal.
+# No change to Talos or to Workstream B's docker-compose.yml / nginx.
+
+services:
+  web_shop:
+    profiles: [demo]
+    build: { context: ./demo/web_shop }
+    restart: unless-stopped
+    environment:
+      DEMO_WEB_HOST: web-01            # must match a host in B's inventory seed (data/inventory)
+      DEMO_ACCESS_LOG: /var/log/web_shop/access.jsonl
+      DEMO_TRUSTED_PROXY: attack_bot   # X-Forwarded-For trusted only from the bot (resolved by DNS)
+    volumes:
+      - web-logs:/var/log/web_shop
+    ports:
+      - "127.0.0.1:8080:8000"
+    networks: [soc-net]
+
+  ssh_target:
+    profiles: [demo]
+    build: { context: ./demo/ssh_target }
+    restart: unless-stopped
+    hostname: bastion-01               # the host name that appears in each sshd log line
+    volumes:
+      - ssh-logs:/var/log
+    networks: [soc-net]
+
+  shipper:
+    profiles: [demo]
+    # ponytail: reuse the pinned Talos image so the shipper uses Talos's OWN parsers. Same
+    # Dockerfile+context as the talos service, so this is a fully cached rebuild, not a new image.
+    build: { context: ., dockerfile: deploy/talos/Dockerfile }
+    restart: unless-stopped
+    # sshd's auth.log is root:adm 0640; the Talos image runs as an unprivileged user that cannot
+    # read it. The shipper only reads mounted log files, so run it as root.
+    user: "0:0"
+    command: ["python", "/app/ship.py"]
+    environment:
+      TALOS_URL: http://talos:8000
+      DEMO_WEB_LOG: /var/log/web_shop/access.jsonl
+      DEMO_SSH_LOG: /var/log/ssh_target/auth.log
+    volumes:
+      - ./demo/shipper/ship.py:/app/ship.py:ro
+      - web-logs:/var/log/web_shop:ro
+      - ssh-logs:/var/log/ssh_target:ro
+    # No depends_on talos: it lives in the main compose's `app` profile, so the demo profile
+    # stays self-consistent. ship.py polls Talos /healthz before shipping.
+    networks: [soc-net]
+
+  attack_bot:
+    profiles: [demo]
+    build: { context: ./demo/attack_bot }
+    restart: unless-stopped
+    environment:
+      DEMO_SHOP_URL: http://web_shop:8000
+      TALOS_URL: http://talos:8000
+      DEMO_SSH_HOST: ssh_target
+      DEMO_SOAK: "${DEMO_SOAK:-0}"     # set DEMO_SOAK=1 for the always-running chaos loop
+    ports:
+      - "127.0.0.1:8090:8000"          # POST /launch?attack=sqli ; GET /selfcheck
+    depends_on:
+      - web_shop
+      - ssh_target
+    networks: [soc-net]
+
+volumes:
+  web-logs:
+  ssh-logs:

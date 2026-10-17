@@ -110,8 +110,19 @@ Update this section whenever a checkpoint is reached. It is the only status line
 - **Oct 16:** UI spec written (`docs/UI_PAGES.md`). Contract gaps GAP-1…7 found and logged
   (`docs/CONTRACT_GAPS.md`); waiting for acks. Login decided: hard-coded demo users for the
   hackathon, real login later. Agents (A) not started yet; B building on `b/graph-foundation`.
-- **Next checkpoint (end of Oct 16):** scenario 1 end to end — Talos → ingestor → graph → three agents → UI.
-- **Open decisions:** agent framework, LLM provider, tenancy with Talos (one Talos per tenant, or map by host name).
+- **Oct 16 (A, on `a/agents-talos`):** Talos verified (all scenarios matched). Built: Talos image
+  (`deploy/talos/Dockerfile`, pinned commit, LLM off), ingestor (`argus-ingest`), Triage /
+  Investigator / Responder / runner (`argus-agents`), learning (`on_feedback(tenant, case_id,
+  feedback_id)`), LLM client (Anthropic or OpenAI) and MCP deep dive, scenario logs
+  (`data/scenarios/`, `scripts/replay_scenario.py --reset/--burst/--demo`). GAP-5/6 done on A's
+  side. B merged into A; B's real graph functions all done. Backend checkpoint met: scenarios
+  1–6 and the 31-alert concurrency burst pass end to end on the live stack
+  (`ARGUS_E2E=1 pytest tests/e2e`, see `tests/e2e/conftest.py`). Next: C's API and UI on top.
+- **Next checkpoint:** scenario 1 end to end including the UI (approve in the UI).
+- **Decided Oct 16:** agents are plain Python (no framework); LLM is Anthropic or OpenAI, chosen
+  in `.env` (LLD §6.8); one shared Talos, reports routed to tenants by host (LLD §5.4).
+- **Windows note:** Compose v5 `up --build` fails ("additional privileges requested"); build with
+  `docker build -f deploy/<x>.Dockerfile` and start with `docker compose up --no-build`.
 
 ## Reference
 

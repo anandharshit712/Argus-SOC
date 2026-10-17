@@ -55,6 +55,7 @@ Entry points (console scripts in `pyproject.toml`): `argus-ingest` → `ingest_l
 | `TALOS_URL_<TENANT>` | unset | ingestor, if one Talos per tenant | A |
 | `INGEST_POLL_SECONDS` | `3` | ingestor | A |
 | `INGEST_PAGE_LIMIT` | `50` | ingestor | A |
+| `ARGUS_INVENTORY_DIR` | `data/inventory` | ingestor (routes reports to tenants by host) | A |
 | `AGENT_POLL_SECONDS` | `2` | agents | A |
 | `AGENT_CLAIM_TTL_SECONDS` | `120` | agents | A |
 | `CORRELATION_WINDOW_HOURS` | `24` | triage | A |
@@ -66,7 +67,7 @@ Entry points (console scripts in `pyproject.toml`): `argus-ingest` → `ingest_l
 | `AGENT_WORKER_ID` | host name of the container | agents | A |
 | `PLAYBOOK_MIN_FEEDBACK` | `1` (demo) | learning | A |
 | `LLM_ENABLED` | `false` | agents | A |
-| `LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY` | unset | agents | A |
+| `LLM_PROVIDER`, `LLM_MODEL`, `LLM_API_KEY` | unset (provider read from the key; model required for OpenAI, §6.8) | agents | A |
 | `LLM_TIMEOUT_SECONDS` | `20` | agents | A |
 | `API_PORT` | `8080` | api | C |
 | `API_CORS_ORIGINS` | `http://localhost:5173` | api | C |
@@ -155,7 +156,7 @@ Every function is `async`, takes `tenant` first, returns plain Python types.
 | `paths_to_crown_jewels(tenant, host, max_hops=6)` | Q2: shortest path over `CONNECTS_TO`/`LOGGED_INTO` to hosts tagged `crown-jewel` | `[[node names...]]`, shortest first, max 3 |
 | `rank_hosts(tenant, case_id)` | Q3: centrality on the case's host subgraph × `criticality` | `[(hostname, score)]`, highest first |
 | `recall(tenant, ioc=None, host=None, user=None)` | Q4: closed cases containing alerts with that IOC/host/user, with verdict and feedback | `[{case_id, verdict, closed_at, note}]` |
-| `linked_alerts(tenant, incident_id, window_hours)` | Q5: alerts sharing a host, user or IOC within the window; connected components when more than one hop | `[incident_id]` |
+| `linked_alerts(tenant, incident_id, window_hours)` | Q5: alerts sharing an IOC or a user within the window (a shared host alone does not link; alerts in closed cases are skipped); connected components when more than one hop | `[incident_id]` |
 | `explain_decision(tenant, decision_id)` | Q6: decision, case, alerts, acted-on nodes, playbook and source case | `dict` |
 | `entity_facts(tenant, hosts, users, iocs)` | Semantic facts on those nodes (§4.4.1) | `{hosts: {name: facts}, users: {...}, iocs: {...}}` |
 | `matching_playbook(tenant, alert)` | Active playbooks whose `condition` matches the alert's category and IOC | `dict | None` |
@@ -256,13 +257,13 @@ crown jewel.
 
 ```python
 class TalosClient:
-    async def healthz(self) -> bool
     async def list_reports(self, limit: int) -> list[dict]      # GET /reports, newest first
-    async def get_report(self, incident_id: str) -> dict        # GET /reports/{incident_id}
 ```
 
-`httpx.AsyncClient`, 10 s timeout, retries with exponential backoff (1, 2, 4, 8 s, max 30 s) on
-connection errors and 5xx. A 404 on a single report is logged and skipped.
+`httpx.AsyncClient`, 10 s timeout, retries 1, 2, 4, 8 s on connection errors and 5xx, then
+raises `TalosError` (the loop logs it and polls again); a 4xx fails at once. As built:
+`GET /reports` already returns full IncidentReports (every verdict and its evidence), so
+`GET /reports/{incident_id}` is not needed. The Compose healthcheck covers `/healthz`.
 
 ### 5.2 `report_mapper.py`
 
@@ -296,24 +297,27 @@ This is a day-1 check: run scenario 1 through Talos and confirm the attacker IP 
 
 ### 5.4 `tenant_resolver.py`
 
+**Decided (Oct 16): one shared Talos, routed by host (Option B).** Option A still works with
+no code change: set `TALOS_URL_<TENANT>` and that Talos's reports all go to that tenant.
+
 - **Option A — one Talos per tenant:** the tenant is the one whose `TALOS_URL_<TENANT>` was polled.
-- **Option B — one Talos:** a report goes to the tenant whose inventory contains any of its
-  `hosts`; no match → logged and dropped (never guessed).
+- **Option B — one Talos:** a report goes to the tenant whose inventory
+  (`ARGUS_INVENTORY_DIR`, expanded with its filler hosts) contains any of its `hosts`; no
+  match, or hosts of two tenants → logged once and dropped (never guessed). Host names must
+  be unique across tenants (filler hosts are prefixed `acme-…`, `globex-…`).
 
 ### 5.5 `ingest_loop.py`
 
 ```
 for ever:
-    for tenant, talos_url in sources():
+    for talos_url, fixed_tenant in sources():        # fixed_tenant None = route by host
         reports = talos.list_reports(limit=INGEST_PAGE_LIMIT)
-        ids = [r.incident_id for r in reports]
-        new_ids = ids - graph.known_incident_ids(tenant, ids)
-        for id in new_ids (oldest first):
-            try:
-                report = talos.get_report(id)
-                t = tenant_resolver.resolve(report) or tenant
-                graph.upsert_alert_from_report(t, report_mapper.map_report(report))
-            except error: log, continue
+        group reports by (fixed_tenant or tenant_resolver.resolve(report)); drop None, log once
+        for tenant, group:
+            new = group - graph.known_incident_ids(tenant, ids)
+            for report in new (oldest first):
+                try: graph.upsert_alert_from_report(tenant, report_mapper.map_report(report))
+                except error: log, continue          # retried next poll
     sleep(INGEST_POLL_SECONDS)
 ```
 
@@ -355,29 +359,38 @@ concurrency proof, §11).
 
 ### 6.2 `triage_agent.py`
 
+As built (Oct 16): two phases, so two workers never triage one case twice (the double-decision
+fix from the Oct 16 review; proven by `tests/e2e/test_concurrency_burst.py`).
+
 ```
 step(tenant):
-    alerts = graph.list_new_alerts(tenant, limit=20)
-    for alert in alerts:
+    # 1. Route: one atomic write per alert.
+    for alert in graph.list_new_alerts(tenant, limit=20):
         if pb := graph.matching_playbook(tenant, alert):
-            graph.close_case_auto(tenant, [alert.id], pb, reason=f"Playbook {pb.name} v{pb.version}, learned from Case {pb.source_case}")
+            case = graph.close_case_auto(tenant, [alert.id], pb, reason=f"Playbook {pb.name} v{pb.version}, learned from Case {pb.source_case}")
             graph.record_agent_run(tenant, "triage", case, summary="auto-closed by playbook")
             continue
-        history = graph.recall(tenant, ioc=alert.iocs, host=alert.hosts, user=alert.users)
-        facts   = graph.entity_facts(tenant, alert.hosts, alert.users, alert.iocs)
-        linked  = graph.linked_alerts(tenant, alert.id, CORRELATION_WINDOW_HOURS)
-        priority = alert.severity
-        memory_hit = (any(h.verdict == "malicious" for h in history)
-                      or any(u.suspected_compromised for u in facts.users)
-                      or any(len(h.targeted_case_ids) >= REPEAT_TARGET_THRESHOLD for h in facts.hosts))
-        if memory_hit: priority = raise_one(priority)       # at most one step, whatever matched
-        case = graph.open_or_join_case(tenant, [alert.id] + linked, priority)
-        graph.record_findings(tenant, case, {"recall": history, "facts": facts, "linked": linked})
-        graph.set_case_status(tenant, case, TRIAGED, priority)
-        graph.record_agent_run(tenant, "triage", case, summary=..., handed_to="investigator")
+        linked = graph.linked_alerts(tenant, alert.id, CORRELATION_WINDOW_HOURS)   # shared IOC or user
+        case = graph.open_or_join_case(tenant, [alert.id] + linked, alert.severity)
+        if case is past triage: record_agent_run("joined case; not re-triaged")   # never moved back
+    # 2. Triage each new case this worker can claim (like the other agents).
+    while case_id := graph.claim_case(tenant, NEW, "triage@<worker>", AGENT_CLAIM_TTL_SECONDS):
+        case = graph.get_case(tenant, case_id)                    # all its hosts, users, IOCs
+        history = graph.recall(tenant, ioc=case.iocs, host=case.hosts, user=case.users)
+        facts   = graph.entity_facts(tenant, case.hosts, case.users, case.iocs)
+        reasons = memory_reasons(history, facts)   # malicious past case or IOC, suspected user,
+                                                   # host targeted >= REPEAT_TARGET_THRESHOLD times
+        severity = highest(alert.severity for alert in case.alerts)
+        priority = raise_one(severity) if reasons else severity   # at most one step
+        graph.record_findings(tenant, case_id, {"recall": history, "facts": facts,
+            "linked": other alert ids, "severity": severity, "memory_reasons": reasons})
+        handoff: set_case_status(TRIAGED, priority) + record_agent_run(handed_to="investigator")
 ```
 
-Priority order: `info < low < medium < high < critical`.
+Priority order: `info < low < medium < high < critical`. The IOC-verdict check is an addition:
+nothing writes `Case.verdict = malicious`, but an approved decision marks the IOC malicious.
+The Investigator and Responder also raise a case to its most severe alert, so a late success
+alert that joins an investigated case still counts.
 
 ### 6.3 `investigator_agent.py`
 
@@ -404,8 +417,11 @@ run(tenant, case_id):
                            worker=AGENT_WORKER_ID, tool_calls=deep)
 ```
 
-The fixed Q1 + Q2 run always comes first, so the decision never depends on the deep dive. A user is
-marked suspected compromised only when an alert in the case `succeeded`.
+The fixed Q1 + Q2 run always comes first, so the decision never depends on the deep dive. As
+built: paths are taken from the case's own hosts first and from hosts reached through its
+accounts only when those have none (keeps `bastion-01 → app-02 → db-prod-01` as the story);
+only the accounts **in alerts that succeeded** are marked suspected compromised (scenario 1:
+`svc_deploy`, not the 18 customer e-mails the credential stuffing tried).
 
 ### 6.4 `decision_table.py`
 
@@ -436,7 +452,7 @@ run(tenant, case_id):
     explanation = llm.explain(case, rule, ranking) if LLM_ENABLED else template(case, rule, ranking)
     graph.record_decision(tenant, case_id, DecisionInput(rule_id=rule.id, actions=targets,
         needs_approval=rule.needs_approval, reason=..., explanation=explanation,
-        previous_priority=case.priority,          # GAP-5 (proposed): lets the UI show high → medium
+        previous_priority=case.priority,          # GAP-5 (done): lets the UI show high → medium
         evidence={"findings": case.findings, "ranking": ranking}))
     new_priority = lower_one(case.priority) if rule.priority == "lower_one" else None
     graph.set_case_status(tenant, case_id, AWAITING_APPROVAL if rule.needs_approval else CLOSED, new_priority)
@@ -444,6 +460,12 @@ run(tenant, case_id):
 ```
 
 Talos's `recommended_actions` are shown next to ours in the UI but never decide.
+
+Targets (as built): `isolate_top_host` → the first host of the ranking; `disable_accounts` → the
+accounts in alerts that succeeded; `block_ips` / `block_or_rate_limit_ips` → the case's IOCs;
+`watch_path_hosts` → named in the explanation only, never a target (`record_decision` isolates
+every target host once applied). `previous_priority` (GAP-5, done) is the case's priority going
+into the decision; the priority set after it is that, or one step lower for R4.
 
 ### 6.6 `handoff_service.py`
 
@@ -470,11 +492,17 @@ async def on_feedback(tenant: str, case_id: int, feedback_id: str) -> str | None
 async def complete(prompt_name: str, variables: dict, schema: type[BaseModel]) -> BaseModel | None
 ```
 
-- Provider chosen during the build; one adapter class per provider behind this function.
-- Returns `None` on timeout, error or invalid JSON; callers then use the template.
-- Prompts live in `agents/prompts/<agent>_<purpose>_v<N>.md`, e.g. `responder_explain_v1.md`.
-- Untrusted content (evidence, log lines, summaries) goes inside a fenced block marked
-  `UNTRUSTED DATA`, each item cut to 500 characters, with an instruction that it is data only.
+- **Providers (as built): Anthropic or OpenAI**, one adapter function each. `LLM_PROVIDER` if
+  set, else from `LLM_API_KEY` (`sk-ant-…` = Anthropic, other keys = OpenAI). `LLM_MODEL`:
+  default `claude-opus-5-5` on Anthropic (low effort, server-side refusal fallback on), required
+  on OpenAI (e.g. `gpt-5.4-mini`).
+- Returns `None` when off or misconfigured, on timeout, API error, refusal or JSON that does not
+  validate against `schema`; callers then use the template.
+- Prompts live in `agents/prompts/<agent>_<purpose>_v<N>.md`: `responder_explain_v1.md`,
+  `investigator_deepdive_v1.md`; filled with `string.Template`, so a `$` in data is inert.
+- Untrusted content (evidence, log lines, summaries, user and host names) goes inside an
+  `<untrusted_data>` block, each item cut to 500 characters, with a system instruction that it is
+  data only.
 - The LLM never chooses actions, Cypher, or targets. It writes explanations and short summaries,
   and in the deep dive (§6.9) it picks which read-only graph tool to call next.
 

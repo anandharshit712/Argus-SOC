@@ -344,7 +344,7 @@ sequenceDiagram
     Note over UI,G: Session 1
     UI->>API: POST /cases/32/feedback {benign, "internal pentest scanner"}
     API->>G: record_feedback(tenant, 32, benign, note)
-    API->>LS: on_feedback(tenant, feedback_id)
+    API->>LS: on_feedback(tenant, 32, feedback_id)
     LS->>G: feedback pattern = (category auth_failure, ioc 10.0.5.20)
     LS->>G: create_playbook_version(condition, action=auto_close)
     Note over G: Playbook v2 -[:LEARNED_FROM]-> Feedback
