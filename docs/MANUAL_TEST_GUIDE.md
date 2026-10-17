@@ -32,13 +32,23 @@ All demo traffic belongs to tenant **acme**: the shop logs as host `web-01` and 
 
 Setup takes about 10 minutes: deploy the latest code, check the stack, open the UI, and choose a light or full reset.
 
-**Step 0: deploy the latest code (once, about 5 minutes).** Two files that now live in git were copied to the VM by hand, so they must be moved aside or `git pull` refuses.
+**Step 0: deploy the latest code (once, about 5 minutes).**
+
+The one-command path does the whole deploy — pull, build, start, health check — and is idempotent, so it is also the update path:
 
 ```bash
 ssh argus                      # your own SSH alias
+sudo /opt/Argus-SOC/deploy/deploy_gcp.sh
+```
+
+On the very first run on a bare VM it provisions the host and writes a `.env` skeleton, then stops so you can fill the secrets; run it again to build and start. On an already-set-up VM it just pulls, builds and restarts. See `deploy/gcp_runbook.md` for what it automates.
+
+Manual path (if you want to drive it by hand): two files that live in git were once copied to the VM by hand, so move them aside first or `git pull` refuses.
+
+```bash
 cd /opt/Argus-SOC
-mkdir -p /tmp/pre-pull && mv docker-compose.public-shop.yml deploy/nginx/oci/web-shop.conf.template /tmp/pre-pull/
-git pull                       # should land on 53c9e04 or later
+mkdir -p /tmp/pre-pull && mv docker-compose.public-shop.yml deploy/nginx/oci/web-shop.conf.template /tmp/pre-pull/ 2>/dev/null || true
+git pull                       # should land on b458309 (attack-bot v2) or later
 git log -1 --oneline
 dc up -d --build --scale agents=2
 ```
@@ -79,7 +89,7 @@ Use documentation-range IPs only (`192.0.2.x`, `198.51.100.x`, `203.0.113.x`). T
 
 ## The attacker
 
-Today the attack bot only sends traffic that crosses one Talos detector threshold, and every campaign it runs fails. Attack bot v2 (next section, not built yet) adds random passes. Until then, successful attacks come from the `land.sh` helper.
+The attack bot has two generations. **v1** (this section) only sends traffic that crosses one Talos detector threshold, and every campaign it runs **fails**; successful attacks then come from the `land.sh` helper. **v2** (next section, now in `main` at `b458309`) adds random **passes** straight from the bot — no helper script — so once the VM is on the latest code (Setup step 0) a pass is just `outcome=pass`.
 
 **Demo mode (one attack on demand).** Run this on the VM. The call blocks until the campaign ends, then waits up to 20 s for Talos to raise the incident.
 
@@ -118,9 +128,9 @@ sed -i 's/^DEMO_SOAK=.*/DEMO_SOAK=0/' .env && dc up -d attack_bot   # stop, back
 
 **By hand in a browser.** The public shop works too, for example a wrong login posted to `/login` or a search for `1' UNION SELECT NULL--`. The shop trusts `X-Forwarded-For` only from the bot, so every browser attack carries the nginx container's internal IP as its source, the same IOC for everyone.
 
-## Attack bot v2: random pass and fail (once built)
+## Attack bot v2: random pass and fail
 
-Once v2 is deployed, every campaign can fail or pass: exactly 3 passes in every 10 soak runs, in random order, and soak runs until someone stops it. Full design: `demo/docs/ATTACK_BOT_PASS_FAIL_DESIGN.md`. Until v2 is on the VM, skip this section and tests V1 to V7.
+v2 is built and merged to `main` (`b458309`). Once the VM is on that code (Setup step 0), every campaign can fail or pass: exactly 3 passes in every 10 soak runs, in random order, and soak runs until someone stops it. Passes come from the bot itself (`outcome=pass`), not from `land.sh`. Full design and e2e result: `demo/docs/ATTACK_BOT_PASS_FAIL_DESIGN.md`. If the VM still runs older code, skip this section and tests V1 to V7 until Setup step 0 is done.
 
 **Commands on the VM:**
 
@@ -408,7 +418,7 @@ dc exec -T falkordb redis-cli GRAPH.QUERY tenant_acme "MATCH (u:User {disabled:t
 dc exec -T falkordb redis-cli GRAPH.QUERY tenant_acme "MATCH (i:IOC) WHERE i.verdict <> 'unknown' RETURN i.value, i.verdict"
 ```
 
-### Attack bot v2 tests (once v2 is deployed)
+### Attack bot v2 tests (after Setup step 0 puts v2 on the VM)
 
 Do a full reset first (Setup step 3). T14 teaches a playbook that auto-closes every SSH attack from the bot, which would turn every v2 SSH pass into an Auto-closed case.
 
