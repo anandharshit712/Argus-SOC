@@ -118,17 +118,45 @@ def explain(
     return " ".join(parts)
 
 
+async def _sent_back(tenant: str, case_id: int, case: dict[str, Any]) -> bool:
+    """Send the case back to the Investigator if alerts joined after it was investigated
+    (live test Oct 17, case 8: the "succeeded" alert came 9 s after the brute force, and the
+    case closed as R3 instead of R1). True when sent back."""
+    seen = case["findings"].get("investigated_alerts")
+    now = sorted(a["incident_id"] for a in case["alerts"])
+    if seen is None or seen == now:  # None: investigated before this check existed
+        return False
+    await hand_off(
+        tenant,
+        case_id,
+        agent=AGENT,
+        status=CaseStatus.TRIAGED,
+        handed_to=AgentName.INVESTIGATOR,
+        summary=f"case {case_id}: {len(now) - len(seen)} alerts joined since the investigation; "
+        "sent back to the Investigator",
+    )
+    return True
+
+
 async def run(tenant: str, case_id: int) -> None:
     log = get_logger(__name__, tenant=tenant, agent=AGENT, case_id=case_id)
     case = await graph.get_case(tenant, case_id)
     if case is None:
         log.warning("claimed case %s does not exist", case_id)
         return
+    if await _sent_back(tenant, case_id, case):
+        return
     rule = decision_table.decide(case["findings"])
     ranking = [tuple(r) for r in await graph.rank_hosts(tenant, case_id)]
     chosen = targets(rule, case, ranking)
     priority = case_priority(case)
     new_priority = lower_one(priority) if rule.priority == "lower_one" else priority
+    text = await explanation(rule, case, ranking, chosen, new_priority)
+    # The LLM can take seconds: check again just before the decision is written.
+    # ponytail: an alert joining in the milliseconds between this read and record_decision is
+    # still missed; closing that needs the check inside the graph write (Workstream B).
+    if await _sent_back(tenant, case_id, await graph.get_case(tenant, case_id) or case):
+        return
     await graph.record_decision(
         tenant,
         case_id,
@@ -137,7 +165,7 @@ async def run(tenant: str, case_id: int) -> None:
             actions=rule.actions,
             needs_approval=rule.needs_approval,
             reason=rule.reason,
-            explanation=await explanation(rule, case, ranking, chosen, new_priority),
+            explanation=text,
             evidence={"findings": case["findings"], "ranking": ranking},
             previous_priority=priority,  # GAP-5: lets the UI show "high -> medium"
             **chosen,

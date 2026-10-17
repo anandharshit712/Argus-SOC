@@ -43,6 +43,9 @@ async def investigate(tenant: str, case: dict[str, Any]) -> dict[str, Any]:
         "path_to_crown_jewel": bool(paths),
         "shortest_path": paths[0] if paths else None,
         "blast_radius": radius,
+        # What these findings were computed from: the Responder sends the case back here when
+        # an alert joined since (e.g. the "succeeded" alert seconds after the brute force).
+        "investigated_alerts": sorted(a["incident_id"] for a in case["alerts"]),
     }
 
 

@@ -75,8 +75,9 @@ async def route_alert(tenant: str, alert: dict[str, Any]) -> int:
     case_id = await graph.open_or_join_case(tenant, [iid, *linked], Priority(alert["severity"]))
     status = (await graph.get_case(tenant, case_id))["status"]
     if status not in (CaseStatus.NEW, CaseStatus.TRIAGED):
-        # A late alert (e.g. the successful login) joining a case already investigated: it is
-        # recorded, never sent back through triage, so the case keeps its one decision.
+        # A late alert (e.g. the successful login) joining a case already investigated is not
+        # re-triaged. Before deciding, the Responder sends the case back to the Investigator
+        # when its alerts changed; a case already decided keeps its one decision.
         summary = f"{iid} joined case {case_id} ({status}); not re-triaged"
         await graph.record_agent_run(tenant, AGENT, case_id, summary, worker=worker)
     return case_id
@@ -95,6 +96,10 @@ async def triage_case(tenant: str, case_id: int) -> None:
     ]
     facts = await graph.entity_facts(tenant, hosts, users, iocs)
     reasons = memory_reasons(history, facts)
+    # Read by the decision table: R3 needs approval when the attacker is already known bad.
+    known_bad = sorted(
+        i for i, f in facts["iocs"].items() if f.get("verdict") == IocVerdict.MALICIOUS
+    )
     # The most severe alert in the case (a linked success counts), then memory: one step at most.
     severity = highest([a["severity"] for a in case["alerts"]])
     priority = raise_one(severity) if reasons else severity
@@ -108,6 +113,7 @@ async def triage_case(tenant: str, case_id: int) -> None:
             "linked": alert_ids[1:],  # correlated with the first (oldest) alert
             "severity": str(severity),
             "memory_reasons": reasons,
+            "known_malicious_iocs": known_bad,
         },
     )
     raised = f", raised from {severity}: {'; '.join(reasons)}" if reasons else ""

@@ -72,6 +72,7 @@ async def test_memory_hit_raises_priority_one_step():
     case = await _case_of("acme", "inc-new1")
     assert case["priority"] == Priority.CRITICAL
     assert case["findings"]["memory_reasons"] == ["IOC 192.0.2.99 is known malicious"]
+    assert case["findings"]["known_malicious_iocs"] == ["192.0.2.99"]  # read by R3
 
 
 async def test_alert_correlated_with_open_case_joins_it():
