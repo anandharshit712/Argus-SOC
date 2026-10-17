@@ -66,7 +66,7 @@ contract files, these guideline files) changes only after telling the other two.
 | Agents | Python; framework and LLM provider chosen during the build |
 | UI | Chosen by C (React + TypeScript + Vite suggested) |
 | Quality | `ruff` (lint + format), `pytest` |
-| Deployment | Docker Compose on the OCI instance, nginx reverse proxy with HTTPS |
+| Deployment | Docker Compose on one GCP VM (OCI until Oct 17, HLD D14), nginx reverse proxy with HTTPS |
 
 ## 5. The three contracts
 
@@ -111,7 +111,7 @@ These keep the workstreams independent. They are written out in full in the task
 - **Syncs:** 15 minutes each morning and evening (IST): done, next, blocked.
 - **Checkpoint — end of Oct 16:** scenario 1 runs end to end (Talos → ingestor → graph → three
   agents → UI), however rough.
-- **Oct 17:** scenarios 2–4, OCI deployment with HTTPS, first full demo run.
+- **Oct 17:** scenarios 2–4, cloud deployment with HTTPS (done on GCP), first full demo run.
 - **Oct 18:** bug fixes only, video, README, **submit by 8 PM IST**.
 - Track tasks in the task split doc; tick boxes as work lands on `main`.
 
@@ -132,7 +132,7 @@ A task is done when:
 - [ ] README credits Talos (Apache licence, pinned commit) and lists what was built Oct 15–18
 - [ ] README discloses AI coding assistant use
 - [ ] Demo video, plus a backup recording
-- [ ] Live URL on OCI, plus local setup steps
+- [ ] Live URL (live on GCP: `https://argus-soc.34-93-139-203.sslip.io`), plus local setup steps
 - [ ] Both tracks named on the submission form
 - [ ] All three teammates on the WeMakeDevs panel
 - [ ] Optional: blog post for the AirPods side prize

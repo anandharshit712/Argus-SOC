@@ -17,7 +17,8 @@ Argus-SOC/                              repository root
 ├── FOLDER_STRUCTURE.md                 shared   this file
 ├── pyproject.toml                      B        Python package, dependencies, ruff/pytest config
 ├── docker-compose.yml                  B        every service, one command to run
-├── docker-compose.oci.yml              B        OCI override: HTTPS on 80/443
+├── docker-compose.oci.yml              B        cloud-VM override (named for OCI, used on GCP): HTTPS on 80/443
+├── docker-compose.public-shop.yml      B        cloud VM: demo web shop at SHOP_DOMAIN
 ├── .dockerignore                       B        keeps .env and caches out of images
 ├── .env.example                        B        every variable, no real values
 ├── .gitignore                          shared
@@ -85,10 +86,11 @@ Argus-SOC/                              repository root
 │   ├── agents.Dockerfile               runs ingestor, agents and the seed job
 │   ├── api.Dockerfile
 │   ├── ui.Dockerfile                   Vite build served by nginx
-│   ├── oci_runbook.md                  OCI steps: ports, DNS, certificate, deploy, reset
+│   ├── gcp_runbook.md                  live deployment on GCP: VM, certificate, deploy, demo, reset
+│   ├── oci_runbook.md                  superseded OCI steps, kept for reference
 │   └── nginx/                          proxy-common.conf, ui-static.conf,
 │       ├── local/                      front proxy on http://127.0.0.1:8088
-│       └── oci/                        front proxy with HTTPS for ARGUS_DOMAIN
+│       └── oci/                        cloud-VM front proxy: HTTPS for ARGUS_DOMAIN and SHOP_DOMAIN
 │
 ├── scripts/
 │   ├── seed_tenants.py                 B        load both inventories

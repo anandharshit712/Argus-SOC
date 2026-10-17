@@ -9,7 +9,7 @@ and the case lifecycle. Diagrams are Mermaid and render on GitHub. Detail behind
 | Section | Owner | What to take from it |
 |---|---|---|
 | 1. System context | Everyone | The big picture; read first |
-| 2. Deployment view | **B — Database and graph** | Services, ports, network and volumes for `docker-compose.yml` and OCI |
+| 2. Deployment view | **B — Database and graph** | Services, ports, network and volumes for `docker-compose.yml` and the GCP VM |
 | 3. Component view: `ingestor/`, `agents/`, `deploy/talos/` | **A — Harshit** | Modules you build and what they call |
 | 3. Component view: `graph/`, `core/` | **B — Database and graph** | Modules you build and who calls them |
 | 3. Component view: `api/`, `ui/` | **C — UI, API and submission** | Modules you build and what they call |
@@ -47,10 +47,15 @@ flowchart LR
 
 ---
 
-## 2. Deployment view (Docker Compose on the OCI instance)
+## 2. Deployment view (Docker Compose on the GCP VM)
 
 One Compose project. Only nginx is reachable from the internet. Talos, its PostgreSQL and
 FalkorDB stay on the internal network.
+
+Since Oct 17, 2026 it runs on one GCP Compute Engine VM (`argus-soc`, e2-standard-4, asia-south1,
+static IP 34.93.139.203) instead of OCI (HLD D14). nginx serves the UI and API at `ARGUS_DOMAIN` and
+the demo web shop at `SHOP_DOMAIN` (free sslip.io names); the rest of the live demo harness
+(attack-bot, SSH target, log shipper) stays on `soc-net`. Steps: `deploy/gcp_runbook.md`.
 
 ```mermaid
 flowchart TB
@@ -58,8 +63,8 @@ flowchart TB
         BROWSER(["Analyst / judge browser"])
     end
 
-    subgraph OCI["OCI instance — docker compose project argus-soc"]
-        NGINX["nginx<br/>:443 HTTPS<br/>/ → ui, /api → api"]
+    subgraph VM["GCP VM argus-soc — docker compose project argus-soc"]
+        NGINX["nginx<br/>:443 HTTPS<br/>/ → ui, /api → api<br/>SHOP_DOMAIN → web_shop"]
 
         subgraph NET["internal network: soc-net"]
             UI["ui<br/>static build<br/>:80"]
@@ -69,6 +74,7 @@ flowchart TB
             FDB[("falkordb<br/>:6379<br/>graph per tenant")]
             TALOS["talos<br/>talos serve :8000<br/>(pinned commit)"]
             TPG[("talos-postgres<br/>:5432<br/>Talos audit log")]
+            SHOP["web_shop<br/>demo target :8000<br/>(live demo harness)"]
         end
 
         VOLF[["volume: falkordb-data"]]
@@ -78,6 +84,7 @@ flowchart TB
     BROWSER -- HTTPS --> NGINX
     NGINX --> UI
     NGINX --> API
+    NGINX --> SHOP
     API -- "graph tools library" --> FDB
     AGENTS -- "graph tools library" --> FDB
     ING -- "graph tools library" --> FDB
@@ -85,7 +92,7 @@ flowchart TB
     TALOS --> TPG
     FDB --- VOLF
     TPG --- VOLT
-    AGENTS -. "LLM API (provider TBD)<br/>optional" .-> EXT(["LLM provider"])
+    AGENTS -. "LLM API (OpenAI gpt-5.5 in the live demo)<br/>optional" .-> EXT(["LLM provider"])
 ```
 
 | Service | Built from | Port (internal) | Exposed | Depends on | Owner |
@@ -98,6 +105,7 @@ flowchart TB
 | `falkordb` | `falkordb/falkordb` image | 6379 | no | — | B |
 | `talos` | `deploy/talos/Dockerfile` | 8000 | no | talos-postgres | A |
 | `talos-postgres` | `postgres:16` image | 5432 | no | — | B |
+| `web_shop` (+ `ssh_target`, `shipper`, `attack_bot`) | `demo/` (`demo/docker-compose.demo.yml`) | 8000 | shop only, via nginx `SHOP_DOMAIN` | talos | A |
 
 ---
 

@@ -15,7 +15,7 @@ Diagrams are in `ARCHITECTURE.md`; module-level detail is in `LLD.md`; data flow
 | 6. External interfaces | **A** (Talos API, MCP client), **C** (UI API), **B** (MCP server) | The boundaries you own |
 | 7. Design decisions | Everyone | Why things are the way they are; don't reopen without the team |
 | 8. Non-functional requirements | A: reliability of agents and ingestor · B: performance, isolation, persistence · C: usability, security at the edge | Targets you're measured against |
-| 9. Deployment | **B** | How it runs on OCI |
+| 9. Deployment | **B** | How it runs on GCP (OCI until Oct 17, D14) |
 | 10–11. Risks, open decisions | Everyone; owner named per row | What could go wrong, what's still undecided |
 
 Owners: **A** = Agents + Talos integration (Harshit) · **B** = Database and graph (Md Adnan Afzal) ·
@@ -38,7 +38,7 @@ investigate, decide and learn, explaining every decision as a path through the g
 - Memory: cases, decisions, analyst feedback, versioned playbooks; survives restarts.
 - Two tenants (Acme, Globex) with isolated graphs.
 - Analyst UI with approve / reject / benign, path view, playbooks, live agent activity.
-- Deployment on one OCI instance with HTTPS.
+- Deployment on one cloud VM with HTTPS (GCP Compute Engine; OCI was the plan until Oct 17, D14).
 - Sign in with **hard-coded demo users** per tenant (D13), so the public demo URL isn't open.
 
 **Out of scope**
@@ -111,7 +111,7 @@ See `ARCHITECTURE.md` §1–3 for the context, deployment and component diagrams
 | Graph tools library | All Cypher: reads Q1–Q6, algorithms, writes, stubs | Python, `falkordb` client | B |
 | MCP server | Read-only graph tools exposed over MCP (stdio) for the deep dive | Python `mcp` SDK | B |
 | Asset inventory + seed | Environment per tenant; reset command | YAML + Python script | B |
-| Deployment | Compose, Dockerfiles, nginx, HTTPS, OCI | Docker Compose, nginx | B |
+| Deployment | Compose, Dockerfiles, nginx, HTTPS, GCP VM | Docker Compose, nginx | B |
 | Backend API | REST endpoints for the UI | FastAPI, Pydantic v2 | C |
 | Analyst UI | Case queue, case detail with path, feedback, playbooks, activity | Framework chosen by C | C |
 | Submission | README, demo video, docs | Markdown, screen recording | C |
@@ -162,10 +162,11 @@ Full schema: `ARCHITECTURE.md` §4 and `LLD.md` §4.1.
 | D11 | MCP tool selection is a bounded, read-only deep dive after the fixed queries | Shows the agent choosing tools (Track 01) without letting the LLM decide, write or cross tenants | LLM drives the whole investigation through MCP |
 | D12 | Semantic facts store case-id lists, not counters | Writing the same case twice changes nothing (D7) | Incrementing counters |
 | D13 | Hackathon login uses hard-coded demo users in `.env` and a signed token; no analyst accounts in FalkorDB | Protects the public URL in hours, not days; keeps the graph about security data only | Full user management now (too slow); no login at all (anyone could approve actions on the live URL) |
+| D14 | Host the demo on one GCP Compute Engine VM (e2-standard-4, asia-south1) instead of OCI; the whole stack stays on one VM | OCI's free Ampere A1 shape had no capacity in Hyderabad (~40 min of retries) and the account limit was 2 OCPU / 12 GB; GCP free-trial credit pays for 4 vCPU / 16 GB x86 (~$30 a week), and x86 removes the ARM build risk | OCI A1 (no capacity); UI on Cloudflare Pages with the API on the VM (splits the origin, adds CORS and a second HTTPS host for no gain) |
 
 ## 8. Non-functional requirements
 
-Targets are for the demo on one OCI instance. All numbers are proposed and can be tuned.
+Targets are for the demo on one GCP VM (e2-standard-4: 4 vCPU, 16 GB). All numbers are proposed and can be tuned.
 
 | Quality | Requirement | Owner |
 |---|---|---|
@@ -183,10 +184,14 @@ Targets are for the demo on one OCI instance. All numbers are proposed and can b
 
 ## 9. Deployment
 
-- One Docker Compose project on the OCI instance: nginx, ui, api, agents, ingestor, falkordb,
-  talos, talos-postgres (`ARCHITECTURE.md` §2).
-- nginx terminates HTTPS and routes `/` to the UI and `/api` to the API. Nothing else is
-  published.
+- One Docker Compose project on one GCP VM (`argus-soc`, e2-standard-4, Ubuntu 24.04,
+  asia-south1-c, static IP 34.93.139.203): nginx, ui, api, agents (×2), ingestor, falkordb, talos,
+  talos-postgres, plus the live demo harness (`ARCHITECTURE.md` §2, `deploy/gcp_runbook.md`).
+- nginx terminates HTTPS and routes `/` to the UI and `/api` to the API on `ARGUS_DOMAIN`, and
+  serves the demo web shop on `SHOP_DOMAIN` (`docker-compose.public-shop.yml`). Nothing else is
+  published; the attack-bot is driven from the VM's terminal.
+- Host names are free sslip.io names (no domain owned): `argus-soc.34-93-139-203.sslip.io` and
+  `shop.34-93-139-203.sslip.io`; one Let's Encrypt certificate covers both.
 - Volumes: `falkordb-data` and `talos-pg-data`.
 - `scripts/seed_tenants.py` loads both inventories; `scripts/reset_demo.py` wipes and reseeds.
 - Fallback if the instance can't run everything: local `docker compose up` with full README
@@ -200,6 +205,7 @@ Targets are for the demo on one OCI instance. All numbers are proposed and can b
 | FalkorDB algorithm procedure names differ from drafts | Q2, Q3, Q5 fail | Check docs on day 1; fall back to plain Cypher variable-length paths | B |
 | Scenario logs don't trigger the expected detectors | No incidents | Start from Talos's demo chains; test each with `talos replay` first | A |
 | Instance runs out of RAM | Services crash | Check specs on day 1; trim Talos to one instance; reduce inventory size | B |
+| No cloud capacity, or credit runs out | No live URL | Moved from OCI (no A1 capacity) to GCP on Oct 17; ~$30/week from ₹28,797 free-trial credit; stop the VM after judging; local Compose + video stay the fallback | B |
 | LLM unavailable or slow | Agents stall | Templated explanations; decision table needs no LLM | A |
 | Judges see Talos as most of the project | Lower score | README and video show the boundary clearly | C |
 | Agent work runs late (critical path) | No end-to-end demo | Stubs from day 1; C can take over learning logic | A, C |

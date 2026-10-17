@@ -4,11 +4,11 @@
 #   docker compose --profile app up -d --build the whole stack: Talos, ingestor, agents,
 #                                              API, UI and the nginx front at 127.0.0.1:8088
 #   docker compose --profile app up -d --scale agents=2   two agent workers (G11)
-#   On OCI add the override: -f docker-compose.yml -f docker-compose.oci.yml (HTTPS)
+#   On the cloud VM (GCP, deploy/gcp_runbook.md) add the override: -f docker-compose.yml -f docker-compose.oci.yml (HTTPS)
 #
 # The "app" profile holds the services whose code lives on other branches (Talos Dockerfile
 # and agents: A; API and UI: C). Drop the profile once they are on main.
-# Only nginx is published on OCI; everything else stays on the private soc-net network.
+# Only nginx is published on the cloud VM; everything else stays on the private soc-net network.
 name: argus-soc
 
 x-python-image: &python-image
@@ -42,7 +42,7 @@ services:
       - falkordb-data:/var/lib/falkordb/data
     ports:
       # 127.0.0.1 only: reachable from this machine (tests, seed script, Browser), never from
-      # the internet. FalkorDB has no password, so it must stay private on OCI too.
+      # the internet. FalkorDB has no password, so it must stay private on the cloud VM too.
       - "127.0.0.1:6379:6379"   # database
       - "127.0.0.1:3000:3000"   # FalkorDB Browser (web UI)
     healthcheck:
