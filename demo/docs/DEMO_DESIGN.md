@@ -105,6 +105,10 @@ The ingestor already polls `/reports`; nothing else changes.
 
 ## 5. The attack-bot (randomized simulator)
 
+> **v2 (built Oct 17):** every campaign can now **fail or pass**; soak draws outcomes from a shuffled
+> bag (exactly 3 passes per 10) and is toggled at runtime via `/soak/start` and `/soak/stop`, with a
+> backlog pause. Full spec and e2e result: [ATTACK_BOT_PASS_FAIL_DESIGN.md](ATTACK_BOT_PASS_FAIL_DESIGN.md).
+
 One container, one script (`httpx` + `paramiko`), driven by a menu of campaigns. Purpose is two
 things at once: drive the live demo, and **exercise Talos's full detector set** as a running mini
 eval.

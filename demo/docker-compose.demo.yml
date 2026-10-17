@@ -21,6 +21,7 @@ services:
       DEMO_TRUSTED_PROXY: attack_bot   # X-Forwarded-For trusted only from the bot (resolved by DNS)
       DEMO_VALID_ACCOUNT: "${DEMO_VALID_ACCOUNT:-demo@shop.example}"
       DEMO_VALID_PASSWORD: "${DEMO_VALID_PASSWORD:-correct-horse-battery-staple}"
+      DEMO_POOL_PASSWORD: "${DEMO_POOL_PASSWORD:-}"   # pool####@shop.example login on a pass run
     volumes:
       - web-logs:/var/log/web_shop
     ports:
@@ -33,6 +34,8 @@ services:
       context: ./demo/ssh_target
       args:
         SSH_TARGET_PASSWORD: "${SSH_TARGET_PASSWORD:-correct-horse-battery-staple-ssh}"
+        DEMO_SSH_POOL_PASSWORD: "${DEMO_SSH_POOL_PASSWORD:-change-me-ssh-pool}"  # ops### pool login
+        DEMO_SSH_POOL_SIZE: "${DEMO_SSH_POOL_SIZE:-300}"
     restart: unless-stopped
     hostname: bastion-01               # the host name that appears in each sshd log line
     volumes:
@@ -69,7 +72,21 @@ services:
       DEMO_SHOP_URL: http://web_shop:8000
       TALOS_URL: http://talos:8000
       DEMO_SSH_HOST: ssh_target
-      DEMO_SOAK: "${DEMO_SOAK:-0}"     # set DEMO_SOAK=1 for the always-running chaos loop
+      DEMO_SOAK: "${DEMO_SOAK:-0}"     # set DEMO_SOAK=1 for the always-running chaos loop at boot
+      # pass/fail v2 (ATTACK_BOT_PASS_FAIL_DESIGN.md). Pool passwords must match web_shop/ssh_target.
+      DEMO_PASS_RATIO: "${DEMO_PASS_RATIO:-0.3}"
+      DEMO_BAG_SIZE: "${DEMO_BAG_SIZE:-10}"
+      DEMO_POOL_PASSWORD: "${DEMO_POOL_PASSWORD:-}"
+      DEMO_WEB_POOL_SIZE: "${DEMO_WEB_POOL_SIZE:-500}"
+      DEMO_SSH_POOL_PASSWORD: "${DEMO_SSH_POOL_PASSWORD:-}"
+      DEMO_SSH_POOL_SIZE: "${DEMO_SSH_POOL_SIZE:-300}"
+      DEMO_SOAK_INTERVAL_MIN: "${DEMO_SOAK_INTERVAL_MIN:-45}"
+      DEMO_SOAK_INTERVAL_MAX: "${DEMO_SOAK_INTERVAL_MAX:-180}"
+      # Backlog pause (§9a): count Cases Awaiting approval straight off FalkorDB (soc-net, no login).
+      DEMO_MAX_PENDING: "${DEMO_MAX_PENDING:-20}"
+      DEMO_TENANT: "${DEMO_TENANT:-acme}"
+      FALKORDB_HOST: falkordb
+      FALKORDB_PORT: "6379"
     ports:
       - "127.0.0.1:8090:8000"          # POST /launch?attack=sqli ; GET /selfcheck
     depends_on:
