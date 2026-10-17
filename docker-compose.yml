@@ -134,7 +134,7 @@ services:
     <<: *env-file
     build:
       context: .
-      dockerfile: deploy/api.Dockerfile
+      dockerfile: backend/Dockerfile   # Workstream C: the API lives in backend/
     restart: unless-stopped
     environment:
       <<: *in-network
