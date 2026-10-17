@@ -1,0 +1,20 @@
+# Keep the Docker build context small and free of secrets. Owner: Workstream B.
+.git
+.env
+.env.*
+!.env.example
+.venv
+venv
+**/__pycache__
+**/*.py[cod]
+.pytest_cache
+.ruff_cache
+.mypy_cache
+ui/node_modules
+ui/dist
+docs
+tests
+falkordb-data
+*.rdb
+CHAT_LOG.md
+CLAUDE.local.md

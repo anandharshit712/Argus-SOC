@@ -24,7 +24,7 @@ How to read the owner columns: **A** = Harshit (agents + Talos), **B** = Md Adna
 | GAP-2 | `ActivityItem` has no `worker` | G11 concurrency proof | — | return it from `list_activity`, `get_case` | add to model, show in UI | PROPOSED |
 | GAP-3 | `ActivityItem` has no `tool_calls` | G9 MCP tool selection proof | — | return it from `list_activity`, `get_case` | add to model, show in UI | PROPOSED |
 | GAP-4 | `CaseDetail.feedback` is an untyped `list[dict]` | Feedback history | — | return fixed fields from `get_case` | typed model | PROPOSED |
-| GAP-5 | The priority before the Responder lowered it is not stored | G3 "high → medium" on screen | pass it in `DecisionInput` | property on `Decision`, `record_decision` | `DecisionOut.previous_priority` | PROPOSED |
+| GAP-5 | The priority before the Responder lowered it is not stored | G3 "high → medium" on screen | pass it in `DecisionInput` | property on `Decision`, `record_decision` | `DecisionOut.previous_priority` | AGREED (Oct 16) · B DONE · A, C to do |
 | GAP-6 | `findings` keys are not typed in the API | Findings, Memory, Deep-dive panels | keep the key names from LLD §6.2–6.3 | — | typed optional model | PROPOSED |
 | GAP-7 | `APPLIED` relationship (Case/Decision → Playbook) is in code but not in the docs | Q6 and auto-close citation | — | already in `graph_schema.py` on `b/graph-foundation` | — | DOCS ONLY |
 
@@ -162,6 +162,13 @@ the UI can only show "medium".
   `graph_schema.py` docs. Bump `SCHEMA_VERSION`.
 - C: `DecisionOut.previous_priority: str | None`; the UI shows "high → medium" when it differs
   from the case priority.
+
+**Status: AGREED (Oct 16, Harshit). B part DONE** on `b/graph-foundation`:
+`DecisionInput.previous_priority: Priority | None = None` (optional, invalid values rejected);
+`record_decision` stores it on the `Decision` node; `get_case` and `explain_decision` return it
+in the decision (stub and FalkorDB alike; the stub's sample case 31 has `"high"`);
+`SCHEMA_VERSION` = 2; tests cover R4 high → medium on both backends. Still to do: A passes
+`previous_priority=case["priority"]` in the Responder; C adds `DecisionOut.previous_priority`.
 
 ---
 

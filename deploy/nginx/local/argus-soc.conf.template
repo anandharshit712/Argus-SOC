@@ -1,0 +1,7 @@
+# Local front proxy: plain HTTP on http://127.0.0.1:8088 (see docker-compose.yml).
+server {
+    listen 80;
+    server_name _;
+    client_max_body_size 1m;
+    include /etc/nginx/argus/proxy-common.conf;
+}
