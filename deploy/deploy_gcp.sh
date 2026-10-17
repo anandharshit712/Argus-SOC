@@ -89,14 +89,20 @@ EOF
 fi
 
 # Required-before-start checks (fail loud, never start half-configured).
-# shellcheck disable=SC1091
-set -a; . ./.env; set +a
-[ -n "${TALOS_DB_PASSWORD:-}" ] || die "TALOS_DB_PASSWORD is empty in .env (set it before the first start)"
-[ -n "${DEMO_POOL_PASSWORD:-}" ]     || warn "DEMO_POOL_PASSWORD empty: web/cred-stuffing 'pass' runs will be skipped"
-[ -n "${DEMO_SSH_POOL_PASSWORD:-}" ] || warn "DEMO_SSH_POOL_PASSWORD empty: SSH 'pass' runs will be skipped"
+# Read values WITHOUT sourcing: .env is compose format, not shell -- a value like
+# `MCP_SERVER_COMMAND=python -m argus_soc.graph.mcp_server` would make `. ./.env` try to run `-m`.
+env_get() { grep -E "^$1=" .env | tail -n1 | cut -d= -f2-; }
+TALOS_DB_PASSWORD="$(env_get TALOS_DB_PASSWORD)"
+DEMO_POOL_PASSWORD="$(env_get DEMO_POOL_PASSWORD)"
+DEMO_SSH_POOL_PASSWORD="$(env_get DEMO_SSH_POOL_PASSWORD)"
+ARGUS_DOMAIN="$(env_get ARGUS_DOMAIN)"
+SHOP_DOMAIN="$(env_get SHOP_DOMAIN)"
+[ -n "$TALOS_DB_PASSWORD" ] || die "TALOS_DB_PASSWORD is empty in .env (set it before the first start)"
+[ -n "$DEMO_POOL_PASSWORD" ]     || warn "DEMO_POOL_PASSWORD empty: web/cred-stuffing 'pass' runs will be skipped"
+[ -n "$DEMO_SSH_POOL_PASSWORD" ] || warn "DEMO_SSH_POOL_PASSWORD empty: SSH 'pass' runs will be skipped"
 
 PUBLIC=0
-[ -n "${ARGUS_DOMAIN:-}" ] && [ -n "${SHOP_DOMAIN:-}" ] && PUBLIC=1
+[ -n "$ARGUS_DOMAIN" ] && [ -n "$SHOP_DOMAIN" ] && PUBLIC=1
 
 # --- 4. Team access (shared folder) -------------------------------------------------------------
 log "Team access: group '$ARGUS_GROUP' owns $PROJECT_DIR"
