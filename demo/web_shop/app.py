@@ -13,9 +13,10 @@ in front of it -- one fewer container and no nginx config to own (that is Workst
 A crude inline WAF 403s obvious SQLi/XSS so the injection story shows "did not succeed / high"
 rather than "succeeded / critical" (DEMO_DESIGN §2, scenario 3).
 
-Home page (CHAT_LOG.md §8): a banner, one-click campaign buttons that call `/demo/launch` (a
-whitelisted, rate-limited proxy to the attack-bot's own `/launch`), and a list of the
-attack-prone endpoints for anyone who wants to try their own payloads by hand or via /docs.
+Home page (demo/README.md, "Attack buttons on the shop"): a banner, one-click campaign buttons
+that call `/demo/launch` (a whitelisted, rate-limited proxy to the attack-bot's own `/launch`),
+and a list of the attack-prone endpoints for anyone who wants to try their own payloads by hand
+or via /docs. Every live attack lands in tenant Globex (this shop logs as gx-web-01).
 """
 
 from __future__ import annotations
@@ -33,7 +34,7 @@ import httpx
 from fastapi import FastAPI, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse
 
-HOST_NAME = os.environ.get("DEMO_WEB_HOST", "web-01")
+HOST_NAME = os.environ.get("DEMO_WEB_HOST", "gx-web-01")  # a Globex host (data/inventory)
 ACCESS_LOG = Path(os.environ.get("DEMO_ACCESS_LOG", "/var/log/web_shop/access.jsonl"))
 # Attack-bot container name or IP; X-Forwarded-For is honoured only from it. A name is resolved
 # via Docker DNS so the compose file needs no hard-coded container IP.
@@ -58,10 +59,9 @@ _SQLI = re.compile(
 )
 _XSS = re.compile(r"<\s*script|on\w+\s*=|javascript:|<\s*svg|<\s*img[^>]*\bon\w+", re.I)
 
-# --- demo launch panel (CHAT_LOG.md §8.2-§8.4) ----------------------------------------------
-# Internal-only: the attack-bot is never reached from the browser directly, only via this proxy,
-# and only these five fixed campaign names are ever forwarded to it (no pass-through, no soak
-# control exposed here).
+# --- demo launch panel (demo/README.md) -------------------------------------------------------
+# The attack-bot is never reached from the browser directly, only through this proxy, and only
+# these five fixed campaign names are forwarded to it: no pass-through, no soak control here.
 ATTACK_BOT_URL = os.environ.get("DEMO_ATTACK_BOT_URL", "http://attack_bot:8000").rstrip("/")
 # Where a resulting case shows up in the Argus UI (for the "view the case" link). Optional: the
 # panel still works without it, it just has nothing to link to.
@@ -74,11 +74,15 @@ ATTACKS: dict[str, str] = {
     "ssh_brute": "SSH brute force",
 }
 OUTCOMES = ("fail", "pass")
-LAUNCH_RATE_LIMIT_SECONDS = 20.0
-LAUNCH_TIMEOUT_SECONDS = 45.0  # a "pass" run polls Talos for up to 40 s before the bot answers
+# Global, not per visitor: behind the public nginx every visitor has the same address anyway.
+LAUNCH_INTERVAL_SECONDS = 20.0
+# The bot answers only after the campaign and its Talos poll (up to 40 s for a pass), and it may
+# first wait for its lock while a soak campaign runs. Past this, the attack still runs in the
+# background; the page then says so instead of reporting a failure.
+LAUNCH_TIMEOUT_SECONDS = 120.0
 
 _launch_lock = threading.Lock()
-_last_launch_at: dict[str, float] = {}  # source ip -> monotonic time of its last /demo/launch
+_launch_state = {"running": False, "last_start": float("-inf")}
 
 app = FastAPI(title="Argus demo shop")
 ACCESS_LOG.parent.mkdir(parents=True, exist_ok=True)
@@ -170,12 +174,15 @@ def _attack_buttons_html() -> str:
     return "".join(buttons)
 
 
-_ARGUS_LINK_HTML = (
-    f'<p>See the resulting case in <a href="{ARGUS_UI_URL}" target="_blank">Argus</a> '
-    "(the incident id below links the two together).</p>"
+_ARGUS_WHERE = (
+    f'<a href="{ARGUS_UI_URL}" target="_blank" rel="noopener">Argus</a>'
     if ARGUS_UI_URL
-    else "<p>The resulting case appears in the Argus UI (ask your host for its URL); "
-    "the incident id below is how to find it.</p>"
+    else "the Argus UI (ask your host for its address)"
+)
+_ARGUS_LINK_HTML = (
+    f"<p>Every attack on this shop lands in tenant <strong>Globex</strong>. See the resulting "
+    f"case in {_ARGUS_WHERE}, signed in as a Globex user; the incident id shown after each "
+    "launch is how to find it.</p>"
 )
 
 _HOME_PAGE = f"""<!doctype html>
@@ -191,8 +198,8 @@ _HOME_PAGE = f"""<!doctype html>
              border-radius: 6px; margin-bottom: 1.5rem; }}
   .attack-row {{ display: flex; align-items: center; gap: 0.75rem; padding: 0.4rem 0; }}
   .attack-label {{ flex: 1 0 220px; }}
-  button {{ background: #1d5c38; color: #eafff0; border: 0; border-radius: 4px; padding: 0.4rem 0.9rem;
-            cursor: pointer; }}
+  button {{ background: #1d5c38; color: #eafff0; border: 0; border-radius: 4px;
+            padding: 0.4rem 0.9rem; cursor: pointer; }}
   button:disabled {{ opacity: 0.5; cursor: default; }}
   .attack-result {{ font-family: ui-monospace, monospace; font-size: 0.85rem; color: #9fc; }}
   .attack-result.err {{ color: #f88; }}
@@ -213,7 +220,10 @@ _HOME_PAGE = f"""<!doctype html>
 <h2>One-click attacks</h2>
 <p>Pick an outcome and launch a campaign against this shop. <code>fail</code> is a realistic
 attempt that does not get in; <code>pass</code> lets one attempt through so you can see a
-succeeded, higher-severity case. Campaigns run one at a time and are rate-limited.</p>
+succeeded, higher-severity case that waits for an analyst's approval.</p>
+<p>One launch at a time, shared by everyone using this page, at least 20 s apart. A run takes
+10 s to about a minute; if the attack harness is busy with its own background campaign, yours
+waits for it first.</p>
 {_attack_buttons_html()}
 
 <h2>Attack-prone endpoints</h2>
@@ -242,11 +252,14 @@ async function launch(name) {{
     const res = await fetch('/demo/launch?attack=' + encodeURIComponent(name) +
                              '&outcome=' + encodeURIComponent(outcome), {{ method: 'POST' }});
     const body = await res.json();
-    if (!res.ok) {{
+    if (res.status === 504) {{
+      out.textContent = body.error;  // still running in the background: not a failure
+    }} else if (!res.ok) {{
       out.className = 'attack-result err';
       out.textContent = body.error || ('HTTP ' + res.status);
     }} else if (body.detected) {{
-      out.textContent = 'detected: ' + body.incident_id + ' (' + body.latency_s + 's)';
+      out.textContent = 'detected: ' + body.incident_id + ' (' + body.latency_s + ' s)' +
+                        (body.warning ? ' (' + body.warning + ')' : '');
     }} else {{
       out.textContent = 'not detected within the wait window';
       out.className = 'attack-result err';
@@ -269,40 +282,60 @@ async def home(request: Request) -> HTMLResponse:
     return HTMLResponse(_HOME_PAGE)
 
 
-@app.post("/demo/launch")
-async def demo_launch(request: Request, attack: str, outcome: str = "fail") -> Response:
-    """Whitelisted, rate-limited proxy to the attack-bot's own `/launch` (CHAT_LOG.md §8.3-§8.4).
-
-    Only the five fixed campaign names below are ever forwarded -- no arbitrary pass-through to
-    the bot, and the bot's soak controls are never reachable from here.
-    """
-    if attack not in ATTACKS:
-        return JSONResponse(
-            {"error": f"attack must be one of {sorted(ATTACKS)}"}, status_code=400
-        )
-    if outcome not in OUTCOMES:
-        return JSONResponse({"error": "outcome must be fail or pass"}, status_code=400)
-
-    source_ip = _client_ip(request)
+def _claim_launch_slot() -> str | None:
+    """Take the single launch slot, or say why not (one launch in flight, 20 s apart)."""
     now = time.monotonic()
     with _launch_lock:
-        last = _last_launch_at.get(source_ip, 0.0)
-        wait = LAUNCH_RATE_LIMIT_SECONDS - (now - last)
+        if _launch_state["running"]:
+            return "another launch is still running; try again when it finishes"
+        wait = LAUNCH_INTERVAL_SECONDS - (now - _launch_state["last_start"])
         if wait > 0:
-            return JSONResponse(
-                {"error": f"one campaign at a time here; try again in {wait:.0f}s"},
-                status_code=429,
-            )
-        _last_launch_at[source_ip] = now
+            gap = f"{LAUNCH_INTERVAL_SECONDS:.0f} s"
+            return f"launches are at least {gap} apart; try again in {wait:.0f} s"
+        _launch_state.update(running=True, last_start=now)
+        return None
+
+
+@app.post("/demo/launch")
+async def demo_launch(attack: str, outcome: str = "fail") -> Response:
+    """Whitelisted, rate-limited proxy to the attack-bot's own `/launch` (demo/README.md).
+
+    Only the five fixed campaign names are forwarded: no arbitrary pass-through to the bot, and
+    the bot's soak controls are never reachable from here.
+    """
+    if attack not in ATTACKS:
+        return JSONResponse({"error": f"attack must be one of {sorted(ATTACKS)}"}, status_code=400)
+    if outcome not in OUTCOMES:
+        return JSONResponse({"error": "outcome must be fail or pass"}, status_code=400)
+    busy = _claim_launch_slot()
+    if busy:
+        return JSONResponse({"error": busy}, status_code=429)
 
     try:
         async with httpx.AsyncClient(timeout=LAUNCH_TIMEOUT_SECONDS) as client:
             upstream = await client.post(
                 f"{ATTACK_BOT_URL}/launch", params={"attack": attack, "outcome": outcome}
             )
+    except httpx.TimeoutException:
+        # The bot keeps going after we stop waiting; the case still shows up.
+        return JSONResponse(
+            {"error": "still running in the background; check Argus in a minute"},
+            status_code=504,
+        )
     except httpx.HTTPError:
         return JSONResponse({"error": "could not reach the attack harness"}, status_code=502)
-    return JSONResponse(upstream.json(), status_code=upstream.status_code)
+    finally:
+        with _launch_lock:
+            _launch_state["running"] = False
+
+    try:
+        body = upstream.json()
+    except ValueError:
+        return JSONResponse(
+            {"error": f"the attack harness answered {upstream.status_code} without JSON"},
+            status_code=502,
+        )
+    return JSONResponse(body, status_code=upstream.status_code)
 
 
 # Several search-like endpoints behind ONE handler. The attack-bot rotates among them per

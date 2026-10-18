@@ -9,12 +9,22 @@ through Argus (Triage → Investigator → Responder → analyst) live, without 
 > self-contained test harness, not a general attack tool. All source addresses are RFC 5737
 > documentation ranges; all data is synthetic.
 
+**Every live attack lands in tenant Globex.** The shop logs as `gx-web-01` and the SSH target is
+`gx-jump-01`, both Globex hosts in `data/inventory`; the ingestor routes each Talos report to the
+tenant whose inventory has its host. Watch the cases as a Globex user (`globex.analyst`, or
+`demo.admin` switched to Globex). Acme is shown by the scenario replays only, and `vpn-gw` is left
+to the scenario 4 replay so its Memory panel stays empty (the tenant isolation proof).
+
+The two hosts have the same shape as Acme's `web-01` and `bastion-01`, so every rule shows up live:
+`gx-web-01` has no path to a crown jewel (R2 on a pass, R4 on a fail) and `gx-jump-01` reaches one
+through `gx-jump-01 → gx-app-01 → gx-db-01` (R1 on a pass, R3 on a fail).
+
 ## Services
 
 | Service | What it is | Exposed |
 |---|---|---|
-| `web_shop` | tiny FastAPI shop (`/login`, `/api/search`, `/api/orders/{id}`); writes nginx-JSON access logs | 127.0.0.1:8080 |
-| `ssh_target` | throwaway sshd, one dummy account, host name `bastion-01` | internal only |
+| `web_shop` | tiny FastAPI shop (`/login`, `/api/search`, `/api/orders/{id}`), host name `gx-web-01`; writes nginx-JSON access logs; home page has the attack buttons | 127.0.0.1:8080 |
+| `ssh_target` | throwaway sshd, one dummy account, host name `gx-jump-01` | internal only |
 | `shipper` | tails the logs, parses with **Talos's own** parsers, POSTs to Talos `/events` | internal only |
 | `attack_bot` | randomized campaigns + self-check scoreboard | 127.0.0.1:8090 |
 
@@ -37,6 +47,7 @@ On Windows, build first then start without `--build` (see root CLAUDE.md "Window
 
 ```bash
 # fire one campaign on demand. outcome: fail (default) | pass | random
+# (or press a button on the shop's home page, http://127.0.0.1:8080: see "Attack buttons" below)
 curl -X POST "http://127.0.0.1:8090/launch?attack=sqli&outcome=pass"
 #   attacks: web_brute | cred_stuffing | sqli | xss | ssh_brute
 
@@ -68,9 +79,33 @@ bot still runs but skips passes, with a reason in `/selfcheck`.
 The WAF bypass for an injection pass is honoured **only** for a request from the trusted bot carrying
 `X-Demo-Outcome: pass`; the public shop can never be told to let a payload through (§7).
 
-**Backlog pause (§9a):** soak pauses while more than `DEMO_MAX_PENDING` (default 20) cases are
-Awaiting approval, and resumes within ~30 s once an analyst works one off. It counts straight off
+**Backlog pause (§9a):** soak pauses while more than `DEMO_MAX_PENDING` (default 20) Globex cases
+are Awaiting approval, and resumes within ~30 s once an analyst works one off. It counts straight off
 FalkorDB (no Argus login). Manual `/launch` is never paused. `DEMO_MAX_PENDING=0` turns it off.
+
+## Attack buttons on the shop
+
+So evaluators can run attacks without SSH or server access, the shop's home page (`GET /`) has
+three parts: a "synthetic target" banner with where to find the case in Argus, one **Launch**
+button per campaign with a fail/pass choice, and the list of attack-prone endpoints (plus
+`/docs`, the shop's Swagger page) for anyone who would rather send their own requests.
+
+Each button calls `POST /demo/launch?attack=<name>&outcome=fail|pass` on the shop, which forwards
+to the bot's `/launch` over `soc-net`. The bot itself stays private.
+
+- Only the five campaign names above are forwarded, and only `fail` / `pass` (anything else: 400).
+  The soak controls are not reachable from the shop.
+- One launch at a time for the whole shop, at least 20 s apart (429 otherwise). This is global,
+  not per visitor: behind the public nginx every visitor has the same address.
+- The shop waits up to 120 s for the bot. The bot answers only after the campaign and its Talos
+  poll, and may first wait for a soak campaign to finish. Past 120 s the page says the attack is
+  still running (504); the case still appears in Argus.
+- `DEMO_ARGUS_UI_URL` (optional) makes "Argus" on the page a link to the UI.
+
+**Worth knowing:** anyone who can open the public shop can launch `pass` runs, and each one opens an
+Awaiting-approval case in Globex. The backlog pause applies to soak only, not to `/launch`, so the
+only limit on public visitors is the one-at-a-time, 20 s rule (about 3 runs a minute). When the
+backlog is over the limit the page still runs the attack and shows the bot's warning.
 
 ## Campaigns and what Talos raises
 

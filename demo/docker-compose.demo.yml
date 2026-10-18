@@ -9,6 +9,9 @@
 # Only web_shop is published (127.0.0.1:8080 locally; on the cloud VM nginx serves it at
 # https://SHOP_DOMAIN via docker-compose.public-shop.yml). ssh_target and the bot stay internal.
 # No change to Talos or to Workstream B's docker-compose.yml / nginx.
+#
+# Every live attack lands in tenant GLOBEX: the shop logs as gx-web-01 and the SSH target is
+# gx-jump-01, both Globex hosts (data/inventory). Acme is shown by the scenario replays only.
 
 services:
   web_shop:
@@ -16,13 +19,13 @@ services:
     build: { context: ./demo/web_shop }
     restart: unless-stopped
     environment:
-      DEMO_WEB_HOST: web-01            # must match a host in B's inventory seed (data/inventory)
+      DEMO_WEB_HOST: gx-web-01         # a Globex host in B's inventory seed (data/inventory)
       DEMO_ACCESS_LOG: /var/log/web_shop/access.jsonl
       DEMO_TRUSTED_PROXY: attack_bot   # X-Forwarded-For trusted only from the bot (resolved by DNS)
       DEMO_VALID_ACCOUNT: "${DEMO_VALID_ACCOUNT:-demo@shop.example}"
       DEMO_VALID_PASSWORD: "${DEMO_VALID_PASSWORD:-correct-horse-battery-staple}"
       DEMO_POOL_PASSWORD: "${DEMO_POOL_PASSWORD:-}"   # pool####@shop.example login on a pass run
-      DEMO_ATTACK_BOT_URL: http://attack_bot:8000     # the shop's own "Launch" buttons (§8 of the log)
+      DEMO_ATTACK_BOT_URL: http://attack_bot:8000     # the shop page's "Launch" buttons proxy here
       DEMO_ARGUS_UI_URL: "${DEMO_ARGUS_UI_URL:-}"     # optional: link to Argus from the shop page
     volumes:
       - web-logs:/var/log/web_shop
@@ -39,7 +42,7 @@ services:
         DEMO_SSH_POOL_PASSWORD: "${DEMO_SSH_POOL_PASSWORD:-change-me-ssh-pool}"  # ops### pool login
         DEMO_SSH_POOL_SIZE: "${DEMO_SSH_POOL_SIZE:-300}"
     restart: unless-stopped
-    hostname: bastion-01               # the host name that appears in each sshd log line
+    hostname: gx-jump-01               # the host name in each sshd log line (a Globex host)
     volumes:
       - ssh-logs:/var/log
     networks: [soc-net]
@@ -86,7 +89,7 @@ services:
       DEMO_SOAK_INTERVAL_MAX: "${DEMO_SOAK_INTERVAL_MAX:-180}"
       # Backlog pause (§9a): count Cases Awaiting approval straight off FalkorDB (soc-net, no login).
       DEMO_MAX_PENDING: "${DEMO_MAX_PENDING:-20}"
-      DEMO_TENANT: "${DEMO_TENANT:-acme}"
+      DEMO_TENANT: "${DEMO_TENANT:-globex}"
       FALKORDB_HOST: falkordb
       FALKORDB_PORT: "6379"
     ports:
