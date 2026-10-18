@@ -1,11 +1,18 @@
 # Globex: second synthetic tenant (Workstream B). Shares no host, user or IP with Acme,
 # so scenario 4 can show that Globex has no memory of Acme's attacks.
+# The live demo harness (demo/) attacks two Globex hosts, the same shape as Acme's web-01 and
+# bastion-01 so every decision rule still shows up live:
+#   - gx-web-01 (the demo web shop) has no path to any crown jewel   -> R2 / R4
+#   - gx-jump-01 (the demo SSH target) -> gx-app-01 -> gx-db-01       -> R1 / R3
+# vpn-gw stays for the scenario 4 replay only, so its Memory panel stays empty.
 tenant: globex
 
 hosts:
-  - {hostname: vpn-gw,    ip: 10.20.1.10, os: ubuntu-22.04, zone: dmz,  criticality: 3}
-  - {hostname: gx-app-01, ip: 10.20.2.10, os: ubuntu-22.04, zone: app,  criticality: 3}
-  - {hostname: gx-db-01,  ip: 10.20.3.10, os: ubuntu-22.04, zone: data, criticality: 5, tags: [crown-jewel]}
+  - {hostname: vpn-gw,     ip: 10.20.1.10, os: ubuntu-22.04, zone: dmz,  criticality: 3}
+  - {hostname: gx-app-01,  ip: 10.20.2.10, os: ubuntu-22.04, zone: app,  criticality: 3}
+  - {hostname: gx-db-01,   ip: 10.20.3.10, os: ubuntu-22.04, zone: data, criticality: 5, tags: [crown-jewel]}
+  - {hostname: gx-web-01,  ip: 10.20.1.20, os: ubuntu-22.04, zone: dmz,  criticality: 2}
+  - {hostname: gx-jump-01, ip: 10.20.1.30, os: ubuntu-22.04, zone: dmz,  criticality: 3}
 
 users:
   - {username: gx_ops, role: admin, department: it, privileged: true, logs_into: [vpn-gw, gx-app-01]}
@@ -13,6 +20,7 @@ users:
 links:
   - {from: vpn-gw,    to: gx-app-01, port: 443}
   - {from: gx-app-01, to: gx-db-01,  port: 5432}
+  - {from: gx-jump-01, to: gx-app-01, port: 22}
 
 iocs: []
 

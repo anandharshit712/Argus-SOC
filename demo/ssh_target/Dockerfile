@@ -4,7 +4,7 @@
 #
 # rsyslog writes the auth facility to /var/log/auth.log in the standard
 # "Mmm d HH:MM:SS <host> sshd[pid]: ..." syslog shape Talos's NetworkLogParser reads. The host
-# name in each line is the container hostname, set to bastion-01 in the compose file.
+# name in each line is the container hostname, set to gx-jump-01 (a Globex host) in the compose file.
 FROM debian:12-slim
 # Dummy password for the throwaway account (rule 12: no secret baked in; override at build).
 # Irrelevant to detection anyway -- the attack-bot always guesses wrong.

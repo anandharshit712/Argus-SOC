@@ -53,7 +53,7 @@ INTERVAL_MAX = float(os.environ.get("DEMO_SOAK_INTERVAL_MAX", "180"))
 
 # Backlog pause (§9a): count Cases Awaiting approval on the tenant graph; pause soak over the limit.
 MAX_PENDING = int(os.environ.get("DEMO_MAX_PENDING", "20"))  # 0 = off
-DEMO_TENANT = os.environ.get("DEMO_TENANT", "acme")
+DEMO_TENANT = os.environ.get("DEMO_TENANT", "globex")  # every live attack lands in Globex
 FALKOR_HOST = os.environ.get("FALKORDB_HOST", "falkordb")
 FALKOR_PORT = int(os.environ.get("FALKORDB_PORT", "6379"))
 PENDING_RECHECK_SECONDS = 30.0
