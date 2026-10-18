@@ -9,7 +9,7 @@ Built for **Graph Hacks: Context for AI Agents** (WeMakeDevs × FalkorDB, Oct 15
 | **Tracks entered** | **Track 01: Agents That Act on Connected Data** and **Track 02: Agent Memory and Coordination** |
 | **Demo video** | DEMO_VIDEO_LINK_HERE |
 | **Live demo** | Analyst console: https://argus-soc.34-93-139-203.sslip.io · Demo web shop (attack target): https://shop.34-93-139-203.sslip.io |
-| **Live demo login** | JUDGE_LOGIN_HERE |
+| **Live demo login** | Username: globex.analyst, Password: G10bX_Test |
 | **Graph database** | FalkorDB, one graph per tenant (`tenant_acme`, `tenant_globex`) |
 | **License** | [Apache-2.0](LICENSE) |
 
