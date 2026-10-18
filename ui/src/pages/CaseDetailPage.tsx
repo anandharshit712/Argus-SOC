@@ -14,6 +14,7 @@ import {
 } from '../components/CasePanels.tsx'
 import CasePathGraph from '../components/CasePathGraph.tsx'
 import CaseProgress from '../components/CaseProgress.tsx'
+import GlowFrame from '../components/GlowFrame.tsx'
 import NotFoundView from '../components/NotFoundView.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { caseTitle } from '../lib/caseTitle.ts'
@@ -66,6 +67,7 @@ export default function CaseDetailPage() {
         path={nodes}
         targets={[...(decision?.target_hosts ?? []), ...(decision?.target_users ?? [])]}
         endsOnCrownJewel={data.findings.path_to_crown_jewel !== false}
+        ranking={decision?.ranking ?? []}
       />
     ) : (
       <p className="muted">
@@ -139,33 +141,47 @@ export default function CaseDetailPage() {
 
       {tab === 'overview' && (
         <div className="overview-grid">
-          <section className="panel area-decision">
-            <CaseDecisionPanel case={data} onGiveFeedback={() => setTab('feedback')} />
-          </section>
-          <section className="panel area-path">
-            <h2>Path to Crown Jewel</h2>
-            {path}
-          </section>
-          <section className="panel area-ranking">
-            <h2>Host Ranking</h2>
-            {ranking}
-          </section>
-          <section className="panel area-findings">
-            <h2>Key Findings</h2>
-            <FindingsPanel findings={data.findings} />
-          </section>
-          <section className="panel area-memory">
-            <h2>Memory</h2>
-            <MemoryPanel findings={data.findings} />
-          </section>
-          <section className="panel area-alerts">
-            <h2>Linked Alerts</h2>
-            <LinkedAlertsList alerts={data.alerts} />
-          </section>
-          <section className="panel area-deepdive">
-            <h2>Deep Dive (MCP tools)</h2>
-            <DeepDivePanel calls={data.findings.deep_dive} />
-          </section>
+          <GlowFrame className="area-decision">
+            <section className="panel">
+              <CaseDecisionPanel case={data} onGiveFeedback={() => setTab('feedback')} />
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-path">
+            <section className="panel path-panel">
+              <h2>Path to Crown Jewel</h2>
+              {path}
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-ranking">
+            <section className="panel">
+              <h2>Host Ranking</h2>
+              {ranking}
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-findings">
+            <section className="panel">
+              <h2>Key Findings</h2>
+              <FindingsPanel findings={data.findings} />
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-memory">
+            <section className="panel">
+              <h2>Memory</h2>
+              <MemoryPanel findings={data.findings} />
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-alerts">
+            <section className="panel">
+              <h2>Linked Alerts</h2>
+              <LinkedAlertsList alerts={data.alerts} />
+            </section>
+          </GlowFrame>
+          <GlowFrame className="area-deepdive">
+            <section className="panel">
+              <h2>Deep Dive (MCP tools)</h2>
+              <DeepDivePanel calls={data.findings.deep_dive} />
+            </section>
+          </GlowFrame>
         </div>
       )}
 

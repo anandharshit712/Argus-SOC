@@ -1,11 +1,13 @@
-import { useState, type CSSProperties } from 'react'
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import type { SessionOut } from '../api/apiTypes.ts'
 import { fetchCases, fetchHealth } from '../api/argusApi.ts'
 import { usePoll } from '../hooks/usePoll.ts'
 import { storedTenant, storeTenant, tenantColor, tenantLabel } from '../lib/tenantLabel.ts'
 import { AppContext } from '../state/AppContext.tsx'
 import ArgusLogo from './ArgusLogo.tsx'
+import CommandPalette, { isMac } from './CommandPalette.tsx'
+import GooeyNav from './GooeyNav.tsx'
 import Icon, { type IconName } from './Icon.tsx'
 import './AppShell.css'
 
@@ -52,6 +54,28 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
   )
   const awaitingCount = awaiting.data?.length ?? 0
 
+  // Ctrl+K / ⌘K opens the search palette from anywhere.
+  const [paletteOpen, setPaletteOpen] = useState(false)
+  const closePalette = useCallback(() => setPaletteOpen(false), [])
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setPaletteOpen((open) => !open)
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  // The tab title carries the approval count, so it shows while the tab is in the background.
+  useEffect(() => {
+    document.title = awaitingCount > 0 ? `(${awaitingCount}) Argus SOC` : 'Argus SOC'
+    return () => {
+      document.title = 'Argus SOC'
+    }
+  }, [awaitingCount])
+
   function setTenant(next: string) {
     if (next === tenant) return
     storeTenant(next)
@@ -96,6 +120,18 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
             </label>
           )}
 
+          <button
+            type="button"
+            className="palette-trigger"
+            onClick={() => setPaletteOpen(true)}
+            aria-haspopup="dialog"
+            title="Search pages and cases"
+          >
+            <Icon name="search" size={16} />
+            <span className="palette-trigger-label">Search</span>
+            <kbd>{isMac() ? '⌘K' : 'Ctrl K'}</kbd>
+          </button>
+
           <div className="topbar-status">
             <button
               type="button"
@@ -119,19 +155,36 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
 
         <div className="shell-body">
           <aside className="sidebar">
-            <nav aria-label="Main">
-              {NAV.map((item) => (
-                <NavLink key={item.to} to={item.to} className="side-link">
-                  <Icon name={item.icon} /> {item.label}
-                  {item.to === '/cases' && awaitingCount > 0 && (
+            <GooeyNav
+              ariaLabel="Main"
+              orientation="vertical"
+              items={NAV.map((item) => ({
+                label: item.label,
+                href: item.to,
+                icon: <Icon name={item.icon} />,
+                badge:
+                  item.to === '/cases' && awaitingCount > 0 ? (
                     <span className="nav-badge" title={`${awaitingCount} awaiting approval`}>
                       {awaitingCount}
                       <span className="visually-hidden"> awaiting approval</span>
                     </span>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
+                  ) : undefined,
+              }))}
+              activeIndex={NAV.findIndex(
+                (item) => location.pathname === item.to || location.pathname.startsWith(`${item.to}/`),
+              )}
+              onChange={(_, item) => navigate(item.href)}
+              theme="dark"
+              size="md"
+              frame={false}
+              particleCount={15}
+              spread={56}
+              animationTime={600}
+              timeVariance={300}
+              gooeyness={0.5}
+              wobble={0.5}
+              hoverEffect
+            />
 
             <div className={`system-health${view.bad ? ' is-bad' : ''}`}>
               <span className="dot" />
@@ -159,6 +212,13 @@ export default function AppShell({ session, onSignOut }: AppShellProps) {
           </main>
         </div>
       </div>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={closePalette}
+        tenant={tenant}
+        tenants={tenants}
+        setTenant={setTenant}
+      />
     </AppContext.Provider>
   )
 }

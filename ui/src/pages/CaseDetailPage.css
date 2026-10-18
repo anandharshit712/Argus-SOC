@@ -11,7 +11,10 @@
   gap: 12px;
   flex-wrap: wrap;
   padding: 16px 22px;
-  background: rgba(10, 18, 14, 0.85);
+  /* same look as the dashboard's welcome card */
+  background:
+    radial-gradient(circle at 85% 40%, rgba(74, 222, 106, 0.1), transparent 45%),
+    rgba(10, 18, 14, 0.85);
   border: 1px solid var(--border);
   border-radius: 10px;
 }
@@ -48,10 +51,11 @@
 .overview-grid {
   display: grid;
   grid-template-columns: 300px repeat(3, minmax(0, 1fr));
+  /* the attack path gets the full first row */
   grid-template-areas:
-    'decision path path ranking'
-    'decision findings memory alerts'
-    'decision deepdive deepdive deepdive';
+    'decision path path path'
+    'decision ranking findings memory'
+    'decision alerts deepdive deepdive';
   gap: 16px;
 }
 .area-deepdive { grid-area: deepdive; }
@@ -126,8 +130,93 @@
 .btn-outline:disabled { opacity: 0.4; cursor: default; }
 
 /* ---------- path graph ---------- */
-.path-graph { width: 100%; height: auto; max-height: 320px; }
-.path-edge { stroke: #7d9a89; stroke-width: 2; stroke-dasharray: 6 4; }
+/* No max-height: the drawing keeps its exact aspect, so the hover card can be placed on it. */
+.path-graph { display: block; width: 100%; height: auto; overflow: visible; }
+.path-edge {
+  stroke: #7d9a89;
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+  /* fades in after its source node, then the dashes march towards the crown jewel */
+  animation:
+    path-fade 0.4s ease-out var(--d, 0s) backwards,
+    path-march 0.9s linear infinite;
+}
+.path-node {
+  outline: none;
+  cursor: default;
+  animation: path-pop 0.45s cubic-bezier(0.34, 1.5, 0.64, 1) var(--d, 0s) backwards;
+}
+.path-node .path-shape { transition: filter 0.2s, stroke-width 0.2s; }
+.path-node.is-active .path-shape,
+.path-node:focus-visible .path-shape { stroke-width: 3.5; filter: drop-shadow(0 0 8px var(--accent)); }
+.path-node.is-entry.is-active .path-shape { filter: drop-shadow(0 0 8px var(--danger)); }
+.path-node.is-jewel.is-active .path-shape { filter: drop-shadow(0 0 8px var(--warn)); }
+.path-node.is-jewel .path-shape { animation: path-jewel 2.4s ease-in-out infinite; }
+/* hidden until the path is drawn and the pulse starts moving */
+.path-packet { animation: path-fade 0.3s ease-out var(--d, 0s) backwards; }
+.path-packet-halo { fill: rgba(255, 107, 107, 0.55); }
+.path-packet-core { fill: #ffd2d2; }
+@keyframes path-fade { from { opacity: 0; } }
+@keyframes path-march { to { stroke-dashoffset: -10; } }
+@keyframes path-pop { from { opacity: 0; transform: scale(0.4); } }
+@keyframes path-jewel {
+  50% { filter: drop-shadow(0 0 10px rgba(240, 192, 64, 0.7)); }
+}
+
+.path-graph-wrap { display: flex; flex-direction: column; gap: 10px; }
+.path-graph-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.path-legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0; padding: 0; list-style: none; color: var(--muted); font: 0.8rem 'Share Tech Mono', monospace; }
+.path-legend li { display: inline-flex; align-items: center; gap: 6px; }
+.path-legend i { display: inline-block; width: 12px; height: 12px; border: 2px solid; border-radius: 3px; }
+.path-legend .lg-entry { border-color: var(--danger); background: rgba(255, 107, 107, 0.22); }
+.path-legend .lg-jewel { border-color: var(--warn); background: rgba(240, 192, 64, 0.18); }
+.path-legend .lg-target { border: 2px dashed var(--warn); }
+.path-legend .lg-user { border-color: var(--accent); border-radius: 50%; }
+.path-replay {
+  padding: 4px 12px;
+  background: var(--field);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--accent);
+  font: 600 0.9rem 'Rajdhani', sans-serif;
+  cursor: pointer;
+}
+.path-replay:hover { border-color: var(--accent); }
+
+.path-graph-canvas { position: relative; }
+.path-tip {
+  position: absolute;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 160px;
+  padding: 8px 12px;
+  background: rgba(7, 13, 10, 0.96);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+  color: var(--text);
+  font: 0.85rem 'Share Tech Mono', monospace;
+  pointer-events: none;
+  /* above the node by default; below it for nodes in the upper row */
+  transform: translate(-50%, calc(-100% - 40px));
+}
+.path-tip.is-below { transform: translate(-50%, 40px); }
+.path-tip strong { color: #fff; font: 700 1.1rem 'Rajdhani', sans-serif; }
+.path-tip-roles { color: var(--warn); }
+
+/* the attack path is the case's centrepiece */
+.path-panel {
+  background:
+    radial-gradient(ellipse at 50% 55%, rgba(74, 222, 106, 0.07), transparent 65%),
+    rgba(10, 18, 14, 0.85);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .path-edge, .path-node, .path-node.is-jewel .path-shape { animation: none; }
+  .path-packet { display: none; }
+}
 .path-node > rect, .path-node > circle { fill: #0c1511; stroke: var(--accent); stroke-width: 2.5; }
 .path-node.is-entry > rect, .path-node.is-entry > circle { stroke: var(--danger); fill: rgba(255, 107, 107, 0.22); }
 .path-node.is-jewel > rect, .path-node.is-jewel > circle { stroke: var(--warn); fill: rgba(240, 192, 64, 0.18); }

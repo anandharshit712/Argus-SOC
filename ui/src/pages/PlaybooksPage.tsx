@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { PlaybookOut } from '../api/apiTypes.ts'
 import { fetchPlaybooks } from '../api/argusApi.ts'
+import GlowFrame from '../components/GlowFrame.tsx'
 import Icon from '../components/Icon.tsx'
 import { usePoll } from '../hooks/usePoll.ts'
 import { timeAgo } from '../lib/formatTime.ts'
@@ -127,7 +128,9 @@ export default function PlaybooksPage() {
       ) : (
         <div className="playbook-grid">
           {groups.map((g) => (
-            <PlaybookCard key={g.name} group={g} />
+            <GlowFrame key={g.name}>
+              <PlaybookCard group={g} />
+            </GlowFrame>
           ))}
         </div>
       )}
