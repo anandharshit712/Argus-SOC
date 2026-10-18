@@ -69,7 +69,7 @@ its own random pause (`DEMO_SOAK_INTERVAL_MIN`..`MAX`), so their attacks overlap
 
 | Lane | Campaigns | Talos category |
 |---|---|---|
-| `auth` | `web_brute`, `cred_stuffing` | `auth_failure` |
+| `accounts` | `web_brute`, `cred_stuffing` | `auth_failure` |
 | `injection` | `sqli`, `xss` | `injection` |
 | `ssh` | `ssh_brute` | `network_brute_force` |
 
