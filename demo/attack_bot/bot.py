@@ -4,7 +4,7 @@ Two modes, one service:
   * demo   -- POST/GET /launch?attack=<name>&outcome=pass|fail|random fires one campaign on demand.
   * soak   -- a background weighted-random loop, toggled at runtime with /soak/start and /soak/stop
               (or DEMO_SOAK=1 at boot), benign traffic trickling underneath. One campaign at a
-              time by default; with DEMO_SOAK_PARALLEL=1 three attackers (auth, injection, ssh)
+              time by default; with DEMO_SOAK_PARALLEL=1 three attackers (accounts, injection, ssh)
               each run their own loop with their own pauses, so their campaigns overlap.
 
 Every campaign can fail (wrong creds / WAF 403) or pass (a real success Talos marks `succeeded`,
@@ -69,7 +69,7 @@ _scoreboard: deque[dict] = deque(maxlen=100)
 # Different lanes run in parallel: Talos keys each detector separately (account, source IP,
 # host+account, per request), so overlapping attacks are still detected one by one.
 LANES: dict[str, tuple[str, ...]] = {
-    "auth": ("web_brute", "cred_stuffing"),
+    "accounts": ("web_brute", "cred_stuffing"),
     "injection": ("sqli", "xss"),
     "ssh": ("ssh_brute",),
 }
