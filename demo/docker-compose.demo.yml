@@ -22,6 +22,8 @@ services:
       DEMO_VALID_ACCOUNT: "${DEMO_VALID_ACCOUNT:-demo@shop.example}"
       DEMO_VALID_PASSWORD: "${DEMO_VALID_PASSWORD:-correct-horse-battery-staple}"
       DEMO_POOL_PASSWORD: "${DEMO_POOL_PASSWORD:-}"   # pool####@shop.example login on a pass run
+      DEMO_ATTACK_BOT_URL: http://attack_bot:8000     # the shop's own "Launch" buttons (§8 of the log)
+      DEMO_ARGUS_UI_URL: "${DEMO_ARGUS_UI_URL:-}"     # optional: link to Argus from the shop page
     volumes:
       - web-logs:/var/log/web_shop
     ports:
