@@ -3,7 +3,9 @@
 Two modes, one service:
   * demo   -- POST/GET /launch?attack=<name>&outcome=pass|fail|random fires one campaign on demand.
   * soak   -- a background weighted-random loop, toggled at runtime with /soak/start and /soak/stop
-              (or DEMO_SOAK=1 at boot), one campaign at a time, benign traffic trickling underneath.
+              (or DEMO_SOAK=1 at boot), benign traffic trickling underneath. One campaign at a
+              time by default; with DEMO_SOAK_PARALLEL=1 three attackers (auth, injection, ssh)
+              each run their own loop with their own pauses, so their campaigns overlap.
 
 Every campaign can fail (wrong creds / WAF 403) or pass (a real success Talos marks `succeeded`,
 which reaches Argus as an Awaiting-approval case). In soak mode the outcome is drawn from a shuffled
@@ -50,6 +52,7 @@ PASS_RATIO = float(os.environ.get("DEMO_PASS_RATIO", "0.3"))
 BAG_SIZE = int(os.environ.get("DEMO_BAG_SIZE", "10"))
 INTERVAL_MIN = float(os.environ.get("DEMO_SOAK_INTERVAL_MIN", "45"))
 INTERVAL_MAX = float(os.environ.get("DEMO_SOAK_INTERVAL_MAX", "180"))
+PARALLEL = os.environ.get("DEMO_SOAK_PARALLEL", "0") == "1"  # one soak loop per lane (below)
 
 # Backlog pause (§9a): count Cases Awaiting approval on the tenant graph; pause soak over the limit.
 MAX_PENDING = int(os.environ.get("DEMO_MAX_PENDING", "20"))  # 0 = off
@@ -60,21 +63,34 @@ PENDING_RECHECK_SECONDS = 30.0
 
 CAMPAIGNS = {**WEB_CAMPAIGNS, "ssh_brute": ssh_brute_force}
 _scoreboard: deque[dict] = deque(maxlen=100)
-_lock = threading.Lock()  # one campaign at a time, so the demo story stays legible
+# Campaigns that raise the same Talos category share a lane, and a lane runs one campaign at a
+# time. So the self-check never takes another run's incident for its own (it matches the first new
+# incident of the expected category), and web_brute / cred_stuffing never mix failures from one IP.
+# Different lanes run in parallel: Talos keys each detector separately (account, source IP,
+# host+account, per request), so overlapping attacks are still detected one by one.
+LANES: dict[str, tuple[str, ...]] = {
+    "auth": ("web_brute", "cred_stuffing"),
+    "injection": ("sqli", "xss"),
+    "ssh": ("ssh_brute",),
+}
+LANE_OF = {name: lane for lane, names in LANES.items() for name in names}
+if set(LANE_OF) != set(CAMPAIGNS):
+    raise RuntimeError(f"every campaign needs exactly one lane: {sorted(CAMPAIGNS)}")
+_lane_locks = {lane: threading.Lock() for lane in LANES}
 
-# Soak control: a single loop, guarded so a second /soak/start is a no-op (§8).
+# Soak control: one loop (or one per lane), guarded so a second /soak/start is a no-op (§8).
 _soak_ctl_lock = threading.Lock()
-_soak_thread: threading.Thread | None = None
+_soak_threads: list[threading.Thread] = []
 _soak_stop = threading.Event()
 _soak_state_lock = threading.Lock()
 _soak_state: dict = {
     "running": False,
+    "parallel": False,
     "paused": False,
     "paused_since": None,
     "pending": 0,
     "limit": MAX_PENDING,
-    "current": None,
-    "next_run_at": None,
+    "lanes": {},  # lane -> {"current": campaign or None, "next_run_at": iso time or None}
     "passes": 0,
     "fails": 0,
     "tokens_left": 0,
@@ -84,6 +100,11 @@ _soak_state: dict = {
 def _set_state(**kw) -> None:
     with _soak_state_lock:
         _soak_state.update(kw)
+
+
+def _set_lane(lane: str, **kw) -> None:
+    with _soak_state_lock:
+        _soak_state["lanes"].setdefault(lane, {}).update(kw)
 
 
 @asynccontextmanager
@@ -146,10 +167,10 @@ def _latency(report: dict, started: datetime) -> float | None:
 
 
 def run_campaign(name: str, outcome: str = "fail") -> dict:
-    """Fire one campaign (pass or fail) and score it against Talos. Serialized by _lock."""
+    """Fire one campaign (pass or fail) and score it against Talos. Serialized per lane."""
     if name not in CAMPAIGNS:
         return {"error": f"unknown campaign {name}", "known": sorted(CAMPAIGNS)}
-    with _lock, httpx.Client(timeout=10.0) as client:
+    with _lane_locks[LANE_OF[name]], httpx.Client(timeout=10.0) as client:
         before = _known_incident_ids(client)
         log.info("launching %s (outcome=%s)", name, outcome)
         started = datetime.now(UTC)
@@ -222,12 +243,13 @@ def _backlog_over_limit() -> tuple[bool, int]:
 
 
 # --- Soak loop (§8) ----------------------------------------------------------------------------
-def _soak_loop(interval_min: float, interval_max: float, ratio: float) -> None:
-    names = list(WEIGHTS)
+def _soak_loop(
+    lane: str, names: tuple[str, ...], bag: OutcomeBag, interval_min: float, interval_max: float
+) -> None:
+    """One attacker: weighted-random campaigns from `names`, its own random pause between them.
+    All lanes draw from one shared bag, so the pass ratio holds across them (§4)."""
     weights = [WEIGHTS[n] for n in names]
-    bag = OutcomeBag(BAG_SIZE, ratio)
-    _set_state(running=True, passes=0, fails=0, tokens_left=bag.remaining())
-    log.info("soak loop started (ratio=%.2f, bag=%d, max_pending=%d)", ratio, BAG_SIZE, MAX_PENDING)
+    log.info("soak lane %s started: %s, pause %.0f-%.0f s", lane, names, interval_min, interval_max)
     try:
         while not _soak_stop.is_set():
             over, pending = _backlog_over_limit()
@@ -247,7 +269,8 @@ def _soak_loop(interval_min: float, interval_max: float, ratio: float) -> None:
 
             name = random.choices(names, weights=weights, k=1)[0]
             outcome = bag.draw()
-            _set_state(current=name, tokens_left=bag.remaining(), pending=pending)
+            _set_lane(lane, current=name, next_run_at=None)
+            _set_state(tokens_left=bag.remaining(), pending=pending)
             try:
                 run_campaign(name, outcome)
                 with _soak_state_lock:
@@ -257,24 +280,54 @@ def _soak_loop(interval_min: float, interval_max: float, ratio: float) -> None:
                 log.exception("soak campaign %s failed", name)
 
             delay = random.uniform(interval_min, interval_max)
-            _set_state(next_run_at=datetime.fromtimestamp(time.time() + delay, UTC).isoformat())
+            next_run = datetime.fromtimestamp(time.time() + delay, UTC).isoformat()
+            _set_lane(lane, current=None, next_run_at=next_run)
             _soak_stop.wait(delay)  # stop interrupts the sleep, never a running campaign
     finally:
-        _set_state(running=False, paused=False, current=None, next_run_at=None)
-        log.info("soak loop stopped")
+        with _soak_state_lock:
+            _soak_state["lanes"].pop(lane, None)
+            if not _soak_state["lanes"]:  # the last lane out turns the soak off
+                _soak_state.update(running=False, paused=False)
+        log.info("soak lane %s stopped", lane)
 
 
-def _start_soak(interval_min: float, interval_max: float, ratio: float) -> bool:
-    """Start the loop if not already running. True if started, False if one was already running."""
-    global _soak_thread
+def _start_soak(
+    interval_min: float, interval_max: float, ratio: float, parallel: bool = PARALLEL
+) -> bool:
+    """Start the loop(s) if not already running. True if started, False if already running."""
     with _soak_ctl_lock:
-        if _soak_thread is not None and _soak_thread.is_alive():
+        if any(t.is_alive() for t in _soak_threads):
             return False
         _soak_stop.clear()
-        _soak_thread = threading.Thread(
-            target=_soak_loop, args=(interval_min, interval_max, ratio), daemon=True
+        groups = LANES if parallel else {"all": tuple(WEIGHTS)}
+        bag = OutcomeBag(BAG_SIZE, ratio)  # shared by every lane
+        with _soak_state_lock:
+            _soak_state.update(
+                running=True,
+                parallel=parallel,
+                passes=0,
+                fails=0,
+                tokens_left=bag.remaining(),
+                lanes={lane: {"current": None, "next_run_at": None} for lane in groups},
+            )
+        log.info(
+            "soak started (ratio=%.2f, bag=%d, max_pending=%d, lanes=%s)",
+            ratio,
+            BAG_SIZE,
+            MAX_PENDING,
+            list(groups),
         )
-        _soak_thread.start()
+        _soak_threads[:] = [
+            threading.Thread(
+                target=_soak_loop,
+                args=(lane, names, bag, interval_min, interval_max),
+                name=f"soak-{lane}",
+                daemon=True,
+            )
+            for lane, names in groups.items()
+        ]
+        for t in _soak_threads:
+            t.start()
         return True
 
 
@@ -307,19 +360,23 @@ def launch(attack: str, outcome: str = "fail") -> dict:
 
 @app.post("/soak/start")
 def soak_start(
-    interval_min: float | None = None, interval_max: float | None = None, ratio: float | None = None
+    interval_min: float | None = None,
+    interval_max: float | None = None,
+    ratio: float | None = None,
+    parallel: bool | None = None,
 ) -> dict:
     started = _start_soak(
         interval_min if interval_min is not None else INTERVAL_MIN,
         interval_max if interval_max is not None else INTERVAL_MAX,
         ratio if ratio is not None else PASS_RATIO,
+        parallel if parallel is not None else PARALLEL,
     )
     return {"status": "started" if started else "already running", "running": True}
 
 
 @app.post("/soak/stop")
 def soak_stop() -> dict:
-    """Stop after the current campaign finishes (never mid-campaign)."""
+    """Stop after the current campaign(s) finish (never mid-campaign)."""
     _soak_stop.set()
     return {"status": "stopping", "note": "the current campaign finishes first"}
 

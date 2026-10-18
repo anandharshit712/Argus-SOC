@@ -87,6 +87,7 @@ services:
       DEMO_SSH_POOL_SIZE: "${DEMO_SSH_POOL_SIZE:-300}"
       DEMO_SOAK_INTERVAL_MIN: "${DEMO_SOAK_INTERVAL_MIN:-45}"
       DEMO_SOAK_INTERVAL_MAX: "${DEMO_SOAK_INTERVAL_MAX:-180}"
+      DEMO_SOAK_PARALLEL: "${DEMO_SOAK_PARALLEL:-0}"   # 1 = auth, injection and ssh attackers overlap
       # Backlog pause (§9a): count Cases Awaiting approval straight off FalkorDB (soc-net, no login).
       DEMO_MAX_PENDING: "${DEMO_MAX_PENDING:-20}"
       DEMO_TENANT: "${DEMO_TENANT:-globex}"
