@@ -55,11 +55,31 @@ curl -X POST "http://127.0.0.1:8090/launch?attack=sqli&outcome=pass"
 curl http://127.0.0.1:8090/selfcheck
 
 # soak (always-running weighted-random loop), toggled at runtime -- no restart needed
-curl -X POST "http://127.0.0.1:8090/soak/start"   # optional ?interval_min=45&interval_max=180&ratio=0.3
-curl http://127.0.0.1:8090/soak/status            # running, passes/fails, tokens left, paused?, next run
-curl -X POST "http://127.0.0.1:8090/soak/stop"    # stops after the current campaign finishes
+curl -X POST "http://127.0.0.1:8090/soak/start"   # optional ?interval_min=45&interval_max=180&ratio=0.3&parallel=true
+curl http://127.0.0.1:8090/soak/status            # running, passes/fails, tokens left, paused?, each lane's current / next run
+curl -X POST "http://127.0.0.1:8090/soak/stop"    # stops after the current campaign(s) finish
 # or start the loop at boot: DEMO_SOAK=1 in .env
 ```
+
+### Parallel attackers (`DEMO_SOAK_PARALLEL=1`)
+
+By default soak runs one campaign at a time. With `DEMO_SOAK_PARALLEL=1` (or
+`/soak/start?parallel=true`) three attackers run side by side, each picking its next campaign and
+its own random pause (`DEMO_SOAK_INTERVAL_MIN`..`MAX`), so their attacks overlap:
+
+| Lane | Campaigns | Talos category |
+|---|---|---|
+| `auth` | `web_brute`, `cred_stuffing` | `auth_failure` |
+| `injection` | `sqli`, `xss` | `injection` |
+| `ssh` | `ssh_brute` | `network_brute_force` |
+
+A lane never overlaps with itself. Each run's self-check then matches its own incident (it waits for
+the first new incident of its category), and web brute force and credential stuffing never mix
+failures from one address. Talos needs no change: each detector counts on its own key (account,
+source IP, host+account, or per request), so overlapping attacks from different lanes are detected
+one by one. All lanes share one pass/fail bag, so 3 in every 10 still pass. A manual `/launch` (and
+the shop's buttons) waits only for a soak run in the same lane. More overlap fills the approval
+queue faster: the backlog pause below still applies to every lane.
 
 ### Pass or fail (ATTACK_BOT_PASS_FAIL_DESIGN.md)
 
