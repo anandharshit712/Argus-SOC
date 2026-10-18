@@ -10,12 +10,18 @@
 
 /* ---------- top bar ---------- */
 .topbar {
+  /* Stays at the top while the page scrolls; the sidebar is pinned beneath it. */
+  position: sticky;
+  top: 0;
+  z-index: 20;
   display: flex;
   align-items: center;
   gap: 24px;
   height: 64px;
   padding: 0 20px;
   background: rgba(7, 13, 10, 0.92);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border-bottom: 2px solid var(--tenant, var(--border));
   color: var(--text);
 }
@@ -129,6 +135,14 @@
 }
 
 .sidebar {
+  /* Pinned below the top bar: nav stays at the top, System Health at the bottom. */
+  position: sticky;
+  top: 64px; /* .topbar height (border-box) */
+  align-self: start;
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
+  overflow-x: hidden; /* nav droplets must not cause a sideways scrollbar */
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 24px;
@@ -144,23 +158,7 @@
   border-bottom: 1px solid var(--border);
 }
 
-.side-link {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 12px 14px;
-  border: 1px solid transparent;
-  border-radius: 8px;
-  color: var(--text);
-  text-decoration: none;
-  font: 500 1.15rem 'Rajdhani', sans-serif;
-}
-.side-link:hover { background: rgba(74, 222, 106, 0.06); }
-.side-link.active {
-  background: linear-gradient(90deg, rgba(74, 222, 106, 0.28), rgba(74, 222, 106, 0.1));
-  border-color: var(--accent);
-  color: #fff;
-}
+/* Nav links and the active pill: components/GooeyNav.css */
 
 .system-health {
   display: flex;
@@ -201,9 +199,9 @@
   .brand { width: auto; }
 
   /* keep navigation reachable: sidebar turns into a row, the health card is dropped */
-  .sidebar { padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
+  .sidebar { position: static; height: auto; overflow: visible; padding: 8px 12px; border-right: 0; border-bottom: 1px solid var(--border); }
   .sidebar nav { flex-direction: row; overflow-x: auto; padding-bottom: 0; border-bottom: 0; }
-  .side-link { padding: 8px 12px; font-size: 1.05rem; white-space: nowrap; }
+  .sidebar .gooey-nav__item { padding: 8px 12px; font-size: 1.05rem; white-space: nowrap; }
   .system-health { display: none; }
 }
 @media (max-width: 700px) {

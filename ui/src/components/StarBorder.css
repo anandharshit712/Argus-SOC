@@ -1,0 +1,54 @@
+.star-border {
+  position: relative;
+}
+
+.star-border__svg {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.star-border__glow {
+  filter: drop-shadow(0 0 calc(var(--sb-glow) * 0.5) var(--sb-color))
+    drop-shadow(0 0 var(--sb-glow) var(--sb-color));
+}
+
+.star-border__dash {
+  fill: none;
+  stroke-linecap: round;
+}
+
+.star-border__head--sparkle {
+  animation: star-border-twinkle 0.35s ease-in-out infinite;
+}
+
+.star-border__pulse {
+  fill: none;
+  animation: star-border-pulse 0.7s ease-out forwards;
+}
+
+@keyframes star-border-twinkle {
+  50% {
+    stroke-opacity: 0.45;
+  }
+}
+
+@keyframes star-border-pulse {
+  from {
+    stroke-opacity: 0.9;
+    filter: drop-shadow(0 0 6px var(--sb-color));
+  }
+  to {
+    stroke-opacity: 0;
+    filter: drop-shadow(0 0 18px var(--sb-color));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-border__glow,
+  .star-border__pulse {
+    display: none;
+  }
+}

@@ -1,0 +1,139 @@
+.gooey-nav {
+  position: relative;
+  display: flex;
+  gap: 8px;
+  isolation: isolate;
+}
+.gooey-nav--vertical {
+  flex-direction: column;
+}
+.gooey-nav--frame {
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.gooey-nav__defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* The goo layer covers the nav. Shapes are drawn opaque (the filter's alpha threshold
+   needs that) and the layer is faded as a whole; the pill uses pre-darkened colours so
+   it stays a tint while the droplets stay bright. */
+.gooey-nav__goo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.7;
+}
+
+.gooey-nav__pill,
+.gooey-nav__ghost,
+.gooey-nav__outline {
+  position: absolute;
+  top: 0;
+  left: 0;
+  border-radius: 8px;
+  will-change: transform;
+}
+.gooey-nav__pill {
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--goo-color) 40%, #070d0a),
+    color-mix(in srgb, var(--goo-color) 14%, #070d0a)
+  );
+}
+.gooey-nav__pill.is-moving,
+.gooey-nav__outline.is-moving {
+  transition:
+    transform var(--goo-ms) var(--goo-ease),
+    width var(--goo-ms) var(--goo-ease),
+    height var(--goo-ms) var(--goo-ease);
+}
+
+.gooey-nav__ghost {
+  background: color-mix(in srgb, var(--goo-color) 40%, #070d0a);
+  animation: gooey-ghost ease-in forwards;
+  transform-origin: center;
+}
+@keyframes gooey-ghost {
+  to {
+    opacity: 0;
+    scale: 0.2 0.35;
+  }
+}
+
+.gooey-nav__particle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0;
+  animation-name: gooey-particle;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.3, 1);
+  animation-fill-mode: forwards;
+}
+@keyframes gooey-particle {
+  0% {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(0.2);
+  }
+}
+
+.gooey-nav__outline {
+  z-index: 1;
+  border: 1px solid var(--goo-color);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--goo-color) 14%, transparent);
+  pointer-events: none;
+}
+
+.gooey-nav__item {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 14px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: var(--text);
+  text-decoration: none;
+  font: 500 1.15rem 'Rajdhani', sans-serif;
+  transition:
+    color 0.2s,
+    background-color 0.2s;
+}
+.gooey-nav--sm .gooey-nav__item {
+  padding: 8px 12px;
+  font-size: 1rem;
+}
+.gooey-nav--lg .gooey-nav__item {
+  padding: 14px 16px;
+  font-size: 1.25rem;
+}
+.gooey-nav--hover .gooey-nav__item:not(.is-active):hover {
+  background: rgba(74, 222, 106, 0.06);
+}
+.gooey-nav__item.is-active {
+  color: #fff;
+}
+.gooey-nav__item:focus-visible {
+  outline: 2px solid var(--goo-color);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gooey-nav__ghost,
+  .gooey-nav__particle {
+    display: none;
+  }
+}

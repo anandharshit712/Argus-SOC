@@ -1,39 +1,77 @@
 // Small hand-built charts for the dashboard. Plain SVG / HTML, no chart library.
 // Series colours were checked with the dataviz palette validator against the panel surface
 // (dark mode, both pass: lightness band, chroma, CVD and normal-vision separation, 3:1 contrast).
-import { useState } from 'react'
+import { useState, type CSSProperties, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import type { ActivityItem, DashboardOut, TimeWindow } from '../api/apiTypes.ts'
 import { humanize } from '../lib/caseTitle.ts'
 import { clockTime, timeAgo } from '../lib/formatTime.ts'
 import { PriorityBadge } from './CaseBadges.tsx'
+import Icon, { type IconName } from './Icon.tsx'
 import './DashboardCharts.css'
 
 const SERIES = { human: '#4a86e0', auto: '#33a852' } as const
 
+// ---------- empty state ----------
+
+export function EmptyState({
+  icon = 'check',
+  title,
+  hint,
+  actions,
+}: {
+  icon?: IconName
+  title: string
+  hint?: string
+  actions?: ReactNode
+}) {
+  return (
+    <div className="empty-state">
+      <span className="empty-icon" aria-hidden="true">
+        <Icon name={icon} size={18} />
+      </span>
+      <div>
+        <p className="empty-title">{title}</p>
+        {hint && <p className="empty-hint">{hint}</p>}
+        {actions && <div className="empty-actions">{actions}</div>}
+      </div>
+    </div>
+  )
+}
+
 // ---------- case pipeline (G6: the handoffs) ----------
 
-const PIPELINE: { status: string; label: string }[] = [
-  { status: 'new', label: 'New' },
-  { status: 'triaged', label: 'Triaged' },
-  { status: 'investigated', label: 'Investigated' },
-  { status: 'awaiting_approval', label: 'Awaiting' },
-  { status: 'closed', label: 'Closed' },
+// Stage colours follow the status badges (CaseBadges.css).
+const PIPELINE: { status: string; label: string; color: string }[] = [
+  { status: 'new', label: 'New', color: '#5eb4ff' },
+  { status: 'triaged', label: 'Triaged', color: '#5eb4ff' },
+  { status: 'investigated', label: 'Investigated', color: '#5eb4ff' },
+  { status: 'awaiting_approval', label: 'Awaiting', color: '#f0c040' },
+  { status: 'closed', label: 'Closed', color: '#4ade6a' },
 ]
 
 export function PipelineStrip({ pipeline }: { pipeline: Record<string, number> }) {
   return (
     <div className="pipeline" aria-label="Cases per stage">
       <ol>
-        {PIPELINE.map((step, i) => (
-          <li key={step.status}>
-            {i > 0 && <span className="pipeline-arrow" aria-hidden="true">→</span>}
-            <Link to={`/cases?status=${step.status}`} className="pipeline-step">
-              <span>{step.label}</span>
-              <strong>{pipeline[step.status] ?? 0}</strong>
-            </Link>
-          </li>
-        ))}
+        {PIPELINE.map((step, i) => {
+          const n = pipeline[step.status] ?? 0
+          return (
+            <li key={step.status}>
+              {/* Connector with a pulse travelling to the next stage. */}
+              {i > 0 && <span className="pipeline-link" style={{ '--i': i } as CSSProperties} aria-hidden="true" />}
+              <Link
+                to={`/cases?status=${step.status}`}
+                className={`pipeline-step${n > 0 ? ' has-cases' : ''}`}
+                style={{ '--stage': step.color } as CSSProperties}
+              >
+                <i className="pipeline-dot" aria-hidden="true" />
+                <span>{step.label}</span>
+                <strong>{n}</strong>
+              </Link>
+            </li>
+          )
+        })}
       </ol>
       <Link to="/cases?status=auto_closed" className="pipeline-step pipeline-auto" title="Closed by Triage with a learned playbook">
         <span>Auto-closed by playbook</span>
@@ -62,10 +100,14 @@ function columnPath(x: number, y: number, w: number, h: number, round: boolean):
   return `M${x},${y + h} V${y + r} Q${x},${y} ${x + r},${y} H${x + w - r} Q${x + w},${y} ${x + w},${y + r} V${y + h} Z`
 }
 
-export function CasesOverTime({ data }: { data: DashboardOut }) {
+export function CasesOverTime({ data, empty }: { data: DashboardOut; empty?: ReactNode }) {
   const [hover, setHover] = useState<number | null>(null)
   const { buckets, playbook_markers: markers, window, generated_at } = data
-  if (buckets.length === 0) return <p className="muted">No cases in this window.</p>
+  // Nothing opened in the window: a short message instead of a large empty plot.
+  const total = buckets.reduce((sum, b) => sum + b.human + b.auto, 0)
+  if (buckets.length === 0 || (total === 0 && markers.length === 0)) {
+    return <>{empty ?? <EmptyState icon="clock" title="No cases opened in this window." />}</>
+  }
 
   const innerW = W - PAD.left - PAD.right
   const innerH = H - PAD.top - PAD.bottom
@@ -176,8 +218,8 @@ export function CasesOverTime({ data }: { data: DashboardOut }) {
 
 export type BarItem = { label: string; value: number; to?: string }
 
-export function BarList({ items, empty }: { items: BarItem[]; empty: string }) {
-  if (items.length === 0) return <p className="muted">{empty}</p>
+export function BarList({ items, empty }: { items: BarItem[]; empty: ReactNode }) {
+  if (items.length === 0) return <>{typeof empty === 'string' ? <EmptyState icon="cases" title={empty} /> : empty}</>
   const max = Math.max(1, ...items.map((i) => i.value))
   return (
     <ul className="bar-list">
@@ -200,7 +242,7 @@ export function BarList({ items, empty }: { items: BarItem[]; empty: string }) {
 // ---------- agents & workers (G11) ----------
 
 export function AgentsTable({ agents }: { agents: DashboardOut['agents'] }) {
-  if (agents.length === 0) return <p className="muted">No agent steps in this window.</p>
+  if (agents.length === 0) return <EmptyState icon="activity" title="No agent steps in this window." hint="Agents show up here as they work on cases." />
   const max = Math.max(1, ...agents.map((a) => a.steps))
   const workers = new Set(agents.map((a) => a.worker).filter(Boolean))
   return (
@@ -229,7 +271,7 @@ export function AgentsTable({ agents }: { agents: DashboardOut['agents'] }) {
 // ---------- needs you ----------
 
 export function NeedsYouList({ cases }: { cases: DashboardOut['needs_you'] }) {
-  if (cases.length === 0) return <p className="muted">Nothing is waiting for an analyst.</p>
+  if (cases.length === 0) return <EmptyState icon="check" title="Nothing is waiting for an analyst." hint="Cases that need your approval appear here." />
   return (
     <ul className="needs-you">
       {cases.map((c) => (
@@ -250,7 +292,7 @@ export function NeedsYouList({ cases }: { cases: DashboardOut['needs_you'] }) {
 // ---------- recent activity ----------
 
 export function RecentActivity({ items }: { items: ActivityItem[] }) {
-  if (items.length === 0) return <p className="muted">No agent activity yet.</p>
+  if (items.length === 0) return <EmptyState icon="activity" title="No agent activity yet." hint="Each step an agent takes is listed here as it happens." />
   return (
     <ol className="recent-activity">
       {items.map((r, i) => (

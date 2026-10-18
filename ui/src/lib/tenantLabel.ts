@@ -3,12 +3,12 @@ export function tenantLabel(tenant: string): string {
   return tenant.charAt(0).toUpperCase() + tenant.slice(1)
 }
 
-// One accent per tenant, so a switch is obvious on screen (and on the demo video).
-const TENANT_COLORS: Record<string, string> = { acme: '#4ade6a', globex: '#5eb4ff' }
-const FALLBACK_COLORS = ['#c792ea', '#f0c040', '#ff8a5c']
+// Every tenant uses the theme green, so the UI keeps one colour scheme; the tenant
+// name in the picker and the page headings shows which tenant is selected.
+const TENANT_ACCENT = '#4ade6a' // --accent in index.css
 
-export function tenantColor(tenant: string, all: string[]): string {
-  return TENANT_COLORS[tenant] ?? FALLBACK_COLORS[Math.max(0, all.indexOf(tenant)) % FALLBACK_COLORS.length]
+export function tenantColor(_tenant: string, _all: string[]): string {
+  return TENANT_ACCENT
 }
 
 const TENANT_KEY = 'argus.tenant'

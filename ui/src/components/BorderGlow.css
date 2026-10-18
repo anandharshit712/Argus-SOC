@@ -1,0 +1,91 @@
+@property --bg-angle {
+  syntax: '<angle>';
+  inherits: true;
+  initial-value: 0deg;
+}
+
+.border-glow {
+  --bg-edge: 0;
+  position: relative;
+  display: grid; /* the wrapped card fills the wrapper */
+  border-radius: var(--bg-radius);
+  isolation: isolate;
+}
+.border-glow > :not(.border-glow__glow, .border-glow__edge) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Lit arc of the border, drawn as a ring over the card's own border. */
+.border-glow__edge {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  padding: var(--bg-width);
+  border-radius: inherit;
+  background: conic-gradient(from calc(var(--bg-angle) - var(--bg-spread)), var(--bg-arc));
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  opacity: var(--bg-edge);
+  pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+
+/* Soft glow hugging the lit arc: a thicker ring (::before) blurred by its parent,
+   so it spreads mostly outside the card instead of filling it. */
+.border-glow__glow {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  border-radius: inherit;
+  filter: blur(var(--bg-blur));
+  opacity: calc(var(--bg-edge) * var(--bg-intensity) * 0.8);
+  pointer-events: none;
+  transition: opacity 0.25s ease-out;
+}
+.border-glow__glow::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  padding: 5px;
+  border-radius: inherit;
+  background: conic-gradient(
+    from calc(var(--bg-angle) - var(--bg-spread)),
+    transparent 0deg,
+    hsl(var(--bg-glow) / 0.9) var(--bg-spread),
+    transparent calc(var(--bg-spread) * 2)
+  );
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+}
+
+.border-glow--animated:hover {
+  animation: border-glow-sweep 4s linear infinite;
+}
+@keyframes border-glow-sweep {
+  to {
+    --bg-angle: 360deg;
+  }
+}
+
+@media (hover: none) {
+  .border-glow__edge,
+  .border-glow__glow {
+    display: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .border-glow--animated:hover {
+    animation: none;
+  }
+}

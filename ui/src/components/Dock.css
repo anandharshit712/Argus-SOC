@@ -1,0 +1,168 @@
+.dock {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: var(--dock-gap);
+  height: var(--dock-panel-h);
+  padding: 0 10px 6px;
+  background: rgba(12, 21, 17, 0.55);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  box-shadow: inset 0 1px 0 rgba(200, 255, 214, 0.04);
+}
+/* Top dock: tiles hang from the top edge and grow downwards. */
+.dock--top {
+  align-items: flex-start;
+  padding: 6px 10px 0;
+}
+
+.dock__item {
+  position: relative;
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: var(--dock-size);
+  height: var(--dock-size);
+  padding: 0;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--dock-radius);
+  color: var(--muted);
+  font: 600 calc(var(--dock-size) * 0.4) 'Rajdhani', sans-serif;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition:
+    width 0.14s ease-out,
+    height 0.14s ease-out,
+    font-size 0.14s ease-out,
+    color 0.2s,
+    background-color 0.2s,
+    border-color 0.2s;
+}
+.dock--tiles .dock__item {
+  background: rgba(12, 21, 17, 0.9);
+  border-color: var(--border);
+}
+.dock__item:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+.dock__item.is-active {
+  color: var(--dock-accent);
+  border-color: color-mix(in srgb, var(--dock-accent) 55%, transparent);
+  background: color-mix(in srgb, var(--dock-accent) 10%, rgba(12, 21, 17, 0.9));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--dock-accent) 18%, transparent);
+}
+.dock__item:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: 2px;
+}
+
+.dock__icon {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.dock__indicator {
+  position: absolute;
+  left: 50%;
+  bottom: -5px;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--dock-accent);
+  box-shadow: 0 0 6px var(--dock-accent);
+  transform: translateX(-50%);
+}
+.dock--top .dock__indicator {
+  top: -5px;
+  bottom: auto;
+}
+
+.dock__label {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  padding: 3px 8px;
+  background: rgba(7, 13, 10, 0.95);
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  color: var(--text);
+  font: 0.75rem 'Share Tech Mono', monospace;
+  letter-spacing: 0;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, 4px);
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+  z-index: 5;
+}
+.dock--top .dock__label {
+  top: calc(100% + 8px);
+  bottom: auto;
+  transform: translate(-50%, -4px);
+}
+.dock__item:hover .dock__label,
+.dock__item:focus-visible .dock__label {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.dock__badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--dock-badge);
+  color: #fff;
+  font: 700 0.7rem/18px 'Rajdhani', sans-serif;
+  text-align: center;
+}
+
+.dock__separator {
+  align-self: stretch;
+  width: 1px;
+  margin: 10px 2px 4px;
+  background: var(--border);
+}
+
+.dock__item.is-bouncing {
+  animation: dock-bounce 0.45s ease-out;
+}
+@keyframes dock-bounce {
+  30% {
+    transform: translateY(-6px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(-2px);
+  }
+}
+.dock--top .dock__item.is-bouncing {
+  animation-name: dock-bounce-down;
+}
+@keyframes dock-bounce-down {
+  30% {
+    transform: translateY(6px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  80% {
+    transform: translateY(2px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dock__item {
+    transition: none;
+  }
+}

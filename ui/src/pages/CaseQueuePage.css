@@ -6,7 +6,10 @@
 
 .queue-head {
   padding: 22px 26px;
-  background: rgba(10, 18, 14, 0.85);
+  /* same look as the dashboard's welcome card */
+  background:
+    radial-gradient(circle at 85% 40%, rgba(74, 222, 106, 0.1), transparent 45%),
+    rgba(10, 18, 14, 0.85);
   border: 1px solid var(--border);
   border-radius: 10px;
 }

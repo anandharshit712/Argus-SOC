@@ -1,0 +1,43 @@
+.text-type {
+  white-space: pre;
+}
+
+.text-type__sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.text-type__text--fade {
+  animation: text-type-fade 0.25s ease-out;
+}
+
+.text-type__cursor {
+  display: inline-block;
+  margin-left: 0.06em;
+  animation: text-type-blink var(--tt-blink, 1s) steps(1, end) infinite;
+}
+.text-type__cursor--solid {
+  animation: none;
+}
+
+@keyframes text-type-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes text-type-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .text-type__cursor {
+    animation: none;
+  }
+}

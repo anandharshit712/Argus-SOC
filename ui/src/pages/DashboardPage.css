@@ -20,29 +20,19 @@
 .welcome h1 { margin: 0; font: 600 2rem 'Rajdhani', sans-serif; color: #fff; }
 .welcome p { margin: 4px 0 0; color: var(--text); font-size: 1.1rem; }
 
-.window-select {
-  display: inline-flex;
-  border: 1px solid var(--border-strong);
-  border-radius: 6px;
-  overflow: hidden;
+/* Time-window dock (components/Dock): keep it compact inside the welcome card. */
+.window-dock {
+  flex: none;
 }
-.window-select button {
-  padding: 8px 16px;
-  background: var(--field);
-  border: 0;
-  border-right: 1px solid var(--border-strong);
-  color: var(--muted);
-  font: 600 1rem 'Rajdhani', sans-serif;
-  cursor: pointer;
-}
-.window-select button:last-child { border-right: 0; }
-.window-select button.is-active { background: var(--accent); color: #04110a; }
 
 .tile-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
   gap: 16px;
 }
+/* Tiles in a BorderGlow: the glow is the hover cue, so the border keeps its colour. */
+.border-glow > a.stat-tile:hover { border-color: var(--border-strong); }
+.border-glow > a.stat-tile.is-warn:hover { border-color: var(--warn); }
 
 .dash-row {
   display: grid;
@@ -77,7 +67,37 @@
   color: var(--danger);
   font: 0.9rem 'Share Tech Mono', monospace;
 }
-.dash-loading { color: var(--muted); font: 1rem 'Share Tech Mono', monospace; }
+/* "Live · updated 3s ago" under the welcome text */
+.welcome .updated-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+  color: var(--muted);
+  font: 0.85rem 'Share Tech Mono', monospace;
+}
+.updated-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 0 rgba(74, 222, 106, 0.6);
+  animation: updated-pulse 2s ease-out infinite;
+}
+.updated-dot.is-paused { background: var(--muted); animation: none; }
+@keyframes updated-pulse {
+  70% { box-shadow: 0 0 0 7px rgba(74, 222, 106, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(74, 222, 106, 0); }
+}
+
+/* loading placeholders (index.css .skeleton) in the dashboard's layout */
+.dash-skeleton { display: flex; flex-direction: column; gap: 20px; }
+.skeleton-tile { display: flex; flex-direction: column; gap: 12px; height: 150px; padding: 18px; }
+.skeleton-value { width: 30%; height: 34px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .updated-dot { animation: none; }
+}
 
 @media (max-width: 1200px) {
   .dash-row-three { grid-template-columns: 1fr 1fr; }
