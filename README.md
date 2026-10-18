@@ -4,14 +4,14 @@
 
 Built for **Graph Hacks: Context for AI Agents** (WeMakeDevs × FalkorDB, Oct 15–18, 2026).
 
-| | |
-|---|---|
-| **Tracks entered** | **Track 01: Agents That Act on Connected Data** and **Track 02: Agent Memory and Coordination** |
-| **Demo video** | DEMO_VIDEO_LINK_HERE |
-| **Live demo** | Analyst console: https://argus-soc.34-93-139-203.sslip.io · Demo web shop (attack target): https://shop.34-93-139-203.sslip.io |
-| **Live demo login** | Username: globex.analyst, Password: G10bX_Test |
-| **Graph database** | FalkorDB, one graph per tenant (`tenant_acme`, `tenant_globex`) |
-| **License** | [Apache-2.0](LICENSE) |
+|                     |                                                                                                                                |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Tracks entered**  | **Track 01: Agents That Act on Connected Data** and **Track 02: Agent Memory and Coordination**                                |
+| **Demo video**      | https://drive.google.com/file/d/1CeCtUZe2VuNMwFjtfLAYOUFt1TaVpkJG/view?usp=sharing                                             |
+| **Live demo**       | Analyst console: https://argus-soc.34-93-139-203.sslip.io · Demo web shop (attack target): https://shop.34-93-139-203.sslip.io |
+| **Live demo login** | Username: globex.analyst, Password: G10bX_Test                                                                                 |
+| **Graph database**  | FalkorDB, one graph per tenant (`tenant_acme`, `tenant_globex`)                                                                |
+| **License**         | [Apache-2.0](LICENSE)                                                                                                          |
 
 ---
 
@@ -50,16 +50,16 @@ flowchart LR
     UI -- "approve / reject / benign" --> API
 ```
 
-| Component | Tech | Code |
-|---|---|---|
-| Graph tools library (all Cypher) | Python, `falkordb` client | [`src/argus_soc/graph/`](src/argus_soc/graph/) |
-| Ingestor (Talos to graph) | Python, `httpx` | [`src/argus_soc/ingestor/`](src/argus_soc/ingestor/) |
-| Agents (Triage, Investigator, Responder) | Python, Anthropic or OpenAI SDK (optional), `mcp` | [`src/argus_soc/agents/`](src/argus_soc/agents/) |
-| Graph MCP server | official `mcp` SDK, stdio | [`src/argus_soc/graph/mcp_server.py`](src/argus_soc/graph/mcp_server.py) |
-| Backend API | FastAPI | [`backend/`](backend/) |
-| Analyst console | React 19, TypeScript, Vite | [`ui/`](ui/) |
-| Live demo harness (shop, SSH target, log shipper, attack bot) | Python, FastAPI | [`demo/`](demo/) |
-| Deployment | Docker Compose, nginx, HTTPS | [`docker-compose.yml`](docker-compose.yml), [`deploy/`](deploy/) |
+| Component                                                     | Tech                                              | Code                                                                     |
+| ------------------------------------------------------------- | ------------------------------------------------- | ------------------------------------------------------------------------ |
+| Graph tools library (all Cypher)                              | Python, `falkordb` client                         | [`src/argus_soc/graph/`](src/argus_soc/graph/)                           |
+| Ingestor (Talos to graph)                                     | Python, `httpx`                                   | [`src/argus_soc/ingestor/`](src/argus_soc/ingestor/)                     |
+| Agents (Triage, Investigator, Responder)                      | Python, Anthropic or OpenAI SDK (optional), `mcp` | [`src/argus_soc/agents/`](src/argus_soc/agents/)                         |
+| Graph MCP server                                              | official `mcp` SDK, stdio                         | [`src/argus_soc/graph/mcp_server.py`](src/argus_soc/graph/mcp_server.py) |
+| Backend API                                                   | FastAPI                                           | [`backend/`](backend/)                                                   |
+| Analyst console                                               | React 19, TypeScript, Vite                        | [`ui/`](ui/)                                                             |
+| Live demo harness (shop, SSH target, log shipper, attack bot) | Python, FastAPI                                   | [`demo/`](demo/)                                                         |
+| Deployment                                                    | Docker Compose, nginx, HTTPS                      | [`docker-compose.yml`](docker-compose.yml), [`deploy/`](deploy/)         |
 
 More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (deployment, components, sequences, trust boundaries), [docs/HLD.md](docs/HLD.md), [docs/LLD.md](docs/LLD.md), [docs/DFD.md](docs/DFD.md), [docs/UI_PAGES.md](docs/UI_PAGES.md).
 
@@ -112,21 +112,21 @@ flowchart LR
     AgentRun -- HANDED_OFF_TO --> AgentRun
 ```
 
-| Label | Key | What it holds |
-|---|---|---|
-| `Host` | `hostname` | `ip`, `os`, `zone`, `criticality` 1–5, `isolated`; memory: `targeted_case_ids` |
-| `User` | `username` | `role`, `department`, `privileged`, `disabled`; memory: `suspected_compromised` |
-| `Service` | `name` | `port`, `exposed` |
-| `Endpoint` | `path` + `app` | web paths Talos saw attacked |
-| `AssetTag` | `name` | `crown-jewel` marks hosts an attacker must not reach |
-| `Alert` | `incident_id` | category, severity, confidence, `succeeded`, evidence from Talos |
-| `IOC` | `type` + `value` | `verdict` (unknown / malicious / benign), `seen_case_ids` |
-| `Technique` | `mitre_id` | MITRE ATT&CK name and tactic |
-| `Case` | `id` | status, priority, `claimed_by`, findings, verdict |
-| `Decision` | `id` | rule, actions, reason, explanation, `outcome` (pending / approved / rejected / auto) |
-| `Feedback` | `id` | analyst verdict and note |
-| `Playbook` | `name` + `version` | learned condition and action, `active` |
-| `AgentRun` | `id` | which agent and worker did what, tool calls, handoff |
+| Label       | Key                | What it holds                                                                        |
+| ----------- | ------------------ | ------------------------------------------------------------------------------------ |
+| `Host`      | `hostname`         | `ip`, `os`, `zone`, `criticality` 1–5, `isolated`; memory: `targeted_case_ids`       |
+| `User`      | `username`         | `role`, `department`, `privileged`, `disabled`; memory: `suspected_compromised`      |
+| `Service`   | `name`             | `port`, `exposed`                                                                    |
+| `Endpoint`  | `path` + `app`     | web paths Talos saw attacked                                                         |
+| `AssetTag`  | `name`             | `crown-jewel` marks hosts an attacker must not reach                                 |
+| `Alert`     | `incident_id`      | category, severity, confidence, `succeeded`, evidence from Talos                     |
+| `IOC`       | `type` + `value`   | `verdict` (unknown / malicious / benign), `seen_case_ids`                            |
+| `Technique` | `mitre_id`         | MITRE ATT&CK name and tactic                                                         |
+| `Case`      | `id`               | status, priority, `claimed_by`, findings, verdict                                    |
+| `Decision`  | `id`               | rule, actions, reason, explanation, `outcome` (pending / approved / rejected / auto) |
+| `Feedback`  | `id`               | analyst verdict and note                                                             |
+| `Playbook`  | `name` + `version` | learned condition and action, `active`                                               |
+| `AgentRun`  | `id`               | which agent and worker did what, tool calls, handoff                                 |
 
 Full model with every property, indexes and case statuses: **[src/argus_soc/graph/README.md](src/argus_soc/graph/README.md)**. A test ([`tests/graph/test_graph_readme.py`](tests/graph/test_graph_readme.py)) fails if that document drifts from the code.
 
@@ -134,15 +134,15 @@ Full model with every property, indexes and case statuses: **[src/argus_soc/grap
 
 All Cypher lives in [`src/argus_soc/graph/`](src/argus_soc/graph/). Every value is a query parameter, never string-built Cypher, and every write is a single idempotent `MERGE` query.
 
-| # | Query | Used by | What it decides | Code |
-|---|---|---|---|---|
-| Q1 | **Blast radius** (multi-hop): IOC → alerts → hosts → accounts → every host those accounts log into | Investigator | how far the attack can spread | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `blast_radius` |
-| Q2 | **Paths to crown jewels**: FalkorDB **`algo.SPpaths`** over `CONNECTS_TO` and `LOGGED_INTO`, both directions | Investigator | whether a crown jewel is reachable; this drives the decision rule | [`algorithm_queries.py`](src/argus_soc/graph/algorithm_queries.py) `paths_to_crown_jewels` |
-| Q3 | **Which host to isolate**: FalkorDB **`algo.betweenness`** on the host network, × criticality | Responder | the single best host to cut off | [`algorithm_queries.py`](src/argus_soc/graph/algorithm_queries.py) `rank_hosts` |
-| Q4 | **Recall**: closed cases about the same IOCs, hosts or users | Triage | "have we seen this before, and what did the analyst say?" | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `recall` |
-| Q5 | **Linked alerts**: live alerts sharing an IOC or user | Triage | which alerts become one case | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `linked_alerts` |
-| Q6 | **Explain a decision**: decision → case → alerts → targets → playbook → the case it was learned from | UI, all agents | the "why" shown to the analyst | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `explain_decision` |
-| W | Ingest report, open or join case, claim case, record semantic facts, record feedback, create playbook version | all | shared state, memory and learning | [`write_queries.py`](src/argus_soc/graph/write_queries.py) |
+| #   | Query                                                                                                         | Used by        | What it decides                                                   | Code                                                                                       |
+| --- | ------------------------------------------------------------------------------------------------------------- | -------------- | ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| Q1  | **Blast radius** (multi-hop): IOC → alerts → hosts → accounts → every host those accounts log into            | Investigator   | how far the attack can spread                                     | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `blast_radius`                    |
+| Q2  | **Paths to crown jewels**: FalkorDB **`algo.SPpaths`** over `CONNECTS_TO` and `LOGGED_INTO`, both directions  | Investigator   | whether a crown jewel is reachable; this drives the decision rule | [`algorithm_queries.py`](src/argus_soc/graph/algorithm_queries.py) `paths_to_crown_jewels` |
+| Q3  | **Which host to isolate**: FalkorDB **`algo.betweenness`** on the host network, × criticality                 | Responder      | the single best host to cut off                                   | [`algorithm_queries.py`](src/argus_soc/graph/algorithm_queries.py) `rank_hosts`            |
+| Q4  | **Recall**: closed cases about the same IOCs, hosts or users                                                  | Triage         | "have we seen this before, and what did the analyst say?"         | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `recall`                          |
+| Q5  | **Linked alerts**: live alerts sharing an IOC or user                                                         | Triage         | which alerts become one case                                      | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `linked_alerts`                   |
+| Q6  | **Explain a decision**: decision → case → alerts → targets → playbook → the case it was learned from          | UI, all agents | the "why" shown to the analyst                                    | [`read_queries.py`](src/argus_soc/graph/read_queries.py) `explain_decision`                |
+| W   | Ingest report, open or join case, claim case, record semantic facts, record feedback, create playbook version | all            | shared state, memory and learning                                 | [`write_queries.py`](src/argus_soc/graph/write_queries.py)                                 |
 
 Two of them, as they run:
 
@@ -172,12 +172,12 @@ Every query in full, with what it returns on the demo data: [src/argus_soc/graph
 
 The Responder's decision table ([`decision_table.py`](src/argus_soc/agents/decision_table.py)) is plain code keyed on two graph findings: did the attack succeed, and does a path reach a crown jewel (Q2)?
 
-| Rule | Succeeded | Path to crown jewel | Actions | Needs approval |
-|---|---|---|---|---|
-| R1 | yes | yes | isolate the top-ranked host (Q3), disable accounts, block IPs | yes |
-| R2 | yes | no | disable accounts, block IPs, open a hunt ticket | yes |
-| R3 | no | yes | block IPs, watch the hosts on the path | no (yes if the IP is already known malicious) |
-| R4 | no | no | block or rate-limit IPs, open a ticket, lower priority one step | no |
+| Rule | Succeeded | Path to crown jewel | Actions                                                         | Needs approval                                |
+| ---- | --------- | ------------------- | --------------------------------------------------------------- | --------------------------------------------- |
+| R1   | yes       | yes                 | isolate the top-ranked host (Q3), disable accounts, block IPs   | yes                                           |
+| R2   | yes       | no                  | disable accounts, block IPs, open a hunt ticket                 | yes                                           |
+| R3   | no        | yes                 | block IPs, watch the hosts on the path                          | no (yes if the IP is already known malicious) |
+| R4   | no        | no                  | block or rate-limit IPs, open a ticket, lower priority one step | no                                            |
 
 Actions on hosts and accounts are simulated: they set `isolated` / `disabled` in the graph and are shown in the UI.
 
@@ -185,25 +185,25 @@ Actions on hosts and accounts are simulated: they set `isolated` / `disabled` in
 
 **Track 01: Agents That Act on Connected Data**
 
-| Focus | Where |
-|---|---|
-| Multi-hop reasoning | Q1 blast radius, Q2 attack paths, Q6 explanation |
-| Graph queries and algorithms as agent tools | `algo.SPpaths` (Investigator), `algo.betweenness` (Responder) |
-| Tool selection through MCP | Investigator deep dive: the LLM picks from six read-only graph tools ([`mcp_server.py`](src/argus_soc/graph/mcp_server.py), [`graph_tool_client.py`](src/argus_soc/agents/graph_tool_client.py)) |
-| Actions based on graph results | decision table R1–R4 above |
-| Explainable results | each `Decision` stores its rule, reason and evidence; Q6 shows the full chain in the UI |
+| Focus                                       | Where                                                                                                                                                                                            |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Multi-hop reasoning                         | Q1 blast radius, Q2 attack paths, Q6 explanation                                                                                                                                                 |
+| Graph queries and algorithms as agent tools | `algo.SPpaths` (Investigator), `algo.betweenness` (Responder)                                                                                                                                    |
+| Tool selection through MCP                  | Investigator deep dive: the LLM picks from six read-only graph tools ([`mcp_server.py`](src/argus_soc/graph/mcp_server.py), [`graph_tool_client.py`](src/argus_soc/agents/graph_tool_client.py)) |
+| Actions based on graph results              | decision table R1–R4 above                                                                                                                                                                       |
+| Explainable results                         | each `Decision` stores its rule, reason and evidence; Q6 shows the full chain in the UI                                                                                                          |
 
 **Track 02: Agent Memory and Coordination**
 
-| Focus | Where |
-|---|---|
-| Episodic memory | closed `Case`s with alerts, verdict and analyst notes, read back by Q4 recall |
-| Semantic memory | facts on nodes: `Host.targeted_case_ids`, `User.suspected_compromised`, `IOC.verdict` |
-| Procedural memory | `Playbook` versions `LEARNED_FROM` analyst feedback; "mark benign" makes the next matching case auto-close and cite where it learned this |
-| Persistence across sessions | FalkorDB with append-only file on a volume; agents keep nothing in process, so a restarted agent carries on from the graph |
-| Shared state and handoffs | `Case.status` + `claimed_by` / `claimed_at` (expiring claims), `AgentRun -[:HANDED_OFF_TO]-> AgentRun` chain |
+| Focus                             | Where                                                                                                                                                                                                                |
+| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Episodic memory                   | closed `Case`s with alerts, verdict and analyst notes, read back by Q4 recall                                                                                                                                        |
+| Semantic memory                   | facts on nodes: `Host.targeted_case_ids`, `User.suspected_compromised`, `IOC.verdict`                                                                                                                                |
+| Procedural memory                 | `Playbook` versions `LEARNED_FROM` analyst feedback; "mark benign" makes the next matching case auto-close and cite where it learned this                                                                            |
+| Persistence across sessions       | FalkorDB with append-only file on a volume; agents keep nothing in process, so a restarted agent carries on from the graph                                                                                           |
+| Shared state and handoffs         | `Case.status` + `claimed_by` / `claimed_at` (expiring claims), `AgentRun -[:HANDED_OFF_TO]-> AgentRun` chain                                                                                                         |
 | High-concurrency reads and writes | `--scale agents=2`; scenario 5's burst (31 incidents over both tenants) gives exactly one decision per case and no alert in two cases ([`tests/e2e/test_concurrency_burst.py`](tests/e2e/test_concurrency_burst.py)) |
-| Separate memory per tenant | one FalkorDB graph per tenant; `tenant` is the first argument of every graph function; the same attacker IP is new to Globex even after Acme has learned about it |
+| Separate memory per tenant        | one FalkorDB graph per tenant; `tenant` is the first argument of every graph function; the same attacker IP is new to Globex even after Acme has learned about it                                                    |
 
 ## Run it locally
 
@@ -251,15 +251,15 @@ python scripts/replay_scenario.py --reset     # empty Talos and the tenant graph
 
 Windows: `.\run_scenario.ps1 -Demo`, `.\run_scenario.ps1 1`, `.\run_scenario.ps1 5 -Burst`.
 
-| Scenario | Tenant | What it shows |
-|---|---|---|
-| 0 Quiet morning | both | a normal hour at both companies, nothing malicious (control) |
-| 1 Brute force lands | Acme | SSH brute force succeeds on `bastion-01`, then credential stuffing from the same IP; one case, path to `db-prod-01`, rule R1 |
-| 2 Scheduled scanner | Acme | internal pentest scanner; analyst marks it benign, and the next run is auto-closed by the learned playbook |
-| 3 SQLi blocked | Acme | injection with no path to a crown jewel; R4 lowers the priority |
-| 4 Second organisation | Globex | the same attacker IP is new to Globex: tenant isolation |
-| 5 Busy hour | both | 24 attack bursts over both tenants at once (31 Talos incidents) |
-| 6 Account returns | Acme | a week later, a new IP guesses `svc_deploy`'s password; priority is raised because the graph remembers the account as suspected compromised |
+| Scenario              | Tenant | What it shows                                                                                                                               |
+| --------------------- | ------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0 Quiet morning       | both   | a normal hour at both companies, nothing malicious (control)                                                                                |
+| 1 Brute force lands   | Acme   | SSH brute force succeeds on `bastion-01`, then credential stuffing from the same IP; one case, path to `db-prod-01`, rule R1                |
+| 2 Scheduled scanner   | Acme   | internal pentest scanner; analyst marks it benign, and the next run is auto-closed by the learned playbook                                  |
+| 3 SQLi blocked        | Acme   | injection with no path to a crown jewel; R4 lowers the priority                                                                             |
+| 4 Second organisation | Globex | the same attacker IP is new to Globex: tenant isolation                                                                                     |
+| 5 Busy hour           | both   | 24 attack bursts over both tenants at once (31 Talos incidents)                                                                             |
+| 6 Account returns     | Acme   | a week later, a new IP guesses `svc_deploy`'s password; priority is raised because the graph remembers the account as suspected compromised |
 
 **4. Live attacks (optional)**: a small, deliberately attackable shop and SSH target that feed Talos continuously.
 
@@ -322,11 +322,11 @@ Separately, at runtime the agents can call an LLM (Anthropic or OpenAI; the live
 
 ## Team
 
-| Member | Workstream |
-|---|---|
-| Harshit Anand | Workstream A: agents, Talos integration, ingestor, live demo harness, deployment |
-| Md Adnan Afzal | Workstream B: FalkorDB graph model, Cypher queries and algorithms, graph MCP server, Docker Compose |
-| Satya Prakash Nirala | Workstream C: backend API and analyst console (UI) |
+| Member               | Workstream                                                                                          |
+| -------------------- | --------------------------------------------------------------------------------------------------- |
+| Harshit Anand        | Workstream A: agents, Talos integration, ingestor, live demo harness, deployment                    |
+| Md Adnan Afzal       | Workstream B: FalkorDB graph model, Cypher queries and algorithms, graph MCP server, Docker Compose |
+| Satya Prakash Nirala | Workstream C: backend API and analyst console (UI)                                                  |
 
 ## License
 
